@@ -108,6 +108,10 @@ and the failure modes.
 Resources: Google Cloud Vertex AI docs, ADK docs, LangGraph docs, Google's
 "Agents" whitepaper (Kaggle 5-day GenAI course), MCP spec (modelcontextprotocol.io).
 
+**Deep-dive study guides for all of 3.1-3.5 live in
+[`study-materials/`](./study-materials/README.md)** — read those for the
+actual concepts, definitions, diagrams, and self-check questions.
+
 ---
 
 ## 4. Applied design practice (week 2-3)
