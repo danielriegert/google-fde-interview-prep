@@ -3,6 +3,7 @@
 ## 1. Why RAG exists
 
 LLMs have three structural limits RAG addresses:
+
 - **Knowledge cutoff** — model doesn't know about data after training, or
   private/enterprise data it never saw.
 - **Hallucination** — model will confidently invent facts when it doesn't
@@ -18,7 +19,7 @@ instead of parametric memory alone.
 ## 2. The canonical pipeline
 
 ```
-[Source docs] → chunk → embed → [Vector Index]
+[Source / load docs] → chunk → embed → [Vector Index]
                                         ▲
                                         │ similarity search
 [User query] → embed query ────────────┘
@@ -45,12 +46,12 @@ whole 50-page doc embedded as one vector loses too much specificity to
 match a narrow query. Chunks need to be small enough to be specific, big
 enough to retain context.
 
-| Strategy | How | Tradeoff |
-|---|---|---|
-| Fixed-size (e.g. 512 tokens) | Split by token/char count, often with overlap (10-20%) | Simple, fast; can cut sentences/ideas in half |
-| Recursive/structure-aware | Split on paragraph → sentence boundaries, respecting document structure (headers, markdown) | Better semantic coherence; more engineering |
-| Semantic chunking | Embed sentences, split where embedding similarity drops (topic shift) | Best coherence; expensive, non-deterministic boundaries |
-| Hierarchical / parent-child | Index small chunks for precise matching, but retrieve the larger parent chunk/section for generation context | Best of both — precise recall, rich context; more index complexity |
+| Strategy                     | How                                                                                                          | Tradeoff                                                           |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| Fixed-size (e.g. 512 tokens) | Split by token/char count, often with overlap (10-20%)                                                       | Simple, fast; can cut sentences/ideas in half                      |
+| Recursive/structure-aware    | Split on paragraph → sentence boundaries, respecting document structure (headers, markdown)                  | Better semantic coherence; more engineering                        |
+| Semantic chunking            | Embed sentences, split where embedding similarity drops (topic shift)                                        | Best coherence; expensive, non-deterministic boundaries            |
+| Hierarchical / parent-child  | Index small chunks for precise matching, but retrieve the larger parent chunk/section for generation context | Best of both — precise recall, rich context; more index complexity |
 
 **Overlap** between chunks (e.g. 50-100 tokens) prevents losing information
 that straddles a chunk boundary.
@@ -100,7 +101,7 @@ phrases) — embeddings blur precise tokens. Fix: **hybrid search**.
   better search query (e.g. resolve pronouns, add synonyms) via a cheap
   LLM call before retrieval.
 - **HyDE (Hypothetical Document Embeddings)**: ask the LLM to write a
-  hypothetical answer, embed *that*, and search with it — the hypothetical
+  hypothetical answer, embed _that_, and search with it — the hypothetical
   answer's embedding often matches real docs better than the raw question.
 - **Multi-query retrieval**: generate several reformulated queries, retrieve
   for each, merge/dedupe results — improves recall for ambiguous questions.
@@ -125,7 +126,7 @@ phrases) — embeddings blur precise tokens. Fix: **hybrid search**.
 - **Self-RAG / corrective RAG**: model critiques its own retrieval —
   "were these chunks actually relevant?" — and re-retrieves or falls back
   if not.
-- **Agentic RAG**: retrieval becomes a *tool* the agent calls, possibly
+- **Agentic RAG**: retrieval becomes a _tool_ the agent calls, possibly
   multiple times, interleaved with reasoning (vs. a fixed one-shot
   retrieve-then-generate pipeline). Handles multi-hop questions
   ("compare X's Q1 and Q3 revenue" needs two retrievals).
@@ -139,22 +140,22 @@ phrases) — embeddings blur precise tokens. Fix: **hybrid search**.
 - **Retrieval metrics**: precision@k, recall@k, MRR (mean reciprocal rank)
   — did we retrieve the right chunks at all?
 - **Generation metrics** (often via LLM-as-judge or RAGAS-style
-  frameworks): *faithfulness* (is the answer supported by context?),
-  *answer relevancy* (does it address the question?), *context precision*
+  frameworks): _faithfulness_ (is the answer supported by context?),
+  _answer relevancy_ (does it address the question?), _context precision_
   (is retrieved context actually used/relevant?).
 - See file 03 for the full evaluation/observability picture.
 
 ## 10. Failure modes & mitigations
 
-| Failure | Cause | Mitigation |
-|---|---|---|
-| Retrieval miss | Query/doc vocabulary mismatch, bad chunking | Hybrid search, query rewriting, better chunking |
-| Stale answers | Index not updated after source changes | Incremental re-indexing, CDC pipelines, freshness metadata + filtering |
-| Lost context at chunk boundary | Fixed-size chunking cuts mid-idea | Overlap, semantic/structure-aware chunking, parent-child retrieval |
-| Hallucination despite retrieval | Model ignores context or fills gaps | Strict grounding prompts, faithfulness check, "I don't know" fallback |
-| Irrelevant chunks crowd out good ones | Weak similarity search, no re-ranking | Cross-encoder re-ranking, better embedding model |
-| Unauthorized data exposure | No access control at retrieval | ACL/permission metadata filtering at query time (see file 04) |
-| Context window overflow | Too many/too-large chunks stuffed in prompt | Re-ranking to cut top-k, summarization of retrieved chunks, hierarchical retrieval |
+| Failure                               | Cause                                       | Mitigation                                                                         |
+| ------------------------------------- | ------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Retrieval miss                        | Query/doc vocabulary mismatch, bad chunking | Hybrid search, query rewriting, better chunking                                    |
+| Stale answers                         | Index not updated after source changes      | Incremental re-indexing, CDC pipelines, freshness metadata + filtering             |
+| Lost context at chunk boundary        | Fixed-size chunking cuts mid-idea           | Overlap, semantic/structure-aware chunking, parent-child retrieval                 |
+| Hallucination despite retrieval       | Model ignores context or fills gaps         | Strict grounding prompts, faithfulness check, "I don't know" fallback              |
+| Irrelevant chunks crowd out good ones | Weak similarity search, no re-ranking       | Cross-encoder re-ranking, better embedding model                                   |
+| Unauthorized data exposure            | No access control at retrieval              | ACL/permission metadata filtering at query time (see file 04)                      |
+| Context window overflow               | Too many/too-large chunks stuffed in prompt | Re-ranking to cut top-k, summarization of retrieved chunks, hierarchical retrieval |
 
 ## 11. Data freshness: batch vs streaming ingestion
 
@@ -183,3 +184,14 @@ phrases) — embeddings blur precise tokens. Fix: **hybrid search**.
 - [ ] Walk through what breaks and how you'd catch it: a customer says
       the agent gave a wrong, confidently-stated answer about a policy
       that changed yesterday
+
+---
+
+## Further Research
+
+- differetn chunking and retrieval strategies
+- how to improve latency
+- how to address haluciation
+- how to enfroce acces at doc level
+- prevent context window overlfow
+- explainabiltiy
