@@ -662,32 +662,136 @@ Cross-cutting (both pipelines): Cloud Logging, Cloud Trace, Cloud Monitoring,
 Vertex AI Model Monitoring, Cloud Audit Logs (every retrieval — who accessed what).
 ```
 
-### 13.2 Component → GCP service mapping
+### 13.2 Components by category
 
-| Stage | Purpose | GCP service | Notes |
-| --- | --- | --- | --- |
-| Raw doc landing | Durable, cheap object storage for source docs | Cloud Storage | Source of truth for reprocessing; triggers downstream via notifications |
-| Ingestion trigger | React to new/changed docs (streaming) or run on schedule (batch) | Eventarc + Pub/Sub (streaming), Cloud Composer (batch/DAG) | Batch vs. streaming choice mirrors section 12 |
-| Bulk document processing | Parallel, autoscaled chunk/clean/enrich compute over large corpora | Dataflow (Apache Beam) | The lever that lets ingestion scale independently with corpus size/backlog |
-| Parsing / OCR / layout | Turn PDFs, scans, forms into structured text+layout | Document AI | Matches the "document layout analysis" row in section 4's chunking table |
-| PII detection & redaction | Find and de-identify PII/PHI before any downstream step touches it | Sensitive Data Protection (DLP API) | Run as an isolated step/service account — bulkheads untrusted content per section 4's separation-of-concerns note |
-| Metadata enrichment | Title/summary/keywords/entities per chunk (section 5) | Vertex AI Gemini (batch), Cloud Natural Language API (NER) | Cost scales with corpus size — apply section 4's cache-aside-on-content-hash pattern |
-| Embeddings | Vectorize chunks and queries with the same model | Vertex AI Embeddings API (`text-embedding-005` or current gen) | Batch prediction for backfill, online calls for incremental + query-time |
-| Vector index + retrieval | ANN search at scale, with metadata/ACL filtering | Vertex AI Vector Search | Built for billion-scale vectors at low latency; supports namespace/ACL-based restricts natively |
-| Entitlement graph | Canonical user → allowed-doc/ACL mapping | Firestore or Spanner | Synced from source-system ACLs (Drive/SharePoint groups); freshness SLA matters as much as content freshness |
-| API entry / edge | Global entry point, TLS, DDoS/WAF, rate limiting | Cloud Load Balancing (global external HTTPS) + Cloud Armor | Needed at 1M-user scale for both perf (anycast) and abuse protection |
-| AuthN | Verify caller identity | Identity Platform / Cloud IAP | Issues the identity used to resolve entitlements |
-| App orchestration | Stateless service running the retrieve→rerank→generate flow | Cloud Run (or GKE Autopilot for more control) | Autoscaled, min-instances warm pool to control cold-start tail latency |
-| Caching | Cut latency/cost for repeated queries at high concurrency | Memorystore (Redis) | Cache query embeddings, hot retrieval results, and full answers for popular queries |
-| Hybrid retrieval | Combine semantic + keyword search, merge via RRF | Vertex AI Vector Search hybrid mode, or Vertex AI Search as a managed all-in-one alternative | Same tradeoffs as section 7 — pick managed all-in-one vs. hand-rolled based on how much control you need |
-| Reranking | Reorder fused candidates for precision within the latency budget | Vertex AI Ranking API (`semantic-ranker-fast-004` for the latency-critical path) | Stateless API — works directly on Vector Search output, no separate reranker index needed |
-| Generation | Grounded answer synthesis | Vertex AI Gemini (Flash-class model, streamed output) | Flash-class for latency; stream tokens so time-to-first-token, not full completion, drives perceived latency |
-| Evaluation | Offline + scheduled quality checks | Vertex AI Gen AI Evaluation Service, orchestrated by Vertex AI Pipelines | See 13.9 |
-| Observability | Logs, traces, metrics, model drift | Cloud Logging, Cloud Trace, Cloud Monitoring, Vertex AI Model Monitoring | See 13.10 |
-| Secrets / encryption | Credentials and key management | Secret Manager, Cloud KMS (CMEK) | |
-| Network isolation | Prevent data exfiltration across the data plane | VPC Service Controls, Private Service Connect | |
+#### Networking & edge
 
-### 13.3 Latency budget (target: <5s p95, end-to-end)
+| Component | GCP service | Notes |
+| --- | --- | --- |
+| Global entry point | Cloud Load Balancing (global external HTTPS) | Single anycast IP, TLS termination, routes to nearest healthy backend — see 13.4 |
+| Edge caching | Cloud CDN | Caches static UI assets at edge PoPs, off the LB→backend hop |
+| WAF / DDoS / rate limiting | Cloud Armor | Sits in front of the LB; needed at 1M-user scale for abuse protection |
+| DNS | Cloud DNS | Public + private zones for service discovery |
+| Private network | VPC (custom-mode), regional subnets | One VPC per environment (dev/staging/prod); see 13.3 |
+| Serverless → VPC bridge | Serverless VPC Access connector | Lets Cloud Run reach VPC-internal resources (Memorystore, private DBs) with no public IP |
+| Private API access | Private Service Connect | Private connectivity from the VPC to Vertex AI/Google APIs, off the public internet |
+| Outbound for private compute | Cloud NAT | Controlled internet egress for Dataflow workers / GKE nodes on private IPs |
+| Exfiltration perimeter | VPC Service Controls | Wraps the whole data + ML plane; see 13.3 |
+
+#### Compute & autoscaling
+
+| Component | GCP service | Notes |
+| --- | --- | --- |
+| App orchestration | Cloud Run (or GKE Autopilot for more control) | Runs the retrieve→rerank→generate flow and the entitlement service; autoscaling detail in 13.4 |
+| Bulk document processing | Dataflow (Apache Beam) | Autoscales ingestion workers with corpus size/backlog — see 13.4 |
+| Ingestion orchestration | Cloud Composer | Runs the DAG that triggers Dataflow/Document AI steps on batch/streaming triggers |
+| Vector serving capacity | Vertex AI Vector Search | Serving nodes autoscale with QPS/index size |
+
+#### Storage & state
+
+| Component | GCP service | Notes |
+| --- | --- | --- |
+| Raw doc landing | Cloud Storage | Source of truth for reprocessing; triggers downstream via notifications |
+| Entitlement graph | Firestore or Spanner | Canonical user → allowed-doc/ACL mapping, synced from source-system ACLs |
+| Query/answer cache | Memorystore (Redis) | Caches query embeddings, hot retrieval results, full answers, and entitlement lookups |
+| Eval datasets & results | BigQuery | Golden `(query, context, answer)` sets, eval run history, sampled production traffic |
+
+#### AI/ML — ingestion
+
+| Component | GCP service | Notes |
+| --- | --- | --- |
+| Parsing / OCR / layout | Document AI | Matches the "document layout analysis" row in section 4's chunking table |
+| PII detection & redaction | Sensitive Data Protection (DLP API) | Isolated step/service account — bulkheads untrusted content per section 4 |
+| Metadata enrichment | Vertex AI Gemini (batch), Cloud Natural Language API | Cost scales with corpus size — apply section 4's cache-aside-on-content-hash pattern |
+| Embeddings (backfill) | Vertex AI Embeddings API (batch prediction) | `text-embedding-005` or current gen |
+
+#### AI/ML — retrieval & generation
+
+| Component | GCP service | Notes |
+| --- | --- | --- |
+| Hybrid retrieval | Vertex AI Vector Search (hybrid mode), or Vertex AI Search as a managed alternative | ACL-filtered at query time; same tradeoffs as section 7 |
+| Reranking | Vertex AI Ranking API | `semantic-ranker-fast-004` for the latency-critical path; stateless, works directly on retrieval output |
+| Query embedding | Vertex AI Embeddings API (online) | Same model used for chunk embeddings |
+| Generation | Vertex AI Gemini (Flash-class, streamed) | Streamed so time-to-first-token drives perceived latency, not full completion |
+
+#### Identity, access & security
+
+| Component | GCP service | Notes |
+| --- | --- | --- |
+| AuthN | Identity Platform / Cloud IAP | Issues the identity used to resolve entitlements |
+| Entitlement resolution | Custom Entitlement Service (Cloud Run) | Resolves caller → allowed ACL tags; see 13.7 |
+| Service-to-service authZ | IAM | Least privilege per component/service account |
+| Secrets | Secret Manager | API keys, credentials |
+| Encryption | Cloud KMS (CMEK) | Encryption at rest; backs the reversible-PII vault in 13.6 |
+
+#### Evaluation & observability
+
+| Component | GCP service | Notes |
+| --- | --- | --- |
+| Offline evaluation | Vertex AI Gen AI Evaluation Service + Vertex AI Pipelines | Scheduled runs; see 13.9 |
+| Logs | Cloud Logging | Structured, per-stage, shared request/trace ID |
+| Distributed tracing | Cloud Trace | End-to-end hop timing against the 5s budget |
+| Metrics & alerting | Cloud Monitoring | SLO dashboards, alerting |
+| Model drift | Vertex AI Model Monitoring | Embedding/generation quality drift over time |
+| Access audit trail | Cloud Audit Logs | Every retrieval — who accessed what; see 13.7 |
+
+### 13.3 Networking & VPC design
+
+- **Topology**: one custom-mode VPC per environment (dev/staging/prod), with a
+  regional subnet in each region the service is deployed to — multi-region
+  for the 1M-user target described in 13.4.
+- **Public ingress**: only the global external HTTPS Load Balancer is
+  internet-facing; Cloud Armor sits in front of it (WAF, DDoS, rate limiting)
+  before any request reaches app compute.
+- **Private backend**: Cloud Run services restrict ingress to the load
+  balancer and use a Serverless VPC Access connector to reach VPC-internal
+  resources — Memorystore, and any Cloud SQL/AlloyDB — none of which get a
+  public IP.
+- **Private access to Vertex AI/Google APIs**: Private Service Connect
+  endpoints route calls to Vertex AI Vector Search / Embeddings / Gemini /
+  Ranking API and Sensitive Data Protection over Google's private backbone
+  instead of the public internet.
+- **Egress for batch compute**: Dataflow workers and GKE nodes run on private
+  IPs only; Cloud NAT gives them controlled outbound internet access (e.g.
+  pulling from external doc sources) without exposing them publicly.
+- **Perimeter**: VPC Service Controls wraps the entire data + ML plane (Cloud
+  Storage, Vector Search, BigQuery, Vertex AI) so a leaked service-account
+  credential still can't exfiltrate data outside the boundary.
+- **Segmentation**: separate subnets/firewall rules for the ingestion path
+  (Dataflow, Document AI callers) vs. the serving path (Cloud Run,
+  Memorystore) — a spike or failure in bulk ingestion traffic can't starve
+  query-time network capacity.
+
+### 13.4 Load balancing & autoscaling
+
+- **Cloud Load Balancing** (global external HTTPS) is the single anycast
+  entry point — terminates TLS, health-checks backends, and routes each
+  request to the nearest healthy regional backend, which is what makes the
+  multi-region deployment actually cut latency instead of just adding
+  redundancy.
+- **Cloud Run autoscaling**: scales per service on concurrent requests per
+  instance; set a **min-instances** warm pool sized to steady-state traffic
+  to avoid cold-start tail latency eating into the 5s budget (13.5), and let
+  max-instances absorb bursts above that.
+- **GKE Autopilot** (if used instead of/alongside Cloud Run for more
+  networking control): cluster autoscaler adds/removes nodes, Horizontal Pod
+  Autoscaler scales pod replicas on CPU or custom metrics (e.g. queue depth).
+- **Dataflow autoscaling**: worker count scales with pipeline backlog/lag —
+  a bulk corpus backfill or chunking-strategy change spins up many workers
+  temporarily, then scales back down, with no capacity planning needed on
+  the serving path.
+- **Vertex AI Vector Search**: index serving nodes scale with QPS and index
+  size; add replicas for read throughput as corpus/query volume grows.
+- **Decoupling enables independent scaling**: Pub/Sub between ingestion
+  stages absorbs backlog spikes, so the serving path's autoscaling (Cloud
+  Run + Vector Search) is never blocked by ingestion load, or vice versa.
+- **Multi-region for resiliency, not just latency**: running orchestration
+  behind the global LB in 2+ regions means a regional outage degrades
+  capacity instead of taking the system down; combine with Memorystore/
+  Vertex AI context caching for repeat queries and shared system-prompt
+  tokens to keep cost and latency down under bursty concurrent load.
+
+### 13.5 Latency budget (target: <5s p95, end-to-end)
 
 Rough allocation for a single query, assuming the response is **streamed**
 (time-to-first-token counts, not full completion):
@@ -708,22 +812,7 @@ tokens well before generation finishes — the section 7 pipeline pattern
 (retrieve broadly → RRF → rerank → truncate to top-N) exists precisely to
 keep this chain short without sacrificing precision.
 
-### 13.4 Scaling to ~1M users / high concurrency
-
-- Stateless orchestration on Cloud Run/GKE Autopilot, horizontally
-  autoscaled, multi-region behind the global load balancer for both latency
-  and resiliency.
-- Vertex AI Vector Search is designed for high-QPS, low-latency ANN search
-  at large scale — the retrieval hop shouldn't be the bottleneck as traffic
-  grows.
-- Memorystore + Vertex AI context caching absorb repeat queries and shared
-  system-prompt/instruction tokens, cutting both latency and cost under
-  bursty concurrent load.
-- Pub/Sub decouples the ingestion backlog from the serving path — a large
-  bulk-reprocessing job (new chunking strategy, corpus backfill) scales via
-  Dataflow autoscaling without touching query-time SLAs.
-
-### 13.5 PII handling
+### 13.6 PII handling
 
 - Sensitive Data Protection (DLP) inspects raw doc text for PII/PHI
   info-types **before** chunking, enrichment, or embedding ever see it —
@@ -737,7 +826,7 @@ keep this chain short without sacrificing precision.
   gated by its own (stricter) entitlement check, rather than storing PII in
   the plain retrievable chunk.
 
-### 13.6 Authorization / document-level entitlements
+### 13.7 Authorization / document-level entitlements
 
 - Enforce access control **at retrieval time**, not via prompting: resolve
   the caller's allowed ACL tags and pass them as a metadata filter into the
@@ -752,7 +841,7 @@ keep this chain short without sacrificing precision.
   Controls perimeter around the data plane, and Cloud Audit Logs on every
   retrieval so "who accessed what" is always reconstructable.
 
-### 13.7 Grounding & citations
+### 13.8 Grounding & citations
 
 - Pass each retrieved chunk's `chunk_id`/`source`/`section` metadata
   (section 5) into the generation prompt and require the model to cite
@@ -764,7 +853,7 @@ keep this chain short without sacrificing precision.
   every request. Prefer running it **async, post-response**, flagging
   ungrounded answers for review/alerting rather than blocking the user.
 
-### 13.8 Evaluation pipeline
+### 13.9 Evaluation pipeline
 
 - **Offline**: Vertex AI Gen AI Evaluation Service, orchestrated on a
   schedule (and on every index rebuild / chunking change / model version
@@ -778,7 +867,7 @@ keep this chain short without sacrificing precision.
   the same metrics asynchronously, feeding a live quality trend into Cloud
   Monitoring — not just periodic offline batch numbers.
 
-### 13.9 Observability
+### 13.10 Observability
 
 - **Cloud Logging** — structured logs per stage (ingestion job, retrieval
   call, rerank, generation) carrying a shared request/trace ID.
@@ -789,15 +878,15 @@ keep this chain short without sacrificing precision.
   retrieval hit rate) and alerting.
 - **Vertex AI Model Monitoring** — drift/skew on embeddings and generation
   quality over time.
-- **Cloud Audit Logs** — access/authorization audit trail (ties to 13.6).
+- **Cloud Audit Logs** — access/authorization audit trail (ties to 13.7).
 
-### 13.10 Open questions to flesh out further
+### 13.11 Open questions to flesh out further
 
 - Managed hybrid retrieval (Vertex AI Search) vs. hand-rolled (Vector
   Search + separate keyword layer + manual RRF) — decide based on how much
   control is needed over chunking/ranking vs. time-to-market.
 - Exact reranker candidate-set size and model tier tradeoff against the
-  latency budget in 13.3 — needs empirical tuning per corpus.
+  latency budget in 13.5 — needs empirical tuning per corpus.
 - Multi-region active-active vs. active-passive for the serving path at 1M
   concurrent-user scale, and whether the vector index needs regional
   replicas to keep retrieval latency inside budget from every region.
