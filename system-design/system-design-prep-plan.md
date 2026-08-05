@@ -105,10 +105,21 @@ and the failure modes.
 - [ ] Cost/latency levers: model selection (Flash vs Pro), caching,
       batching, streaming responses
 
+### 3.6 LLM fundamentals: training, serving, fine-tuning
+- [ ] Training pipeline: pretraining → SFT → alignment (RLHF/RLAIF/DPO)
+- [ ] Serving/inference: decoding (temperature/top-p), KV cache, batching,
+      quantization, prefill vs decode latency
+- [ ] Structured troubleshooting: isolate retrieval vs generation vs
+      serving-layer faults
+- [ ] Fine-tuning: prompt → RAG → fine-tune decision framework, LoRA/
+      QLoRA/PEFT, data requirements, risks (forgetting, staleness)
+- [ ] Articulate your role in a client's "digital transformation" —
+      crawl/walk/run narrative from prototype to production
+
 Resources: Google Cloud Vertex AI docs, ADK docs, LangGraph docs, Google's
 "Agents" whitepaper (Kaggle 5-day GenAI course), MCP spec (modelcontextprotocol.io).
 
-**Deep-dive study guides for all of 3.1-3.5 live in
+**Deep-dive study guides for all of 3.1-3.6 live in
 [`study-materials/`](./study-materials/README.md)** — read those for the
 actual concepts, definitions, diagrams, and self-check questions.
 
@@ -145,6 +156,15 @@ customer solutions.
 ---
 
 ## 5. Interview framework (memorize the shape, not a script)
+
+**Note**: the timing below is a generic default for an unscoped "design
+X" prompt. The actual FDE interview has a stated, different split —
+**15 min discovery/stakeholder alignment + 30 min deep-dive**, with a
+forced choice between two named scenarios up front. See
+[`study-materials/08-interview-structure-and-discovery.md`](./study-materials/08-interview-structure-and-discovery.md)
+for the calibrated timing, scenario-choice guidance, stakeholder-alignment
+technique, and discovery question banks — use that file's timing script
+for practice reps, not the one below.
 
 1. **Clarify scope** (3-5 min): who's the customer, what's the business
    outcome, scale (users/QPS), latency/cost constraints, data sources,

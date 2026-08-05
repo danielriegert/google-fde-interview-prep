@@ -16,7 +16,7 @@ That's what excites me about the FDE solving problems like the above across diff
 
 # Why FDE:
 
-I've spent the last two years building GenAI at Fund Connect and seen how challenging and transformational it is in an enterprise. Getting access to data in legacy system, security and data protection requirements, getting stakeholders in a highly a regulated business to trust it.
+I've spent the last year building GenAI at Fund Connect and seen how challenging and transformational it is in an enterprise. Getting access to data in legacy system, security and data protection requirements, getting stakeholders in a highly a regulated business to trust it.
 Exciting to get the opportunity to do this full time and work directly with companies on helping them make GenAI work to solve hard probelms. As well as chance to also bring the feedback and experieince back to internal google teams to enhance products further.
 
 challenges (people, process, technical, compliance): educating people (e..g proto), highly regulated (no PII, protect client data) -> shouldn't be afterthought work with people to address these challenges / understand their concerns, legacy systems, poor data quality / fragmented accross different system, poor documentation
@@ -44,3 +44,5 @@ Work alongside smart and talented people
 
 5. "On compensation — could you break out how the package is structured? Base, bonus target, and how the initial equity grant compares to the refresh cycle."
    She's already said she'll cover comp, so this just makes sure you get the structure rather than a headline number. Listen for: the initial GSU grant, which is where the negotiable room usually sits. Don't name your own number in this call if you can avoid it
+
+Option to get moved to higher level (L5) depending on interview performance.

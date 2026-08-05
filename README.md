@@ -32,3 +32,22 @@ Recommend order:
 # ToDo
 
 - Playbook i.e. what architecture to use for what use case e.g. specific tool always needs to be called for specific query
+- Generic architecture
+  https://docs.cloud.google.com/architecture/choose-agentic-ai-architecture-components?hl=en
+- calling tools in paralell https://docs.langchain.com/oss/python/langchain/tools
+- model seletcion (slm, reasoning)
+- perfromance / latency optimization
+- cost optimization
+- scaling, resiliency, reliability
+  - be able to calculate requests per seconds
+  - latency
+  - trhoughtput
+  - storage
+- prompt engineering
+- agent memory and state (short term / long term)
+- basci geeneral systemd e desing concepts
+  - load balancing
+  - shardign data
+  - replication types
+- interveiw playboook
+- grounding / preventing hallucination
