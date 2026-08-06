@@ -220,19 +220,95 @@ subagents (or between subagents in a network/swarm topology).
 
 ## 10. Memory & state management
 
-- **Short-term/working memory**: the current conversation/context window —
-  bounded by token limits, needs pruning/summarization for long sessions.
-- **Long-term memory**: persisted across sessions, typically stored in a
-  vector DB (semantic recall) or structured store (facts, preferences) and
-  retrieved like RAG at the start of a new session.
-- **Episodic memory**: record of past agent actions/trajectories — useful
-  for learning from past runs or auditing.
-- **Checkpointing**: persisting full agent/graph state at each step so
-  execution can pause (human approval), crash-recover, or resume later —
-  critical for long-running or human-in-the-loop workflows in production.
-- **Session vs. global state**: separate what's scoped to one
-  conversation/task vs. what should persist/be shared across users or
-  sessions (e.g. a learned preference vs. a one-off fact).
+_(source: [LangChain — Memory](https://docs.langchain.com/oss/python/concepts/memory))_
+
+Agent memory splits along one axis first — **scope** (how long it lives,
+what it's shared across) — then long-term memory splits again by **content
+type**. Interviewers probe this because "just add memory" is meaningless
+without saying which kind and where it's written from.
+
+### Short-term memory (thread-scoped)
+
+- Lives inside a single conversation/session — conversation history,
+  uploaded files, retrieved documents, generated artifacts — and is part of
+  the agent's **state**, not a side store.
+- In LangGraph terms: persisted via a **checkpointer** keyed by thread ID,
+  which is what makes it resumable across turns within that thread (and
+  the same mechanism that enables crash-recovery and human-in-the-loop
+  interrupts — see framework note in §7). State is read at the start of
+  each step and updated when the graph is invoked or a step completes —
+  i.e. it's plain read/write state, not a separately-fetched memory.
+- Bounded by the context window, so long-running threads need active
+  management:
+  - **Trim** — drop oldest messages once a token/turn budget is hit.
+  - **Summarize** — periodically collapse older history into a running
+    summary, keep only recent turns verbatim.
+  - **Delete** — explicitly remove stale or irrelevant messages (e.g. a
+    large tool result no longer needed) rather than letting it ride along.
+
+### Long-term memory (cross-thread)
+
+- Persists **across sessions**, addressed by a **namespace** (e.g. scoped
+  per user or per org) plus a key — conceptually a document store, not the
+  raw conversation.
+- Retrieved like RAG: pulled in at the start of (or during) a new thread
+  based on relevance to the current task, not replayed wholesale.
+
+Designing long-term memory for a system comes down to two questions:
+**what type of memory** (semantic/episodic/procedural — below), and **when
+do you write it** (hot path vs. background — next subsection). Answering
+both concretely is the difference between "we have memory" and an actual
+design.
+
+Three content types, each answering a different question:
+
+| Type          | Answers                          | Typical shape                                                                | Example                                                    |
+| ------------- | --------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------ |
+| **Semantic**  | "What do I know?"                | **Profile** (one continuously-updated document) or **collection** (documents appended over time) | User's name, team, timezone, product preferences |
+| **Episodic**  | "What have I done before?"       | In practice implemented as **few-shot example prompting** — past input/trajectory/outcome triples injected into the prompt | A past support ticket resolved a similar way, replayed as an example |
+| **Procedural**| "How should I behave?"           | Technically model weights + agent code + prompt combined; in practice almost always just the **prompt**, updated via reflection/meta-prompting | "Always confirm before deleting a resource" learned from a past correction |
+
+- **Profile vs. collection** (semantic memory's two storage patterns): a
+  profile is a single struct kept current (overwrite in place — good for
+  "the current facts about this user"); a collection is append-only (good
+  for "everything we've learned," where old entries stay valid and new
+  ones accumulate rather than overwrite).
+
+### Writing memories: hot path vs. background
+
+How a memory gets created is a design decision with a real latency/quality
+tradeoff, not an implementation detail:
+
+- **Hot path** — the agent decides to save a memory as part of the live
+  turn (e.g. calls a `save_memory` tool before responding). Pro: happens in
+  real time, visible/transparent to the user in the same turn. Con: adds
+  latency to the response, and forces the model to split attention between
+  "answer the user" and "decide what's worth remembering" in one pass —
+  can degrade both.
+- **Background** — a separate process (often after the turn, or on a
+  schedule) reviews the conversation and extracts/updates memories
+  asynchronously. Pro: zero added latency on the user-facing turn, cleanly
+  decouples memory logic from response logic. Con: introduces a staleness
+  window (memory isn't available until the background pass runs), and
+  needs its own trigger policy (every turn? every N turns? end of session?).
+
+### Memory storage: namespace + key
+
+LangGraph's long-term memory `store` persists memories as JSON documents
+addressed by a **namespace** (like a folder — e.g. `(user_id,
+application_context)`) plus a distinct **key** (like a filename) within it.
+Namespacing by user/org ID is what gives you hierarchical organization for
+free. The store supports both **semantic search** (embedding similarity)
+and **filtering by content** (exact field match) within and across
+namespaces, so retrieval isn't limited to "fetch by exact key."
+
+### Session vs. global state
+
+Separate what's scoped to one conversation/task from what should
+persist/be shared across users or sessions (e.g. a durable learned
+preference vs. a one-off fact needed only for this task) — this is the
+practical decision that determines whether something belongs in
+short-term or long-term memory in the first place.
 
 ## 11. Failure modes specific to agents
 
@@ -296,6 +372,13 @@ a real finding, not noise. See file 03 for the full picture.
       [02a-mcp.md](./02a-mcp.md#could-you-explaindraw-this-cold))
 - [ ] Explain checkpointing and why it matters for human-in-the-loop
       workflows
+- [ ] Explain short-term vs. long-term memory and how checkpointer/thread
+      ID relates to short-term memory specifically
+- [ ] Name the three types of long-term memory (semantic, episodic,
+      procedural) with an example of each, and the profile-vs-collection
+      distinction within semantic memory
+- [ ] Argue hot-path vs. background memory writing for a given scenario
+      (latency-sensitive vs. not) and name the tradeoff each side makes
 - [ ] List 3 agent-specific failure modes and their mitigations
 - [ ] List 3 multi-agent-specific (cross-boundary) failure modes and
       their mitigations, including the compounding-error-rate math
