@@ -235,7 +235,9 @@ without saying which kind and where it's written from.
 - In LangGraph terms: persisted via a **checkpointer** keyed by thread ID,
   which is what makes it resumable across turns within that thread (and
   the same mechanism that enables crash-recovery and human-in-the-loop
-  interrupts — see framework note in §7).
+  interrupts — see framework note in §7). State is read at the start of
+  each step and updated when the graph is invoked or a step completes —
+  i.e. it's plain read/write state, not a separately-fetched memory.
 - Bounded by the context window, so long-running threads need active
   management:
   - **Trim** — drop oldest messages once a token/turn budget is hit.
@@ -252,13 +254,19 @@ without saying which kind and where it's written from.
 - Retrieved like RAG: pulled in at the start of (or during) a new thread
   based on relevance to the current task, not replayed wholesale.
 
+Designing long-term memory for a system comes down to two questions:
+**what type of memory** (semantic/episodic/procedural — below), and **when
+do you write it** (hot path vs. background — next subsection). Answering
+both concretely is the difference between "we have memory" and an actual
+design.
+
 Three content types, each answering a different question:
 
 | Type          | Answers                          | Typical shape                                                                | Example                                                    |
 | ------------- | --------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------ |
 | **Semantic**  | "What do I know?"                | **Profile** (one continuously-updated document) or **collection** (documents appended over time) | User's name, team, timezone, product preferences |
-| **Episodic**  | "What have I done before?"       | Stored past episodes — input, reasoning trajectory, outcome — used as few-shot examples | A past support ticket resolved a similar way, replayed as an example |
-| **Procedural**| "How should I behave?"           | Instructions/rules, often the system prompt itself, updated via reflection    | "Always confirm before deleting a resource" learned from a past correction |
+| **Episodic**  | "What have I done before?"       | In practice implemented as **few-shot example prompting** — past input/trajectory/outcome triples injected into the prompt | A past support ticket resolved a similar way, replayed as an example |
+| **Procedural**| "How should I behave?"           | Technically model weights + agent code + prompt combined; in practice almost always just the **prompt**, updated via reflection/meta-prompting | "Always confirm before deleting a resource" learned from a past correction |
 
 - **Profile vs. collection** (semantic memory's two storage patterns): a
   profile is a single struct kept current (overwrite in place — good for
@@ -283,6 +291,16 @@ tradeoff, not an implementation detail:
   decouples memory logic from response logic. Con: introduces a staleness
   window (memory isn't available until the background pass runs), and
   needs its own trigger policy (every turn? every N turns? end of session?).
+
+### Memory storage: namespace + key
+
+LangGraph's long-term memory `store` persists memories as JSON documents
+addressed by a **namespace** (like a folder — e.g. `(user_id,
+application_context)`) plus a distinct **key** (like a filename) within it.
+Namespacing by user/org ID is what gives you hierarchical organization for
+free. The store supports both **semantic search** (embedding similarity)
+and **filtering by content** (exact field match) within and across
+namespaces, so retrieval isn't limited to "fetch by exact key."
 
 ### Session vs. global state
 
