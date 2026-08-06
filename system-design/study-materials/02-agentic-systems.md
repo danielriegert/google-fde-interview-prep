@@ -171,74 +171,9 @@ approval step"_ — i.e., use the vocabulary correctly.
 
 ## 8. MCP — Model Context Protocol
 
-MCP standardizes **how an agent host talks to a tool/data provider**, so
-you don't write a bespoke integration per agent-framework × per-system
-combination.
-
-```
-┌─────────────┐        MCP (JSON-RPC over        ┌──────────────┐
-│  MCP Host    │        stdio / HTTP+SSE)          │  MCP Server   │
-│ (agent /     │ ───────────────────────────────▶ │ (wraps a      │
-│  orchestrator)│ ◀─────────────────────────────── │  system: DB,  │
-└─────────────┘        tools / resources /          │  legacy API,  │
-                        prompts exposed              │  file system) │
-                                                      └──────────────┘
-```
-
-- **MCP server**: exposes **tools** (callable functions), **resources**
-  (readable data, like RAG documents), and **prompts** (reusable prompt
-  templates) from an underlying system.
-- **MCP client/host**: the agent runtime that discovers and calls what the
-  server exposes, without needing custom code per integration.
-- **Why it matters for this role specifically**: the JD calls MCP servers
-  out explicitly — this is exactly the "connective tissue between Google's
-  AI products and customer's live infrastructure" pattern. Think of an
-  MCP server as the standardized adapter you'd build once per customer
-  legacy system (SAP, ServiceNow, an internal REST API) that any
-  Vertex/ADK-based agent can then use, instead of one-off glue code.
-- **Design implication**: MCP servers are a natural **unit of reuse** —
-  build one per system, reuse across customer engagements — directly maps
-  to the JD's "convert repeatable field patterns into reusable modules."
-
-### Authentication & authorization in multi-agent MCP deployments
-
-Single-agent MCP setups often get away with one static API key. That
-breaks down the moment **multiple agents with different trust levels
-share one MCP server** — which is the normal case in a supervisor/worker
-system:
-
-- **Multi-tenancy with agent-aware access control**: the server must know
-  _which agent_ is calling, not just that _some_ authenticated caller is
-  calling. Concretely: "the repository-analysis agent can call read-only
-  GitHub tools but not write tools; the infrastructure-generation agent
-  can write CDK templates to a staging S3 bucket but not deploy them."
-- **Enforce at the server, not the prompt**: access control must live in
-  the MCP server's authorization layer, never in the system prompt alone
-  — "an agent should not do X" is not a security control, because
-  prompt-based instructions "can be overridden by prompt injection or
-  model reasoning errors." The server should reject the tool call
-  outright regardless of what the model was told.
-- **Least-privilege, scoped credentials per call**: don't hand every agent
-  the orchestrator's full credentials. Issue short-lived, task-scoped
-  credentials per delegation (e.g. via IAM Roles Anywhere / STS-style
-  temporary tokens) so a compromised or misbehaving agent has a small
-  blast radius.
-- **Rate limits and parameter constraints are part of auth**: "which
-  agents can call which tools, with what parameters, and subject to what
-  rate limits" is the actual authorization surface — not just yes/no
-  access. An MCP server that lets any agent call any tool with any
-  parameters is a security liability, full stop.
-- **Tool schema quality is a security property, not just UX**: precise
-  parameter descriptions (acceptable values, consequences of misuse),
-  consistent return structures including error cases, and informative
-  error responses all help the _model_ make safe decisions — a vague
-  schema increases the odds of a costly wrong call.
-- **Lifecycle/versioning**: MCP servers evolve; a breaking schema or
-  behavior change can silently corrupt every agent that calls that tool.
-  Track MCP server versions explicitly in agent configs, and test against
-  a new server version before promoting it to production (staged
-  rollouts with evaluation gates, e.g. Amazon Bedrock AgentCore's
-  approach).
+Split out into its own file: **[02a-mcp.md](./02a-mcp.md)** — host/server
+model, why it beats bespoke per-integration glue code, and multi-agent
+auth/authorization on shared MCP servers.
 
 ## 9. A2A — Agent-to-Agent protocol
 
@@ -356,12 +291,9 @@ a real finding, not noise. See file 03 for the full picture.
 - [ ] Pick the right routing pattern (centralized orchestration,
       skill-based dispatch, handoff chain, parallel fan-out/synthesis)
       for a given scenario and justify it
-- [ ] Draw the MCP host/server relationship and explain why it beats
-      bespoke per-integration glue code
-- [ ] Explain why MCP access control must live in the server, not the
-      system prompt, and give a concrete per-agent permission example
 - [ ] Explain what A2A adds over MCP (task objects, agent cards) and when
-      you'd reach for it
+      you'd reach for it (MCP itself: see
+      [02a-mcp.md](./02a-mcp.md#could-you-explaindraw-this-cold))
 - [ ] Explain checkpointing and why it matters for human-in-the-loop
       workflows
 - [ ] List 3 agent-specific failure modes and their mitigations

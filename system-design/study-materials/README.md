@@ -8,7 +8,8 @@ from memory.
 | File | Covers |
 |---|---|
 | [01-rag.md](./01-rag.md) | Retrieval-Augmented Generation: chunking, embeddings, vector search, hybrid search, re-ranking, advanced RAG patterns, failure modes |
-| [02-agentic-systems.md](./02-agentic-systems.md) | Agents, tool use, ReAct, multi-agent orchestration, LangGraph/CrewAI/ADK, MCP, memory & state |
+| [02-agentic-systems.md](./02-agentic-systems.md) | Agents, tool use, ReAct, multi-agent orchestration, LangGraph/CrewAI/ADK, A2A, memory & state |
+| [02a-mcp.md](./02a-mcp.md) | Model Context Protocol: host/server model, tools/resources/prompts, when to use authorization, calling backend APIs safely (token passthrough, confused deputy), multi-agent auth, MCP vs A2A |
 | [03-evaluation-observability.md](./03-evaluation-observability.md) | Offline/online evals, LLM-as-judge, metrics, tracing, guardrails, regression testing |
 | [04-integration-data-readiness.md](./04-integration-data-readiness.md) | Enterprise integration, auth/security perimeters, structured+unstructured data, ACL-aware retrieval |
 | [05-gcp-vertex-ai.md](./05-gcp-vertex-ai.md) | Vertex AI platform, Gemini models, ADK, Vector Search, deployment options, cost/latency levers |

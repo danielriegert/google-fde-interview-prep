@@ -51,3 +51,4 @@ Recommend order:
   - replication types
 - interveiw playboook
 - grounding / preventing hallucination
+- AI Agent indentity
