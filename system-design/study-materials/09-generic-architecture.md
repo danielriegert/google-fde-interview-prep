@@ -15,20 +15,77 @@ https://docs.cloud.google.com/architecture/choose-agentic-ai-architecture-compon
 
 Google's reference architecture for a single-agent system maps the generic
 components above onto specific GCP services — useful as a worked example
-to have ready in an interview instead of a menu of options:
+to have ready in an interview instead of a menu of options.
+(source: https://docs.cloud.google.com/architecture/single-agent-ai-system-adk-cloud-run)
 
-| Generic component | Concrete choice in this reference architecture |
-|---|---|
-| Agent development framework | Agent Development Kit (ADK) |
-| Agent tools | MCP servers/toolsets (e.g. MCP Toolbox for Databases) — the agent reaches external data/APIs through MCP rather than hand-rolled tool code |
-| Agent memory | Short-term: ADK `Session`/state, optionally backed by **Memorystore for Redis**; long-term (cross-session, same user): **Memory Bank** |
-| Agent runtime | **Cloud Run** by default (scale-to-zero, low ops overhead) — or Agent Runtime on Gemini Enterprise Agent Platform, or GKE, for the same agent when more control/scale is needed |
-| AI models | Gemini, or any model available via Model Garden |
-| Model runtime | Vertex AI |
-| Build/deploy | `adk deploy cloud_run` packages the agent, builds the container, pushes it to Artifact Registry, and deploys to Cloud Run in one step (Cloud Build backs the build) |
-| Supporting services | Secret Manager (credentials/API keys), Cloud Storage (artifacts/files), and optionally Cloud SQL or RAG Engine when the agent needs structured data or RAG |
+### Architecture components → generic component
 
-https://docs.cloud.google.com/architecture/single-agent-ai-system-adk-cloud-run?hl=en
+| Component in the doc | Generic component | Role |
+|---|---|---|
+| Frontend | Frontend framework | Chat-style UI — itself a serverless Cloud Run service |
+| Agent | — | Receives requests, interprets intent, selects tools, synthesizes the answer |
+| Agent runtime | Agent runtime | Built with ADK, deployed as a serverless **Cloud Run** service by default — or on **Agent Runtime** (Gemini Enterprise Agent Platform), or as a container on **GKE** |
+| ADK | Agent development framework | Develops/tests/deploys the agent; exposes built-in tools (e.g. Google Search) so you're not hand-rolling them |
+| AI model + model runtime | AI models / Model runtime | **Gemini**, served via **Gemini Enterprise Agent Platform** |
+| MCP Toolbox | Agent tools | MCP Toolbox for Databases — database-specific tools with connection pooling/auth handled for you |
+| MCP clients, servers, tools | Agent tools | MCP standardizes agent↔tool access — one client/server pair per tool (file system, API, Google Search, StackOverflow, ...) |
+| Observability | — | Google Cloud Observability (Logging, Monitoring, Trace) |
 
-Same services as file 05 §1/§5 and file 02 §10's GCP mapping — this is
-those menus of options shown wired together as one concrete system.
+### Agentic flow
+
+1. User prompt enters via the frontend (Cloud Run).
+2. Frontend forwards it to the agent.
+3. Agent reasons over the prompt with the model: decides which tools to
+   call, performs the tool calls and folds results into context, then
+   grounds and validates before responding.
+
+### Memory & session storage
+
+Deliberately **not** in the base diagram — the doc calls this out as
+something you add for a production deployment:
+
+- **Session** = the conversational thread from first message to last.
+  **State** = what the agent accumulates within that session (message
+  history, tool-call results, working variables).
+- Short-term: ADK `Session`/`state` objects, optionally backed by
+  **Memorystore for Redis**.
+- Long-term (cross-session, same user): **Memory Bank**.
+- Reliability rationale for the same choice: to survive a Cloud Run
+  instance recycling/restarting, decouple state from the runtime into an
+  external store — Memory Bank, Memorystore for Redis, or a DB like Cloud
+  SQL. A stateless agent process + external state store is what makes
+  horizontal scaling and crash recovery work.
+
+Matches file 02 §10's GCP mapping and file 05 §1 exactly — this doc is
+where Google shows those choices wired into one concrete system.
+
+### Products used
+
+Cloud Run, Gemini, Gemini Enterprise Agent Platform, MCP, MCP Toolbox for
+Databases, Google Cloud Observability (Logging/Monitoring/Trace).
+
+### Design considerations worth knowing cold
+
+- **Security** — least-privilege IAM per agent; human-in-the-loop for
+  business-critical flows; disable the default `run.app` URL and front the
+  frontend with a regional external HTTPS load balancer (+ Cloud Armor);
+  IAP for internal users, Identity Platform/Firebase Auth for external
+  users; Binary Authorization + Artifact Analysis for container
+  supply-chain security; Model Armor to inspect prompts/responses for
+  injection and sensitive-data leakage.
+- **Reliability** — scale horizontally behind a load balancer (Cloud Run's
+  instance autoscaling does this for you); decouple state from the
+  runtime (Memory Bank/Memorystore/Cloud SQL) so a restart doesn't lose
+  context; simulate failures before shipping to production.
+- **Cost** — baseline QPS/TPS to decide if Provisioned Throughput is
+  needed; start with the cheapest model that clears the quality bar and
+  scale up only where needed; context caching for repeated high-token
+  prompts; batch non-latency-sensitive requests.
+- **Performance** — same model-selection and context-caching levers as
+  cost; tune Cloud Run CPU/memory allocation to the workload.
+
+### Use cases named in the doc
+
+Bug-report triage, retail customer service, time-series forecasting, and
+document retrieval (backed by **RAG Engine**) — each links to a runnable
+ADK sample agent in the source doc.
