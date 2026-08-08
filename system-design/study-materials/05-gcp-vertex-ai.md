@@ -10,9 +10,12 @@ GCP-native answers given the role.
 |---|---|
 | Foundation models | Model Garden (Gemini family + third-party/open models) |
 | Agent orchestration | Vertex AI Agent Builder, Google ADK |
-| Vector search / RAG index | Vertex AI Vector Search (managed ANN, HNSW-based) |
+| Managed RAG pipeline | **RAG Engine** — managed corpus management, chunking/embedding, and retrieval API; the default answer for "how do you build RAG on GCP" unless you need the lower-level control below |
+| Vector search / RAG index (low-level) | Vertex AI Vector Search (managed ANN, HNSW-based) — reach for this when RAG Engine's managed pipeline doesn't give you enough control over chunking/embedding/retrieval logic |
 | Managed search + grounding | Vertex AI Search (turnkey RAG-like search over docs) |
 | Grounding with live web data | Grounding with Google Search |
+| Long-term agent memory | **Memory Bank** (Vertex AI Agent Engine) — cross-session memory (semantic/episodic/procedural), addressed by namespace, retrieved like RAG (see file 02 §10) |
+| Short-term memory / session state | **Memorystore for Redis** (low-latency in-memory cache for hot session state), **Firestore** (durable document-store state, easy per-user/session partitioning), or **Gemini Enterprise Agent Platform Sessions** (managed session state when already building on that platform) — pick based on latency needs, durability needs, and whether you're already inside the managed platform |
 | Eval | Vertex AI Evaluation Service (offline eval, LLM-as-judge tooling) |
 | Structured data | BigQuery (warehouse), Cloud SQL/AlloyDB (+ pgvector) |
 | Data pipelines | Pub/Sub (streaming events), Dataflow (batch/stream ETL) |
@@ -171,6 +174,12 @@ their constraints, not the maximal, most-impressive-sounding stack.
       one pipeline
 - [ ] Explain the difference between Vertex AI Search and Vertex AI Vector
       Search, and when you'd pick each
+- [ ] Explain RAG Engine vs. raw Vertex AI Vector Search, and when you'd
+      drop down to the lower-level service
+- [ ] Name the GCP service for long-term agent memory (Memory Bank) and the
+      three options for short-term/session state (Memorystore for Redis,
+      Firestore, Gemini Enterprise Agent Platform Sessions), and justify a
+      pick among the three for a given latency/durability requirement
 - [ ] Justify Cloud Run vs GKE vs Vertex Endpoints vs Agent Engine vs App
       Engine vs Compute Engine for a given scenario
 - [ ] Explain why VPC Service Controls and IAM are not redundant — what
