@@ -89,3 +89,88 @@ Databases, Google Cloud Observability (Logging/Monitoring/Trace).
 Bug-report triage, retail customer service, time-series forecasting, and
 document retrieval (backed by **RAG Engine**) — each links to a runnable
 ADK sample agent in the source doc.
+
+## Concrete example: multi-agent AI system (ADK + Cloud Run, coordinator/subagent pattern)
+
+Google's multi-agent counterpart to the single-agent architecture above —
+same frontend/runtime/model backbone, but the "Agent" box becomes a
+**Coordinator Agent** delegating to **subagents**, which is where the
+multi-agent orchestration patterns from file 02 §5-§6 show up concretely.
+(source: https://docs.cloud.google.com/architecture/multiagent-ai-system)
+
+### Flow
+
+1. Application user sends a prompt to the **Frontend** (Cloud Run service).
+2. Frontend forwards it to the **Coordinator Agent** — the root agent,
+   built with ADK, playing the orchestrator role from file 02's
+   supervisor/worker (hierarchical) pattern: it holds task context and
+   delegates, it doesn't do the work itself.
+3. Coordinator invokes subagents. The diagram shows **two composition
+   patterns side by side**, both valid within the same system:
+   - **Sequence**: Task-A Subagent → Task-A.1 Subagent — the
+     Sequential/pipeline pattern (file 02 §5), a straight hand-off chain.
+   - **Iterative refinement**: Task-B Subagent produces a draft, a
+     **Quality evaluator Subagent** checks it; if rework is required, a
+     **Prompt enhancer Subagent** rewrites the prompt and feeds an
+     "updated prompt" back into Task-B, looping until quality passes —
+     an evaluator-optimizer/reflection loop, distinct from the
+     Debate/critique row in file 02 §5 (one worker + one critic + one
+     rewriter in a loop, not two peers arguing).
+4. Both branches converge into a **Response Generator Subagent**.
+5. The Response Generator returns its output to the Coordinator, which
+   returns it to the Frontend, which returns it to the user. A separate
+   **human-in-the-loop interaction** path lets a person intervene directly
+   (file 02 §7 checkpointing / file 12 §5 human-in-the-loop guardrails),
+   without necessarily routing back through the full agent chain.
+
+### Inference path: Model Armor sits inline, not just at the edge
+
+Every inference request from the coordinator/subagents to the AI model
+(Gemini) is screened by **Model Armor** before it reaches the model, and
+the response is screened again on the way back — i.e. Model Armor sits
+**between the agent and the model on every call**, not only at the
+frontend/user boundary. This is a sharper version of the guardrail
+placement in file 12 §3/§9: in a multi-agent system, each agent's calls to
+the model are a separate enforcement point, not just the one path a user's
+request takes in and out.
+
+### Runtime options (same three-way choice, twice)
+
+- **Agents runtime** (where the coordinator + subagents execute): Cloud
+  Run, Agent Runtime on Gemini Enterprise Agent Platform, or GKE.
+- **Model runtime** (where the AI model itself is served): Gemini
+  Enterprise Agent Platform, Cloud Run, or GKE.
+
+These are independent choices — the agents and the model they call don't
+have to share a runtime. Same options as file 05 §5's deployment table,
+now shown as two separate decisions in one system rather than one.
+
+### Tools: MCP clients, two tool pools
+
+MCP clients (inside the Google Cloud boundary, alongside the agents) talk
+to MCP servers exposing two distinct pools of tools — the capability plane
+from file 02 §6, made concrete:
+
+- **Tools within Google Cloud**: databases, APIs — reached via MCP servers
+  running inside the same Google Cloud region as the agents.
+- **External tools**: services, files outside Google Cloud — reached via
+  MCP servers outside the Google Cloud boundary. Crossing this boundary is
+  exactly the trust boundary called out in file 02 §12 and file 02a's MCP
+  security guidance — external tool output should be treated as untrusted
+  data, same as any other tool result.
+
+### Other actors and components
+
+- **AI developers** build the agents using **ADK**.
+- **Platform administrators / DevOps engineers** operate the deployed
+  system (distinct from AI developers — worth naming both personas in an
+  interview when asked "who interacts with this system").
+- **Google Cloud Observability**, fed from the agents runtime, same as the
+  single-agent architecture above.
+
+Net takeaway for an interview: this is the single-agent architecture with
+the "Agent" box expanded into a coordinator + subagents, Model Armor
+pushed onto every model call instead of just the edges, and MCP tool
+access split into an internal pool and an external pool — everything else
+(frontend, runtimes, observability) is unchanged from the single-agent
+version.
