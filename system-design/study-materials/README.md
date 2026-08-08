@@ -16,7 +16,7 @@ from memory.
 | [06-llm-training-overview.md](./06-llm-training-overview.md) | Pretraining → SFT → alignment (RLHF/DPO) → serving, decoding params, KV cache, batching, LLM troubleshooting, FDE's role in a client's digital transformation |
 | [07-fine-tuning.md](./07-fine-tuning.md) | Prompt vs RAG vs fine-tune decision framework, LoRA/QLoRA/PEFT, data requirements, Vertex AI tuning, risks (forgetting, staleness, maintenance) |
 | [08-interview-structure-and-discovery.md](./08-interview-structure-and-discovery.md) | This interview's actual timing (15 min discovery/stakeholder alignment + 30 min deep-dive), choosing between the two named scenarios, stakeholder-alignment technique vs generic discovery, question banks per scenario |
-| [09-generic-architecture.md](./09-generic-architecture.md) | Generic agentic system architecture components: frontend framework, agent dev framework, agent tools, agent memory, design patterns, agent runtime, AI models, model runtime |
+| [09-generic-architecture.md](./09-generic-architecture.md) | Generic agentic system architecture components: frontend framework, agent dev framework, agent tools, agent memory, design patterns, agent runtime, AI models, model runtime; worked example mapping these onto a single-agent ADK + Cloud Run reference architecture |
 | [10-prompt-engineering-techniques.md](./10-prompt-engineering-techniques.md) | Prompt structure types, zero/one/few-shot, CoT/self-consistency/tree-of-thoughts, meta prompting, prompt chaining/ReAct/Reflexion/PAL, prompt tuning vs. caching, prompt injection/jailbreaking, known limitations |
 
 ## How to use these
