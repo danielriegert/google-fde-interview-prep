@@ -24,3 +24,21 @@
   large fixed codebase context) — not worth it for one-off or highly
   variable prompts, since the cache-creation cost only pays off once it's
   reused enough times before the TTL expires.
+
+## Batch LLM calls
+
+- For requests that aren't latency-sensitive (bulk classification, offline
+  eval runs, nightly summarization/enrichment jobs), submit a large set of
+  prompts as one **batch** job instead of one synchronous call per prompt.
+- Cuts **cost** — batch inference is priced at a discount vs. standard
+  synchronous requests (roughly half, in line with other providers' batch
+  APIs) — in exchange for **no latency guarantee**: the job is processed
+  asynchronously and results land within a completion window (e.g. hours),
+  not per-request in real time.
+- GCP: **Vertex AI batch prediction** — submit inputs (e.g. a file/table
+  of prompts), poll or get notified on completion, read outputs in bulk;
+  no need to manage your own request queue/concurrency/retry logic.
+- Complements model tier selection and context caching (file 05 §10) as a
+  third cost lever — but only applies where the workload can tolerate
+  async, non-interactive turnaround; never use it for anything on a
+  user-facing request path.
