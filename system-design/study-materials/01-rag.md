@@ -600,7 +600,7 @@ with traffic) are independent pipelines with independent scaling knobs.
 
 Note: Google rebranded Vertex AI's console/namespace to the **Gemini
 Enterprise Agent Platform** in April 2026 — same APIs/SDKs/billing, new
-branding. Names below use the still-current "Vertex AI ___" product names,
+branding. Names below use the still-current "Vertex AI \_\_\_" product names,
 matching the rest of this doc and most existing docs/tooling.
 
 ### 13.1 Diagram
@@ -666,74 +666,74 @@ Vertex AI Model Monitoring, Cloud Audit Logs (every retrieval — who accessed w
 
 #### Networking & edge
 
-| Component | GCP service | Notes |
-| --- | --- | --- |
-| Global entry point | Cloud Load Balancing (global external HTTPS) | Single anycast IP, TLS termination, routes to nearest healthy backend — see 13.4 |
-| Edge caching | Cloud CDN | Caches static UI assets at edge PoPs, off the LB→backend hop |
-| WAF / DDoS / rate limiting | Cloud Armor | Sits in front of the LB; needed at 1M-user scale for abuse protection |
-| DNS | Cloud DNS | Public + private zones for service discovery |
-| Private network | VPC (custom-mode), regional subnets | One VPC per environment (dev/staging/prod); see 13.3 |
-| Serverless → VPC bridge | Serverless VPC Access connector | Lets Cloud Run reach VPC-internal resources (Memorystore, private DBs) with no public IP |
-| Private API access | Private Service Connect | Private connectivity from the VPC to Vertex AI/Google APIs, off the public internet |
-| Outbound for private compute | Cloud NAT | Controlled internet egress for Dataflow workers / GKE nodes on private IPs |
-| Exfiltration perimeter | VPC Service Controls | Wraps the whole data + ML plane; see 13.3 |
+| Component                    | GCP service                                  | Notes                                                                                    |
+| ---------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Global entry point           | Cloud Load Balancing (global external HTTPS) | Single anycast IP, TLS termination, routes to nearest healthy backend — see 13.4         |
+| Edge caching                 | Cloud CDN                                    | Caches static UI assets at edge PoPs, off the LB→backend hop                             |
+| WAF / DDoS / rate limiting   | Cloud Armor                                  | Sits in front of the LB; needed at 1M-user scale for abuse protection                    |
+| DNS                          | Cloud DNS                                    | Public + private zones for service discovery                                             |
+| Private network              | VPC (custom-mode), regional subnets          | One VPC per environment (dev/staging/prod); see 13.3                                     |
+| Serverless → VPC bridge      | Serverless VPC Access connector              | Lets Cloud Run reach VPC-internal resources (Memorystore, private DBs) with no public IP |
+| Private API access           | Private Service Connect                      | Private connectivity from the VPC to Vertex AI/Google APIs, off the public internet      |
+| Outbound for private compute | Cloud NAT                                    | Controlled internet egress for Dataflow workers / GKE nodes on private IPs               |
+| Exfiltration perimeter       | VPC Service Controls                         | Wraps the whole data + ML plane; see 13.3                                                |
 
 #### Compute & autoscaling
 
-| Component | GCP service | Notes |
-| --- | --- | --- |
-| App orchestration | Cloud Run (or GKE Autopilot for more control) | Runs the retrieve→rerank→generate flow and the entitlement service; autoscaling detail in 13.4 |
-| Bulk document processing | Dataflow (Apache Beam) | Autoscales ingestion workers with corpus size/backlog — see 13.4 |
-| Ingestion orchestration | Cloud Composer | Runs the DAG that triggers Dataflow/Document AI steps on batch/streaming triggers |
-| Vector serving capacity | Vertex AI Vector Search | Serving nodes autoscale with QPS/index size |
+| Component                | GCP service                                   | Notes                                                                                          |
+| ------------------------ | --------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| App orchestration        | Cloud Run (or GKE Autopilot for more control) | Runs the retrieve→rerank→generate flow and the entitlement service; autoscaling detail in 13.4 |
+| Bulk document processing | Dataflow (Apache Beam)                        | Autoscales ingestion workers with corpus size/backlog — see 13.4                               |
+| Ingestion orchestration  | Cloud Composer                                | Runs the DAG that triggers Dataflow/Document AI steps on batch/streaming triggers              |
+| Vector serving capacity  | Vertex AI Vector Search                       | Serving nodes autoscale with QPS/index size                                                    |
 
 #### Storage & state
 
-| Component | GCP service | Notes |
-| --- | --- | --- |
-| Raw doc landing | Cloud Storage | Source of truth for reprocessing; triggers downstream via notifications |
-| Entitlement graph | Firestore or Spanner | Canonical user → allowed-doc/ACL mapping, synced from source-system ACLs |
-| Query/answer cache | Memorystore (Redis) | Caches query embeddings, hot retrieval results, full answers, and entitlement lookups |
-| Eval datasets & results | BigQuery | Golden `(query, context, answer)` sets, eval run history, sampled production traffic |
+| Component               | GCP service          | Notes                                                                                 |
+| ----------------------- | -------------------- | ------------------------------------------------------------------------------------- |
+| Raw doc landing         | Cloud Storage        | Source of truth for reprocessing; triggers downstream via notifications               |
+| Entitlement graph       | Firestore or Spanner | Canonical user → allowed-doc/ACL mapping, synced from source-system ACLs              |
+| Query/answer cache      | Memorystore (Redis)  | Caches query embeddings, hot retrieval results, full answers, and entitlement lookups |
+| Eval datasets & results | BigQuery             | Golden `(query, context, answer)` sets, eval run history, sampled production traffic  |
 
 #### AI/ML — ingestion
 
-| Component | GCP service | Notes |
-| --- | --- | --- |
-| Parsing / OCR / layout | Document AI | Matches the "document layout analysis" row in section 4's chunking table |
-| PII detection & redaction | Sensitive Data Protection (DLP API) | Isolated step/service account — bulkheads untrusted content per section 4 |
-| Metadata enrichment | Vertex AI Gemini (batch), Cloud Natural Language API | Cost scales with corpus size — apply section 4's cache-aside-on-content-hash pattern |
-| Embeddings (backfill) | Vertex AI Embeddings API (batch prediction) | `text-embedding-005` or current gen |
+| Component                 | GCP service                                          | Notes                                                                                |
+| ------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Parsing / OCR / layout    | Document AI                                          | Matches the "document layout analysis" row in section 4's chunking table             |
+| PII detection & redaction | Sensitive Data Protection (DLP API)                  | Isolated step/service account — bulkheads untrusted content per section 4            |
+| Metadata enrichment       | Vertex AI Gemini (batch), Cloud Natural Language API | Cost scales with corpus size — apply section 4's cache-aside-on-content-hash pattern |
+| Embeddings (backfill)     | Vertex AI Embeddings API (batch prediction)          | `text-embedding-005` or current gen                                                  |
 
 #### AI/ML — retrieval & generation
 
-| Component | GCP service | Notes |
-| --- | --- | --- |
-| Hybrid retrieval | Vertex AI Vector Search (hybrid mode), or Vertex AI Search as a managed alternative | ACL-filtered at query time; same tradeoffs as section 7 |
-| Reranking | Vertex AI Ranking API | `semantic-ranker-fast-004` for the latency-critical path; stateless, works directly on retrieval output |
-| Query embedding | Vertex AI Embeddings API (online) | Same model used for chunk embeddings |
-| Generation | Vertex AI Gemini (Flash-class, streamed) | Streamed so time-to-first-token drives perceived latency, not full completion |
+| Component        | GCP service                                                                         | Notes                                                                                                   |
+| ---------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Hybrid retrieval | Vertex AI Vector Search (hybrid mode), or Vertex AI Search as a managed alternative | ACL-filtered at query time; same tradeoffs as section 7                                                 |
+| Reranking        | Vertex AI Ranking API                                                               | `semantic-ranker-fast-004` for the latency-critical path; stateless, works directly on retrieval output |
+| Query embedding  | Vertex AI Embeddings API (online)                                                   | Same model used for chunk embeddings                                                                    |
+| Generation       | Vertex AI Gemini (Flash-class, streamed)                                            | Streamed so time-to-first-token drives perceived latency, not full completion                           |
 
 #### Identity, access & security
 
-| Component | GCP service | Notes |
-| --- | --- | --- |
-| AuthN | Identity Platform / Cloud IAP | Issues the identity used to resolve entitlements |
-| Entitlement resolution | Custom Entitlement Service (Cloud Run) | Resolves caller → allowed ACL tags; see 13.7 |
-| Service-to-service authZ | IAM | Least privilege per component/service account |
-| Secrets | Secret Manager | API keys, credentials |
-| Encryption | Cloud KMS (CMEK) | Encryption at rest; backs the reversible-PII vault in 13.6 |
+| Component                | GCP service                            | Notes                                                      |
+| ------------------------ | -------------------------------------- | ---------------------------------------------------------- |
+| AuthN                    | Identity Platform / Cloud IAP          | Issues the identity used to resolve entitlements           |
+| Entitlement resolution   | Custom Entitlement Service (Cloud Run) | Resolves caller → allowed ACL tags; see 13.7               |
+| Service-to-service authZ | IAM                                    | Least privilege per component/service account              |
+| Secrets                  | Secret Manager                         | API keys, credentials                                      |
+| Encryption               | Cloud KMS (CMEK)                       | Encryption at rest; backs the reversible-PII vault in 13.6 |
 
 #### Evaluation & observability
 
-| Component | GCP service | Notes |
-| --- | --- | --- |
-| Offline evaluation | Vertex AI Gen AI Evaluation Service + Vertex AI Pipelines | Scheduled runs; see 13.9 |
-| Logs | Cloud Logging | Structured, per-stage, shared request/trace ID |
-| Distributed tracing | Cloud Trace | End-to-end hop timing against the 5s budget |
-| Metrics & alerting | Cloud Monitoring | SLO dashboards, alerting |
-| Model drift | Vertex AI Model Monitoring | Embedding/generation quality drift over time |
-| Access audit trail | Cloud Audit Logs | Every retrieval — who accessed what; see 13.7 |
+| Component           | GCP service                                               | Notes                                          |
+| ------------------- | --------------------------------------------------------- | ---------------------------------------------- |
+| Offline evaluation  | Vertex AI Gen AI Evaluation Service + Vertex AI Pipelines | Scheduled runs; see 13.9                       |
+| Logs                | Cloud Logging                                             | Structured, per-stage, shared request/trace ID |
+| Distributed tracing | Cloud Trace                                               | End-to-end hop timing against the 5s budget    |
+| Metrics & alerting  | Cloud Monitoring                                          | SLO dashboards, alerting                       |
+| Model drift         | Vertex AI Model Monitoring                                | Embedding/generation quality drift over time   |
+| Access audit trail  | Cloud Audit Logs                                          | Every retrieval — who accessed what; see 13.7  |
 
 ### 13.3 Networking & VPC design
 
@@ -796,14 +796,14 @@ Vertex AI Model Monitoring, Cloud Audit Logs (every retrieval — who accessed w
 Rough allocation for a single query, assuming the response is **streamed**
 (time-to-first-token counts, not full completion):
 
-| Hop | Budget |
-| --- | --- |
-| AuthN + entitlement resolution | ~100-200ms (cache entitlements in Memorystore to avoid a DB hit per query) |
-| Query embedding | ~50-100ms |
-| Hybrid retrieval (ACL-filtered) | ~200-400ms |
-| Reranking (top ~50 → top ~10) | ~150-300ms |
-| Generation — time to first token | ~500ms-1.5s |
-| Network/serialization overhead | ~100-200ms |
+| Hop                              | Budget                                                                     |
+| -------------------------------- | -------------------------------------------------------------------------- |
+| AuthN + entitlement resolution   | ~100-200ms (cache entitlements in Memorystore to avoid a DB hit per query) |
+| Query embedding                  | ~50-100ms                                                                  |
+| Hybrid retrieval (ACL-filtered)  | ~200-400ms                                                                 |
+| Reranking (top ~50 → top ~10)    | ~150-300ms                                                                 |
+| Generation — time to first token | ~500ms-1.5s                                                                |
+| Network/serialization overhead   | ~100-200ms                                                                 |
 
 Levers if the budget is tight: cap reranker candidate-set size, use the
 fastest ranking-model tier, cache embeddings/answers for repeat queries,
@@ -858,7 +858,7 @@ keep this chain short without sacrificing precision.
 - **Offline**: Vertex AI Gen AI Evaluation Service, orchestrated on a
   schedule (and on every index rebuild / chunking change / model version
   bump) via Vertex AI Pipelines, against the golden `(query, context,
-  answer)` dataset from section 3 — stored/versioned in BigQuery.
+answer)` dataset from section 3 — stored/versioned in BigQuery.
 - **Retrieval metrics** (section 10): precision@k, recall@k, MRR, hit rate
   — computed directly against known-relevant chunk IDs in the golden set.
 - **Generation/end-to-end metrics** (section 10's table): groundedness,
@@ -896,7 +896,11 @@ keep this chain short without sacrificing precision.
 https://docs.cloud.google.com/architecture/rag-genai-gemini-enterprise-vertexai
 https://cloud.google.com/use-cases/retrieval-augmented-generation
 
-## 14. Resources
+## 14. Google Services
+
+- Google RAG Engine https://docs.cloud.google.com/gemini-enterprise-agent-platform/build/rag-engine/rag-overview
+
+## 15. Resources
 
 - https://cloud.google.com/blog/products/ai-machine-learning/launching-our-new-state-of-the-art-vertex-ai-ranking-api
 - https://docs.cloud.google.com/sensitive-data-protection/docs/sensitive-data-protection-overview
