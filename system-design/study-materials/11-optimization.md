@@ -4,5 +4,5 @@
 
 # Optimizing Cost
 
-- caching
+- prompt caching, etc.
 - model selection
