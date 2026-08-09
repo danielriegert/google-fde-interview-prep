@@ -217,6 +217,28 @@ observability treatment as file 03's eval/monitoring guidance:
   the product experience just as much as an under-aggressive one creates
   risk.
 
+## 9. GCP-native guardrails: Model Armor
+
+**Model Armor** is GCP's managed screening service for prompts and
+responses — the concrete GCP answer for "where do output/input guardrails
+actually run" instead of hand-rolling the checks in §2-§3:
+
+- Screens both **prompts** (input) and **responses** (output) for prompt
+  injection/jailbreak attempts, sensitive-data leakage (integrates with
+  Sensitive Data Protection/DLP for PII), and harmful content — i.e. it
+  covers the input-guardrail and output-guardrail attachment points from
+  §3 as a single managed service rather than two custom middlewares.
+- Deployable inline in the request path (e.g. in front of a Vertex AI/
+  Model Garden model call, or as a Cloud Run/GKE sidecar check) so a
+  violation is caught before the model call or before the response
+  reaches the user — the same "short-circuit before proceeding" pattern
+  as the before/after-agent hooks in §6.
+- Complements, doesn't replace, the LangChain-style middleware above: use
+  Model Armor for the deterministic + policy-classifier layer that's
+  common across an org's agents, and app-level middleware (`PIIMiddleware`,
+  human-in-the-loop) for logic specific to one agent's tools/workflow —
+  consistent with the layered-defense ordering in §7.
+
 ---
 
 ## Could you explain/draw this cold?
@@ -241,3 +263,7 @@ observability treatment as file 03's eval/monitoring guidance:
 - [ ] Explain the difference between guardrail trigger rate and PII leak
       rate, and why trigger rate alone can't tell you the guardrail is
       working
+- [ ] Name the GCP-native guardrail service (Model Armor), what it screens
+      (prompt injection, sensitive-data leakage, harmful content) on both
+      input and output, and how it relates to app-level middleware like
+      `PIIMiddleware`

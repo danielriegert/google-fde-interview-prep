@@ -898,7 +898,17 @@ https://cloud.google.com/use-cases/retrieval-augmented-generation
 
 ## 14. Google Services
 
-- Google RAG Engine https://docs.cloud.google.com/gemini-enterprise-agent-platform/build/rag-engine/rag-overview
+- **RAG Engine** — the managed, default GCP answer for standing up a RAG
+  pipeline: handles corpus management, chunking/embedding, and retrieval
+  behind one API, so you're not hand-rolling the pipeline in section 2.
+  Drop to raw **Vertex AI Vector Search** (section 13) when you need custom
+  chunking, hybrid-search tuning, or non-standard data shapes it doesn't
+  support.
+  https://docs.cloud.google.com/gemini-enterprise-agent-platform/build/rag-engine/rag-overview
+- Retrieval and RAG feed agent memory too — see file 02 §10 for how
+  retrieved context becomes long-term agent memory (**Memory Bank**) vs.
+  short-term/session state (**Memorystore for Redis**, **Firestore**, or
+  **Gemini Enterprise Agent Platform Sessions**).
 
 ## 15. Resources
 

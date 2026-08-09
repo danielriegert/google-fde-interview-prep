@@ -528,6 +528,27 @@ preference vs. a one-off fact needed only for this task) — this is the
 practical decision that determines whether something belongs in
 short-term or long-term memory in the first place.
 
+### GCP service mapping
+
+Concrete answer for "where does this actually live on GCP" (see also file
+05 §1):
+
+- **Long-term memory** → **Memory Bank** (part of Vertex AI Agent Engine) —
+  purpose-built for cross-session agent memory: namespace-addressed,
+  supports semantic/episodic/procedural content, retrieved like RAG.
+- **Short-term memory / session state** → no single default; pick based on
+  requirements:
+  - **Memorystore for Redis** — lowest latency, in-memory; best when hot
+    session state (current turn's working set) is on the critical path and
+    durability across restarts isn't required.
+  - **Firestore** — durable document store; best when session state must
+    survive process restarts or needs easy per-user/per-session querying,
+    at a small latency cost vs. Redis.
+  - **Gemini Enterprise Agent Platform Sessions** — managed session state
+    built into the platform; best when the agent is already built on
+    Gemini Enterprise Agent Platform and you'd rather not stand up/operate
+    a separate state store.
+
 ## 11. Failure modes specific to agents
 
 | Failure                          | Cause                                                            | Mitigation                                                                                                |
@@ -599,6 +620,10 @@ a real finding, not noise. See file 03 for the full picture.
       distinction within semantic memory
 - [ ] Argue hot-path vs. background memory writing for a given scenario
       (latency-sensitive vs. not) and name the tradeoff each side makes
+- [ ] Name the GCP service for long-term memory (Memory Bank) and the three
+      common short-term/state-management options (Memorystore for Redis,
+      Firestore, Gemini Enterprise Agent Platform Sessions), and justify a
+      pick among the three
 - [ ] List 3 agent-specific failure modes and their mitigations
 - [ ] List 3 multi-agent-specific (cross-boundary) failure modes and
       their mitigations, including the compounding-error-rate math
