@@ -85,12 +85,12 @@ These get bundled into one 15-minute block, but they are not the same
 skill, and conflating them is the most common way candidates under-use
 this phase.
 
-| | Discovery (requirements gathering) | Stakeholder alignment |
-|---|---|---|
-| What it is | Extracting facts you need to design: scale, data, constraints | Negotiating scope, priorities, and success criteria with a person who has competing goals |
-| Question shape | "What data sources exist?" "What's the expected volume?" | "If we can't do both real-time and fully-vetted output on day one, which matters more to you?" |
-| Failure mode if skipped | You design for the wrong scale/constraints | You design the *right* system for the *wrong* priorities — technically correct, still fails the stakeholder |
-| What it's graded on | Did you ask the right things | Did you notice tension, surface it explicitly, and get an explicit answer instead of assuming |
+|                         | Discovery (requirements gathering)                            | Stakeholder alignment                                                                                       |
+| ----------------------- | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| What it is              | Extracting facts you need to design: scale, data, constraints | Negotiating scope, priorities, and success criteria with a person who has competing goals                   |
+| Question shape          | "What data sources exist?" "What's the expected volume?"      | "If we can't do both real-time and fully-vetted output on day one, which matters more to you?"              |
+| Failure mode if skipped | You design for the wrong scale/constraints                    | You design the _right_ system for the _wrong_ priorities — technically correct, still fails the stakeholder |
+| What it's graded on     | Did you ask the right things                                  | Did you notice tension, surface it explicitly, and get an explicit answer instead of assuming               |
 
 Discovery answers "what am I building." Stakeholder alignment answers
 "what does success look like, to whom, and what are we consciously not
@@ -104,30 +104,30 @@ interview is built to catch.
 
 - **State an assumption and ask them to confirm/correct it**, rather than
   only asking open questions — shows judgment, not just information
-  collection. *"I'll assume email drafts always go through human review
+  collection. _"I'll assume email drafts always go through human review
   before sending, at least in v1 — is that right, or do you want
-  autonomous send for some cases?"*
+  autonomous send for some cases?"_
 - **Summarize-and-checkpoint** every few minutes: play back what you've
   heard in your own words before moving on. Catches misunderstandings
   early and signals you're actually listening, not running a script.
 - **Surface tension explicitly instead of silently picking a side.** When
   two goals conflict (e.g. "fully autonomous" vs "highly sensitive data"),
-  name the conflict out loud and ask them to rank it: *"Full autonomy on
+  name the conflict out loud and ask them to rank it: _"Full autonomy on
   emails touching sensitive client data is in tension with your
   compliance exposure — do you want me to default to human-in-the-loop
   for anything touching sensitive data, or is there an approval workflow
-  you'd rather I design around?"*
+  you'd rather I design around?"_
 - **Ask who else has a stake**, even if they're not in the room — legal,
   security, brand/marketing, IT — this is the "stakeholder" framing, not
   just "the user." A design that satisfies the requester but would get
   blocked by legal/security in the real world is an incomplete answer.
-- **Negotiate scope down on purpose, and say so.** *"Given the 30 minutes
+- **Negotiate scope down on purpose, and say so.** _"Given the 30 minutes
   we have, I'm going to design the email-drafting and market-analysis
   agents in depth and treat the spreadsheet-processing agent as a
   same-pattern extension unless you want me to go deep there instead —
-  does that split work for you?"* This is the single highest-leverage
+  does that split work for you?"_ This is the single highest-leverage
   move in the whole 15 minutes: it converts an open-ended prompt into a
-  bounded one *with the stakeholder's buy-in*, so you're not graded on
+  bounded one _with the stakeholder's buy-in_, so you're not graded on
   guessing what they wanted covered.
 - **Confirm the success metric before you design to it.** "Increase
   employee productivity" and "on-brand" are not measurable — pin down
@@ -143,12 +143,12 @@ interview is built to catch.
 Use these as a starting checklist, not a script to read verbatim:
 
 - **Users & workflow**: Who exactly uses this — role, technical literacy?
-  What does the process look like *today*, without the system? Where in
+  What does the process look like _today_, without the system? Where in
   that process does the pain actually live?
 - **Success criteria**: What does "working" look like in 3 months? Is
   there a metric already, or do we need to define one?
 - **Scale**: How many users/requests today? Expected in 6-12 months? Peak
-  vs average load — any bursty pattern (e.g. end-of-quarter)?
+  vs average load — any bursty pattern (e.g. end-of-quarter)? What regions are users located in?
 - **Data**: What data sources exist (systems, formats, structured vs
   unstructured)? Who owns/governs each? Any of it explicitly
   restricted/sensitive, and by what classification?
@@ -180,7 +180,7 @@ Use these as a starting checklist, not a script to read verbatim:
 - For spreadsheet processing: what's actually in them — financial data,
   PII, customer records? Where do they live (shared drive, internal DB,
   email attachments)?
-- "Some internal data is highly sensitive" — sensitive *how*: PII,
+- "Some internal data is highly sensitive" — sensitive _how_: PII,
   financial/material non-public info, competitive intel? Does
   sensitivity vary by task, or is it a blanket constraint across all
   three?
@@ -245,14 +245,14 @@ Use these as a starting checklist, not a script to read verbatim:
 
 ## 10. Timing script for practice reps
 
-| Time | Phase | What you're doing |
-|---|---|---|
-| 0:00-0:30 | Scenario choice | State choice + one-line reason, confirm with "interviewer" |
-| 0:30-6:00 | Discovery | General questions (section 6) + scenario-specific (7/8) |
-| 6:00-13:00 | Stakeholder alignment | Surface 2-3 tensions explicitly, negotiate scope, confirm success metric (section 5) |
-| 13:00-15:00 | Recap & transition | Summarize agreed scope + priorities in 3-4 sentences before drawing anything |
-| 15:00-22:00 | High-level architecture | Draw the boxes, narrate end to end |
-| 22:00-40:00 | Deep dive (1-2 components) | Go deep where it's sharpest per discovery; state tradeoffs as you go |
+| Time        | Phase                      | What you're doing                                                                     |
+| ----------- | -------------------------- | ------------------------------------------------------------------------------------- |
+| 0:00-0:30   | Scenario choice            | State choice + one-line reason, confirm with "interviewer"                            |
+| 0:30-6:00   | Discovery                  | General questions (section 6) + scenario-specific (7/8)                               |
+| 6:00-13:00  | Stakeholder alignment      | Surface 2-3 tensions explicitly, negotiate scope, confirm success metric (section 5)  |
+| 13:00-15:00 | Recap & transition         | Summarize agreed scope + priorities in 3-4 sentences before drawing anything          |
+| 15:00-22:00 | High-level architecture    | Draw the boxes, narrate end to end                                                    |
+| 22:00-40:00 | Deep dive (1-2 components) | Go deep where it's sharpest per discovery; state tradeoffs as you go                  |
 | 40:00-45:00 | Production concerns + wrap | Failure modes, monitoring, rollout, cost — tie back to the success metric from step 3 |
 
 Run this with a real stopwatch at least twice per scenario before the

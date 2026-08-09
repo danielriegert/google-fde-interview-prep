@@ -81,14 +81,232 @@ default to multi-agent just because it sounds sophisticated.
 
 ## 5. Multi-agent orchestration patterns
 
-https://docs.langchain.com/oss/python/langchain/multi-agent
+_(sources: [LangChain — multi-agent](https://docs.langchain.com/oss/python/langchain/multi-agent),
+[Dassum — Multi-Agent AI Patterns for
+Developers](https://dassum.medium.com/multi-agent-ai-patterns-for-developers-pick-the-right-pattern-for-the-right-problem-8f03ef476b45))_
 
-| Pattern                          | Shape                                                                        | Use case                                                                                  |
-| -------------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| Sequential/pipeline              | A → B → C, each hands off output to next                                     | Well-defined multi-stage workflow (draft → review → format)                               |
-| Supervisor/worker (hierarchical) | Orchestrator agent routes tasks to specialist sub-agents, aggregates results | Most common enterprise pattern — e.g. router decides "billing agent" vs "technical agent" |
-| Network/swarm                    | Agents can hand off to each other directly, no fixed hierarchy               | Flexible but harder to reason about/debug; higher risk of loops                           |
-| Debate/critique                  | Two+ agents argue/critique to converge on a better answer                    | Higher-stakes reasoning tasks where single-pass quality isn't enough                      |
+A few of these (orchestrator-worker, router, handoff, parallel fan-out) are
+the same shapes named again from a routing-mechanics angle in §6's table —
+and reflection / planning+execution get a deeper treatment in §3. Listed
+together here as the full pattern catalog to pick from.
+
+| Pattern                                           | Shape                                                                                                                         | Use case                                                                                                | Trade-off                                                                                                       |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| **Sequential / pipeline**                         | A → B → C, each hands off output to next                                                                                      | Well-defined multi-stage workflow (extract → transform → validate → summarize)                          | Clear traceability at every step; throughput capped by the slowest agent                                        |
+| **Orchestrator-worker (hierarchical/supervisor)** | Orchestrator dynamically decomposes the task, delegates to specialists, monitors progress, aggregates results                 | Most common enterprise pattern — dynamic task dependencies, e.g. e-commerce order processing            | Handles runtime replanning well; orchestrator is a bottleneck and single point of failure (see §6)              |
+| **Parallel fan-out / fan-in**                     | Independent sub-tasks dispatched concurrently, results merged                                                                 | All sub-tasks known upfront — competitive analysis, multi-source data collection                        | Latency ≈ slowest branch, not the sum; can't handle tasks with inter-dependencies                               |
+| **Router / dispatch**                             | A lightweight classifier picks one specialist and exits                                                                       | Customer support ticket routing, multi-domain assistants, cost-tiering simple queries to cheaper models | Cheap and simple; only works when a single specialist can own the whole task — no decomposition                 |
+| **Handoff**                                       | An agent recognizes it's out of scope and transfers the conversation, with full context, to a more capable agent or a human   | Escalation tiers (support, healthcare triage), human-in-the-loop workflows                              | Preserves context gracefully; needs carefully drawn scope boundaries or handoffs fire too early/late            |
+| **Planning + execution**                          | Planner produces the full multi-step roadmap upfront; executor(s) carry it out; planner re-engages only to replan             | Complex multi-step research/analysis where upfront strategy pays off (see §3)                           | More predictable than step-by-step improvisation; overkill for small, fixed, well-known workflows               |
+| **Reflection / self-critique**                    | A generator agent produces output, a critic reviews it, loop until a quality threshold is met                                 | Code generation with test cycles, content requiring iterative refinement (see §3)                       | Measurably improves quality; adds latency and token cost per iteration                                          |
+| **Evaluator-optimizer loop**                      | Generate multiple candidates, score each against explicit criteria, feed scores back to generate improved candidates          | Prompt optimization, ad-copy testing, iterative code performance tuning                                 | Measurable improvement over iterations; expensive, and only as good as the scoring function                     |
+| **Debate / adversarial**                          | Two or more agents argue opposing positions; a judge agent decides                                                            | High-stakes reasoning, fact verification where single-pass quality isn't enough                         | Surfaces disagreement explicitly; expensive, and only as reliable as the judge's calibration                    |
+| **Network / swarm**                               | Agents hand off to each other directly, no fixed hierarchy                                                                    | Flexible, emergent workflows                                                                            | Harder to reason about/debug; higher risk of infinite handoff loops                                             |
+| **Group chat**                                    | All agents share one conversation thread, each contributes when relevant                                                      | Brainstorming, multi-perspective drafting                                                               | Rich cross-pollination between agents; expensive (every agent reads every turn) and hard to control turn-taking |
+| **Mixture of Agents (MoA)**                       | Multiple models generate diverse candidate responses in a layer; separate aggregator/refiner layers synthesize a final answer | Maximize accuracy when cost/latency isn't the binding constraint                                        | Highest accuracy ceiling of the group; multiplies token cost the most                                           |
+
+### Pattern diagrams
+
+Same order as the table above. Boxes are agents, diamonds are decision
+points, dashed arrows are conditional/loop-back edges.
+
+**Sequential / pipeline**
+
+```mermaid
+flowchart LR
+    A["Agent A<br/>Extract"] --> B["Agent B<br/>Transform"] --> C["Agent C<br/>Validate"] --> D["Agent D<br/>Summarize"]
+```
+
+**Orchestrator-worker (hierarchical/supervisor)**
+
+```mermaid
+flowchart TD
+    O["Orchestrator<br/>decompose + delegate"] -->|delegate| W1["Worker: Frontend"]
+    O -->|delegate| W2["Worker: Backend"]
+    O -->|delegate| W3["Worker: Database"]
+    W1 -->|result| O2["Orchestrator<br/>aggregate"]
+    W2 -->|result| O2
+    W3 -->|result| O2
+```
+
+**Parallel fan-out / fan-in**
+
+```mermaid
+flowchart TD
+    S["Splitter"] --> P1["Agent: Web"]
+    S --> P2["Agent: DB"]
+    S --> P3["Agent: API"]
+    S --> P4["Agent: Docs"]
+    P1 --> AG["Aggregator"]
+    P2 --> AG
+    P3 --> AG
+    P4 --> AG
+```
+
+**Router / dispatch**
+
+```mermaid
+flowchart TD
+    U["User query"] --> R{"Router /<br/>Classifier"}
+    R -->|billing| S1["Billing specialist"]
+    R -->|technical| S2["Technical specialist"]
+    R -->|sales| S3["Sales specialist"]
+```
+
+**Handoff**
+
+```mermaid
+flowchart LR
+    A["Agent A<br/>General"] -->|"out of scope,<br/>context preserved"| B["Agent B<br/>Specialist"]
+    B -->|"escalate,<br/>context preserved"| C["Agent C /<br/>Human"]
+```
+
+**Planning + execution**
+
+```mermaid
+flowchart LR
+    P["Planner<br/>writes roadmap"] --> E1["Executor<br/>Step 1"] --> E2["Executor<br/>Step 2"] --> E3["Executor<br/>Step 3"]
+    E2 -.replan on surprise.-> P
+    E3 -.replan on surprise.-> P
+```
+
+**Reflection / self-critique**
+
+```mermaid
+flowchart LR
+    G["Generator"] --> R["Reviewer /<br/>Critic"]
+    R -->|"quality insufficient:<br/>revise"| G
+    R -->|"quality threshold met"| OUT["Final output"]
+```
+
+**Evaluator-optimizer loop**
+
+```mermaid
+flowchart LR
+    G["Generator<br/>produces N candidates"] --> E["Evaluator<br/>scores vs criteria"]
+    E -->|"feedback on<br/>best candidates"| G
+    E -->|"best-scoring<br/>candidate"| OUT["Final output"]
+```
+
+**Debate / adversarial**
+
+```mermaid
+flowchart TD
+    P["Proposer<br/>argues for"] <-->|"exchange arguments"| C["Critic<br/>argues against"]
+    P --> J["Judge"]
+    C --> J
+    J --> OUT["Decision"]
+```
+
+**Network / swarm**
+
+```mermaid
+flowchart LR
+    A1["Agent A"] <--> A2["Agent B"]
+    A2 <--> A3["Agent C"]
+    A3 <--> A1
+    A1 <--> A4["Agent D"]
+    A4 <--> A2
+```
+
+**Group chat**
+
+```mermaid
+flowchart TD
+    CTX[("Shared conversation<br/>thread")]
+    PM["Product Manager agent"] <--> CTX
+    ENG["Engineer agent"] <--> CTX
+    DES["Designer agent"] <--> CTX
+```
+
+**Mixture of Agents (MoA)**
+
+```mermaid
+flowchart TD
+    subgraph L1["Layer 1 — proposers"]
+        A["LLM A"]
+        B["LLM B"]
+        C["LLM C"]
+    end
+    subgraph L2["Layer 2 — refiners"]
+        D["LLM D"]
+        E["LLM E"]
+    end
+    A --> D
+    B --> D
+    C --> D
+    A --> E
+    B --> E
+    C --> E
+    D --> AGG["Aggregator"]
+    E --> AGG
+    AGG --> OUT["Final answer"]
+```
+
+**Picking a pattern** — work down this list until one fits:
+
+1. Does a single agent suffice? → stay single-agent (see §4).
+2. Need domain specialization? → orchestrator-worker or router/dispatch.
+3. Need raw speed on independent sub-tasks? → parallel fan-out/fan-in.
+4. Need higher accuracy than one pass gives? → reflection, debate, or
+   mixture-of-agents.
+5. Need adaptability mid-task? → planning + execution.
+6. Need graceful escalation? → handoff.
+
+**Production systems combine patterns** rather than picking one in
+isolation — e.g. router + reflection (route to a specialist, specialist
+self-critiques its own output), orchestrator + parallel + reflection
+(decompose, fan out concurrently, each worker self-critiques before
+returning), or router + handoff + human-in-the-loop (classify, specialize,
+escalate with context preserved). Start with the simplest single pattern
+that fits and add a second only when a specific failure mode demands it —
+this is the same "don't default to multi-agent" discipline from §4, applied
+one level down to pattern choice itself.
+
+### Mixed-pattern diagrams
+
+**Router + reflection** — route to a specialist, specialist self-critiques
+its own output before returning:
+
+```mermaid
+flowchart LR
+    U["User query"] --> R{"Router"}
+    R -->|"specialist A"| SA["Specialist A"]
+    R -->|"specialist B"| SB["Specialist B"]
+    SA --> RevA["Self-critique"]
+    RevA -->|"revise"| SA
+    RevA -->|"pass"| OUT["Final answer"]
+```
+
+**Orchestrator + parallel + reflection** — decompose, fan out
+concurrently, each worker self-critiques before returning to the
+orchestrator for synthesis:
+
+```mermaid
+flowchart TD
+    O["Orchestrator<br/>decompose"] --> W1["Worker 1"]
+    O --> W2["Worker 2"]
+    O --> W3["Worker 3"]
+    W1 --> R1["Self-critique 1"]
+    W2 --> R2["Self-critique 2"]
+    W3 --> R3["Self-critique 3"]
+    R1 -->|"revise"| W1
+    R2 -->|"revise"| W2
+    R3 -->|"revise"| W3
+    R1 -->|"pass"| O2["Orchestrator<br/>synthesize"]
+    R2 -->|"pass"| O2
+    R3 -->|"pass"| O2
+```
+
+**Router + handoff + human-in-the-loop** — classify, specialize, escalate
+to a human with full context preserved:
+
+```mermaid
+flowchart LR
+    U["User query"] --> R{"Router"}
+    R -->|"route"| S["Specialist agent"]
+    S -->|"out of scope,<br/>context preserved"| H["Human"]
+```
 
 ## 6. Anatomy of a multi-agent system & routing patterns
 
@@ -262,11 +480,11 @@ design.
 
 Three content types, each answering a different question:
 
-| Type          | Answers                          | Typical shape                                                                | Example                                                    |
-| ------------- | --------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------ |
-| **Semantic**  | "What do I know?"                | **Profile** (one continuously-updated document) or **collection** (documents appended over time) | User's name, team, timezone, product preferences |
-| **Episodic**  | "What have I done before?"       | In practice implemented as **few-shot example prompting** — past input/trajectory/outcome triples injected into the prompt | A past support ticket resolved a similar way, replayed as an example |
-| **Procedural**| "How should I behave?"           | Technically model weights + agent code + prompt combined; in practice almost always just the **prompt**, updated via reflection/meta-prompting | "Always confirm before deleting a resource" learned from a past correction |
+| Type           | Answers                    | Typical shape                                                                                                                                  | Example                                                                    |
+| -------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| **Semantic**   | "What do I know?"          | **Profile** (one continuously-updated document) or **collection** (documents appended over time)                                               | User's name, team, timezone, product preferences                           |
+| **Episodic**   | "What have I done before?" | In practice implemented as **few-shot example prompting** — past input/trajectory/outcome triples injected into the prompt                     | A past support ticket resolved a similar way, replayed as an example       |
+| **Procedural** | "How should I behave?"     | Technically model weights + agent code + prompt combined; in practice almost always just the **prompt**, updated via reflection/meta-prompting | "Always confirm before deleting a resource" learned from a past correction |
 
 - **Profile vs. collection** (semantic memory's two storage patterns): a
   profile is a single struct kept current (overwrite in place — good for
@@ -362,6 +580,8 @@ a real finding, not noise. See file 03 for the full picture.
       concrete scenario where it's worth it and one where it isn't
 - [ ] Explain the supervisor/worker pattern and why it's the most common
       enterprise choice
+- [ ] Distinguish router/dispatch, handoff, evaluator-optimizer, debate, and
+      mixture-of-agents, and pick the right one for a given scenario (§5)
 - [ ] Name the four planes of a multi-agent system (control, execution,
       state, capability) and what lives in each
 - [ ] Pick the right routing pattern (centralized orchestration,

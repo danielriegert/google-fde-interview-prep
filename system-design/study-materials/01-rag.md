@@ -19,7 +19,7 @@ instead of parametric memory alone.
 ## 2. The canonical pipeline
 
 ```
-[Source / load docs] → chunk → enroch cjunks (opitonal) -> embed → [Vector Index]
+[Source / load docs] → chunk → enrich chunks (opitonal) -> embed → [Vector Index]
                                         ▲
                                         │ similarity search
 [User query] → embed query ────────────┘

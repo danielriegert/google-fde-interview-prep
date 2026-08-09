@@ -52,3 +52,4 @@ Recommend order:
 - interveiw playboook
 - grounding / preventing hallucination
 - AI Agent indentity
+- need to understand different agent patterns for different use cases
