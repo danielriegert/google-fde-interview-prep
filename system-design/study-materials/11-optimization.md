@@ -25,6 +25,20 @@
   variable prompts, since the cache-creation cost only pays off once it's
   reused enough times before the TTL expires.
 
+## Context / State Optimization
+
+Compaction: when a conversation gets long, summarize the older parts into a compact form and discard the raw history, keeping only what's needed to continue (recent messages, key decisions, open threads). Claude Code does this automatically when nearing context limits.
+
+Sub-agents / isolation: spin up a separate agent with its own context window to do a bounded task (e.g., "search the codebase for X"), and have it return only a condensed result to the parent. The parent's context stays clean; the exploratory noise stays isolated. This is what the Agent tool in this environment does.
+
+Just-in-time retrieval instead of eager loading: rather than pre-loading entire files, databases, or docs into context up front, give the agent lightweight references (file paths, IDs, links) and let it fetch content only when it's actually needed. This mirrors how humans work — you don't memorize a filesystem, you navigate it.
+
+Structured note-taking / scratchpads: have the agent persist important intermediate state (a todo list, key facts, a plan) to a file or memory outside the context window, then re-read it as needed rather than keeping everything live in-context. This also survives context resets.
+
+Tool result minimization: truncate or summarize large tool outputs before they enter context — e.g., returning a diff instead of a full file, or the first N rows of a query result with an offer to fetch more.
+
+Deferred tool loading: instead of listing every possible tool's full schema in the system prompt (there might be hundreds), keep tool definitions off to the side and load a tool's schema only when it looks relevant to the current task. This is literally the ToolSearch mechanism I use.
+
 ## Batch LLM calls
 
 - For requests that aren't latency-sensitive (bulk classification, offline
