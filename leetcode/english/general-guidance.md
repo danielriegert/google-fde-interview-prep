@@ -1,12 +1,14 @@
 # LeetCode Problem-Solving Playbook
 
 ## 1. Understand the problem
+
 - Restate the problem in your own words out loud before coding.
 - Identify: inputs, outputs, and the exact transformation between them.
 - Note the return type precisely (index vs value, list of pairs, in-place mutation, boolean, etc).
 - Is the answer unique, or could there be multiple valid answers (any one accepted)?
 
 ## 2. Ask clarifying questions
+
 - Can the input be empty / null / length 0 or 1?
 - Are there duplicates in the input? Does that matter?
 - Is the array/list sorted? Can I assume it, or do I need to sort it myself?
@@ -18,6 +20,7 @@
 - What should happen if no valid answer exists (return -1, empty list, throw)?
 
 ## 3. Work through test cases before coding
+
 - Trivial case: empty input, single element.
 - Normal case: small example, trace by hand.
 - Duplicates / repeated values.
@@ -28,6 +31,7 @@
 - The one given in the prompt — actually trace it, don't just eyeball it.
 
 ## 4. Look for pattern clues in the problem statement
+
 - "sorted array" -> binary search, two pointers.
 - "subarray / substring, contiguous" -> sliding window, prefix sum.
 - "pairs / triplets that sum to target" -> two pointers (if sortable) or hash set.
@@ -46,10 +50,12 @@
 - "range queries, updates" -> prefix sum, difference array, or segment tree / BIT.
 - "matrix, grid, islands" -> DFS/BFS flood fill, or union-find.
 - "words, prefixes" -> trie.
-- "min number of X to cover Y" -> greedy (prove exchange argument) or DP if greedy fails.
+- "min number of X to cover Y", "max Y under a budget/capacity", "non-overlapping intervals / scheduling" -> greedy: sort by a key, one pass, prove with an exchange argument (or fall back to DP if you find a counterexample). See `Greedy_Algorithms.ipynb` for the full pattern writeup.
 
 ## 5. Pick the algorithm / data structure
+
 Rough decision order once a pattern is identified:
+
 1. Can I do it in one pass with a hash map/set? (O(n) time, O(n) space)
 2. Is the input sorted or sortable, letting me use two pointers / binary search? (O(n log n) or O(n))
 3. Is there a sliding window over a contiguous range? (O(n))
@@ -72,6 +78,7 @@ Rough decision order once a pattern is identified:
 | huge / streaming | O(log n) or O(1) per operation |
 
 **Reading complexity off code shape:**
+
 - Single loop over n -> O(n).
 - Nested loop, both over n -> O(n^2). Nested loop where inner shrinks (e.g. `for j in range(i, n)`) -> still O(n^2), just half the constant.
 - Loop that halves the search space each time (binary search) -> O(log n).
@@ -83,6 +90,7 @@ Rough decision order once a pattern is identified:
 - Backtracking that explores all subsets -> O(2^n); all permutations -> O(n!).
 
 **Common data structure operation costs** (average case, hash-based unless noted):
+
 - Array: index O(1), search O(n), insert/delete at end O(1) amortized, insert/delete at front or middle O(n).
 - Hash map / set: insert, delete, lookup O(1) average, O(n) worst case.
 - Sorted array: binary search O(log n), insert/delete O(n) (shifting).
@@ -93,22 +101,26 @@ Rough decision order once a pattern is identified:
 - Trie: insert/search O(L) where L = length of the word/key, independent of n words stored.
 
 **Space complexity gotchas:**
+
 - Recursion uses O(depth) stack space even with no extra data structures — a deep recursion can blow the stack even if "no extra space" was claimed.
 - Output/return array usually isn't counted toward extra space unless the problem says otherwise — clarify if unsure.
-- In-place means O(1) *extra* space, not counting the input/output.
+- In-place means O(1) _extra_ space, not counting the input/output.
 - Memoization tables in DP add O(state space) space — state count x transitions per state = time complexity.
 
 ## 7. Before coding
+
 - State time and space complexity target out loud.
 - Sketch the approach in a couple lines of pseudocode or bullet steps.
 - Decide on variable names for pointers/indices up front (left/right, slow/fast, i/j) to avoid confusion mid-write.
 
 ## 8. While coding
+
 - Handle edge cases first (empty input, single element) if they'd otherwise crash the main logic.
 - Watch off-by-one errors on loop bounds and pointer moves — trace one example as you write.
 - Prefer clarity first, optimize after it's correct.
 
 ## 9. After coding
+
 - Trace through 1-2 of the test cases from step 3 against the actual code.
 - Restate final time/space complexity.
 - Sanity check: does it handle the trivial case (empty/single element) without special-casing bugs?
@@ -116,6 +128,9 @@ Rough decision order once a pattern is identified:
 ---
 
 # Quick reference notes
+
 - non-decreasing = can have duplicates, can increase, just not decrease e.g. [0, 2, 2, 3, 4, 4]
 - check if list is sorted
 - check if modify in place required (affects whether extra space is allowed)
+- Python strings are immutable — can't modify in place; convert to `list(s)`, mutate, then `''.join(...)` at the end
+- `reversed(x)` returns a reverse iterator, not a list/string — wrap in `list(...)` or `''.join(list[])` to materialize it
