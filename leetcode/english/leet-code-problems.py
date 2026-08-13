@@ -133,3 +133,63 @@ fast  nums[fast]  vs nums[slow]  action                  slow  nums (first slow+
 
 Return slow + 1 = 4 -> nums[:4] = [0, 1, 2, 3] are the unique values, in place, O(1) extra space.
 """
+
+# Question 11: Container With Most Water (opposite-direction / converging pointers)
+
+"""
+Container area = min(height[left], height[right]) * (right - left)
+1. Calculate the area between left and right.
+
+2. Update your max_area if this new area is bigger.
+
+3. Compare height[left] and height[right]:
+    If height[left] < height[right], increment left (move the left wall rightward).
+    Otherwise, decrement right (move the right wall leftward).
+
+4. Repeat steps 1–3 until left and right cross paths
+"""
+
+# Brute Force: O(n^2) time, O(1) space
+class Solution:
+
+  def maxArea(self, height: list[int]) -> int:
+    max_water = 0
+    n = len(height)
+
+    # Check every possible pair (i, j)
+    for i in range(n):
+      for j in range(i + 1, n):
+        width = j - i
+        current_height = min(height[i], height[j])
+        current_area = width * current_height
+
+        max_water = max(max_water, current_area)
+
+    return max_water
+
+# Optimized Two-Pointer Approach: O(n) time, O(1) space
+class Solution:
+
+  def maxArea(self, height: list[int]) -> int:
+    # Initialize two pointers at the ends of the array
+    left = 0
+    right = len(height) - 1
+
+    max_water = 0
+
+    while left < right:
+      # 1. Calculate the width and the limiting height
+      width = right - left
+      current_height = min(height[left], height[right])
+
+      # 2. Calculate the current area and update max_water if it's larger
+      current_area = width * current_height
+      max_water = max(max_water, current_area)
+
+      # 3. Move the pointer pointing to the shorter line inward
+      if height[left] < height[right]:
+        left += 1
+      else:
+        right -= 1
+
+    return max_water

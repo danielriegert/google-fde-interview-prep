@@ -1,0 +1,2 @@
+- load balancing
+- db choices

@@ -21,6 +21,7 @@ disadvantages, and its complexity — you should be able to say all of this
 out loud before opening the notebook.
 
 ### 1.1 Arrays & Strings
+
 - **How it works:** contiguous block of memory, O(1) index access via
   address arithmetic. Python `list` is a dynamic array (over-allocates and
   resizes); `str` is an immutable array of characters.
@@ -35,14 +36,17 @@ out loud before opening the notebook.
 - Notebook: `english/Array_String_LinkedList.ipynb`
 
 ### 1.2 Linked Lists
+
 - **How it works:** nodes holding `value` + `next` (and `prev` for
   doubly-linked), scattered in memory, traversed pointer-by-pointer.
+
 ```python
 class ListNode:
     def __init__(self, val=0, next=None):
         self.val = val
         self.next = next
 ```
+
 - **When to use:** frequent insert/delete at known positions (e.g. head),
   when you don't need random access, building blocks for LRU caches,
   stacks/queues.
@@ -53,6 +57,7 @@ class ListNode:
 - Notebook: `english/Array_String_LinkedList.ipynb`
 
 ### 1.3 Hash Tables (dict / set)
+
 - **How it works:** array + hash function mapping keys to bucket indices;
   collisions resolved via chaining or open addressing. Python `dict`/`set`
   are hash tables under the hood.
@@ -66,6 +71,7 @@ class ListNode:
 - Notebook: `english/Hash_Table.ipynb`
 
 ### 1.4 Stacks & Queues
+
 - **How it works:** stack = LIFO (push/pop same end); queue = FIFO (enqueue
   one end, dequeue the other). Implement a stack with a Python `list`
   (`append`/`pop`); implement a queue with `collections.deque` (never a
@@ -79,9 +85,11 @@ class ListNode:
   `english/Stack_and_Queue_Part2_Queue.ipynb`
 
 ### 1.5 Trees & Heaps
+
 - **How it works (tree):** nodes with `val` + child pointers (`left`/
   `right` for binary trees); BST keeps left < node < right for O(log n)
   search when balanced.
+
 ```python
 class TreeNode:
     def __init__(self, val=0, left=None, right=None):
@@ -89,6 +97,7 @@ class TreeNode:
         self.left = left
         self.right = right
 ```
+
 - **How it works (heap):** complete binary tree stored in an array where
   parent ≤ (min-heap) or ≥ (max-heap) both children. Python: `heapq`
   (min-heap only — negate values for a max-heap).
@@ -105,13 +114,13 @@ class TreeNode:
 
 ### 1.6 Data structures — 5 categorized problems
 
-| # | Structure | Problem | Difficulty | Focus |
-|---|---|---|---|---|
-| 1 | Array | [238. Product of Array Except Self](https://leetcode.com/problems/product-of-array-except-self/) | Medium | prefix/suffix arrays, no division |
-| 2 | Linked List | [206. Reverse Linked List](https://leetcode.com/problems/reverse-linked-list/) | Easy | pointer manipulation, iterative + recursive |
-| 3 | Hash Table | [1. Two Sum](https://leetcode.com/problems/two-sum/) | Easy | one-pass hashmap lookup |
-| 4 | Stack | [20. Valid Parentheses](https://leetcode.com/problems/valid-parentheses/) | Easy | stack matching |
-| 5 | Tree / Heap | [215. Kth Largest Element in an Array](https://leetcode.com/problems/kth-largest-element-in-an-array/) | Medium | heap vs. quickselect tradeoff |
+| #   | Structure   | Problem                                                                                                | Difficulty | Focus                                       |
+| --- | ----------- | ------------------------------------------------------------------------------------------------------ | ---------- | ------------------------------------------- |
+| 1   | Array       | [238. Product of Array Except Self](https://leetcode.com/problems/product-of-array-except-self/)       | Medium     | prefix/suffix arrays, no division           |
+| 2   | Linked List | [206. Reverse Linked List](https://leetcode.com/problems/reverse-linked-list/)                         | Easy       | pointer manipulation, iterative + recursive |
+| 3   | Hash Table  | [1. Two Sum](https://leetcode.com/problems/two-sum/)                                                   | Easy       | one-pass hashmap lookup                     |
+| 4   | Stack       | [20. Valid Parentheses](https://leetcode.com/problems/valid-parentheses/)                              | Easy       | stack matching                              |
+| 5   | Tree / Heap | [215. Kth Largest Element in an Array](https://leetcode.com/problems/kth-largest-element-in-an-array/) | Medium     | heap vs. quickselect tradeoff               |
 
 - [ ] Implement each structure from scratch (no builtins) once, even if the
       problem itself doesn't require it — that's the "refresh" part.
@@ -122,6 +131,7 @@ class TreeNode:
 ## 2. Algorithms refresher
 
 ### 2.1 Sorting
+
 - **How it works:** comparison-based (merge, quick, heap sort) or
   non-comparison (counting, radix). Python's built-in `sorted()`/`.sort()`
   is Timsort (hybrid merge/insertion sort).
@@ -138,6 +148,7 @@ class TreeNode:
 - Notebook: `english/Sorting_Algorithms.ipynb`
 
 ### 2.2 Dynamic Programming
+
 - **How it works:** break a problem into overlapping subproblems, cache
   results (memoization, top-down) or build a table bottom-up. Recognize
   it by "optimal substructure + overlapping subproblems."
@@ -152,10 +163,12 @@ class TreeNode:
 - Notebook: `english/Dynamic_Programming.ipynb`
 
 ### 2.3 Recursion
+
 - **How it works:** a function calls itself on a smaller subproblem with a
   base case that stops it. Every recursive solution can be rewritten
   iteratively with an explicit stack — know why you'd pick one over the
   other (call stack depth limits in Python, ~1000 by default).
+
 ```python
 def fib(n, memo={}):
     if n <= 1:
@@ -164,6 +177,7 @@ def fib(n, memo={}):
         memo[n] = fib(n - 1, memo) + fib(n - 2, memo)
     return memo[n]
 ```
+
 - **When to use:** naturally recursive structures (trees, graphs,
   backtracking/combinatorics, divide & conquer).
 - **Pros:** often the clearest expression of the problem. **Cons:** call
@@ -175,6 +189,7 @@ def fib(n, memo={}):
   `english/Template_Summary.ipynb`
 
 ### 2.4 Greedy
+
 - **How it works:** make the locally optimal choice at each step and never
   revisit it, betting that local optimality leads to global optimality.
   Only valid when the problem has the "greedy choice property" — be ready
@@ -190,10 +205,12 @@ def fib(n, memo={}):
 - Notebook: `english/Greedy_Algorithms.ipynb`
 
 ### 2.5 Sliding Window
+
 - **How it works:** maintain a window `[left, right]` over an array/string,
   expand `right` to grow it, shrink `left` when a constraint is violated —
   avoids the O(n²)/O(n³) cost of recomputing from scratch for every
   subarray.
+
 ```python
 def longest_unique_substring(s):
     seen = {}
@@ -205,6 +222,7 @@ def longest_unique_substring(s):
         best = max(best, right - left + 1)
     return best
 ```
+
 - **When to use:** contiguous subarray/substring problems with a
   min/max-length or a constraint (sum ≤ k, at most k distinct chars, etc.).
 - **Pros:** turns O(n²) brute force into O(n). **Cons:** only applies to
@@ -217,13 +235,13 @@ def longest_unique_substring(s):
 
 ### 2.6 Algorithms — 5 categorized problems
 
-| # | Technique | Problem | Difficulty | Focus |
-|---|---|---|---|---|
-| 1 | Sorting | [912. Sort an Array](https://leetcode.com/problems/sort-an-array/) | Medium | implement merge sort or quicksort by hand |
-| 2 | Dynamic Programming | [322. Coin Change](https://leetcode.com/problems/coin-change/) | Medium | bottom-up table, state definition |
-| 3 | Recursion | [22. Generate Parentheses](https://leetcode.com/problems/generate-parentheses/) | Medium | recursion/backtracking, pruning invalid branches |
-| 4 | Greedy | [55. Jump Game](https://leetcode.com/problems/jump-game/) | Medium | greedy reachability, prove the greedy choice |
-| 5 | Sliding Window | [3. Longest Substring Without Repeating Characters](https://leetcode.com/problems/longest-substring-without-repeating-characters/) | Medium | variable-size window with a hashmap |
+| #   | Technique           | Problem                                                                                                                            | Difficulty | Focus                                            |
+| --- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ---------- | ------------------------------------------------ |
+| 1   | Sorting             | [912. Sort an Array](https://leetcode.com/problems/sort-an-array/)                                                                 | Medium     | implement merge sort or quicksort by hand        |
+| 2   | Dynamic Programming | [322. Coin Change](https://leetcode.com/problems/coin-change/)                                                                     | Medium     | bottom-up table, state definition                |
+| 3   | Recursion           | [22. Generate Parentheses](https://leetcode.com/problems/generate-parentheses/)                                                    | Medium     | recursion/backtracking, pruning invalid branches |
+| 4   | Greedy              | [55. Jump Game](https://leetcode.com/problems/jump-game/)                                                                          | Medium     | greedy reachability, prove the greedy choice     |
+| 5   | Sliding Window      | [3. Longest Substring Without Repeating Characters](https://leetcode.com/problems/longest-substring-without-repeating-characters/) | Medium     | variable-size window with a hashmap              |
 
 - [ ] For sorting, actually write the algorithm — don't just call
       `sorted()`.
@@ -239,16 +257,16 @@ This set is deliberately mixed across structures and techniques, several
 combine two concepts, and difficulty ramps up. Solve **cold** — don't
 peek at which category a problem belongs to before attempting it.
 
-| # | Problem | Difficulty | Combines |
-|---|---|---|---|
-| 1 | [146. LRU Cache](https://leetcode.com/problems/lru-cache/) | Medium | hashmap + doubly linked list |
-| 2 | [200. Number of Islands](https://leetcode.com/problems/number-of-islands/) | Medium | grid + DFS/BFS |
-| 3 | [127. Word Ladder](https://leetcode.com/problems/word-ladder/) | Hard | graph BFS + hashset |
-| 4 | [295. Find Median from Data Stream](https://leetcode.com/problems/find-median-from-data-stream/) | Hard | two heaps |
-| 5 | [42. Trapping Rain Water](https://leetcode.com/problems/trapping-rain-water/) | Hard | two pointers / DP / stack (solve with 2 approaches) |
-| 6 | [76. Minimum Window Substring](https://leetcode.com/problems/minimum-window-substring/) | Hard | sliding window + hashmap counting |
-| 7 | [133. Clone Graph](https://leetcode.com/problems/clone-graph/) | Medium | graph traversal + hashmap |
-| 8 | [621. Task Scheduler](https://leetcode.com/problems/task-scheduler/) | Medium | greedy + heap/counting |
+| #   | Problem                                                                                          | Difficulty | Combines                                            |
+| --- | ------------------------------------------------------------------------------------------------ | ---------- | --------------------------------------------------- |
+| 1   | [146. LRU Cache](https://leetcode.com/problems/lru-cache/)                                       | Medium     | hashmap + doubly linked list                        |
+| 2   | [200. Number of Islands](https://leetcode.com/problems/number-of-islands/)                       | Medium     | grid + DFS/BFS                                      |
+| 3   | [127. Word Ladder](https://leetcode.com/problems/word-ladder/)                                   | Hard       | graph BFS + hashset                                 |
+| 4   | [295. Find Median from Data Stream](https://leetcode.com/problems/find-median-from-data-stream/) | Hard       | two heaps                                           |
+| 5   | [42. Trapping Rain Water](https://leetcode.com/problems/trapping-rain-water/)                    | Hard       | two pointers / DP / stack (solve with 2 approaches) |
+| 6   | [76. Minimum Window Substring](https://leetcode.com/problems/minimum-window-substring/)          | Hard       | sliding window + hashmap counting                   |
+| 7   | [133. Clone Graph](https://leetcode.com/problems/clone-graph/)                                   | Medium     | graph traversal + hashmap                           |
+| 8   | [621. Task Scheduler](https://leetcode.com/problems/task-scheduler/)                             | Medium     | greedy + heap/counting                              |
 
 - [ ] Timebox each to 25-35 minutes before looking at hints.
 - [ ] After solving, do the "what if" follow-up: what if input doesn't fit
@@ -262,12 +280,46 @@ peek at which category a problem belongs to before attempting it.
 
 ## 4. Suggested schedule
 
-- **Days 1-2:** Section 1 (data structures) — read + implement each
-  structure from scratch, solve the 5 problems.
-- **Days 3-4:** Section 2 (algorithms) — same pattern, solve the 5
-  problems.
-- **Days 5-7:** Section 3 (uncategorized) — timed, mixed practice; after
-  each problem, write one sentence on which pattern you recognized and
-  how long it took you to see it.
-- **Ongoing:** re-run one problem per structure/technique from memory
-  once a week (spaced repetition) rather than only doing new problems.
+- August 14: Sliding window (& Two Pointers)
+- August 15: Hash map / set
+- August 16: Stack, queue, and monotonic stacks
+- August 17: Linked list
+- August 18: Binary tree DFS/BFS and Tries
+- August 19: Graph DFS/BFS and Topological Sort
+- August 20: Binary search (focus on answer space)
+- August 21: Dynamic programming (focus on 1D/2D grids & memoization)
+- August 22: Heap and priority queue (plus quick review of Intervals if time permits)
+
+# Approach:
+
+Recommended Time Split: 30 / 70
+
+    30% Coding / Syntax / Edge Cases: Writing out the actual code (or heavily typing it out) to build muscle memory.
+
+    70% Pattern Identification, High-Level Solution, & Trade-offs: Reading, diagramming, talking through the approach, and analyzing time/space complexity.
+
+How to Structure Each Day (Per Problem)
+
+Spend roughly 20–30 minutes total per problem, broken down like this:
+
+    Read & Identify (3 mins): Look at the constraints. What data structure or pattern does this scream? (e.g., “Sorted array with a search condition? Binary search on answer.”)
+
+    High-Level Design & Walkthrough (7–10 mins):
+
+        Write down the core algorithm in plain English or pseudocode.
+
+        Trace an example on paper or mentally to catch edge cases (empty inputs, duplicates, boundary values).
+
+        State the target Time and Space complexity before you code.
+
+    Write Code / Pseudo-Code (10 mins):
+
+        If you are short on time, write clean pseudo-code focusing purely on the core logic (the loops, pointer adjustments, or recursive calls) rather than worrying about boilerplate syntax.
+
+        If a problem uses a tricky standard template (like Dijkstra's or a specific Trie implementation), type it out fully once to lock it in.
+
+    The Look-Up Rule (The 15-Minute Hard Stop):
+
+        If you stare at a problem for 15 minutes and cannot figure out the optimal pattern, stop.
+
+        Read the solution immediately, understand why that pattern works, and write down the key takeaway. Do not waste precious hours spinning your wheels on brute force.

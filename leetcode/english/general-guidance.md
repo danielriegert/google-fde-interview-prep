@@ -134,3 +134,17 @@ Rough decision order once a pattern is identified:
 - check if modify in place required (affects whether extra space is allowed)
 - Python strings are immutable — can't modify in place; convert to `list(s)`, mutate, then `''.join(...)` at the end
 - `reversed(x)` returns a reverse iterator, not a list/string — wrap in `list(...)` or `''.join(list[])` to materialize it
+- Clearly articulate different cases and create placeholders in code for it.
+- Be careful with conteol flow if I only use `if` multiple cases might be triggered although not desired. Use `elif` or `else` with nested `if`. Can use `comtinue` alternatively to avoid deep nesting
+- With arrays pay attention to first and last elements. These often require special logic
+- When using two pointers / sliding window be very clear about **when** and **where** to move pointers
+- After initial implementation work interviewer through non trivial test cases to verify solution / edge cases
+- If checking whether index is at end of of sequence need to compare i to len(s) - 1 as index starts at 0
+- When struggling run through different scenarios
+- Sometimes pointer should be initialized with -1 not 0
+- When modifiying an array in place never delete elments as it will mess up index. Need to use two pointers approach e.g. swap elements (sorting, re-arranging),overwrite elements (de-dupe or removal), etc.
+- If parts of problems are independent then tehy might be solved in two sepeprate steps and then combined e.g. first move all non-0 elements to front then fill remaining with zeroes
+- range(0,2) -> first element included, second NOT. same for [1:8] -> 1 to 7
+- Use hashmap ONLY if order doesn't matter
+- Need to think about ALL edge cases e.g. duplicates, empty strings, end or beginning of string, conditions that might cause out of index
+- Think about conditions for early stop
