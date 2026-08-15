@@ -195,3 +195,6 @@ Then slide the window from index k to the end e.g. for i in range(k, len(s)): . 
 
 - can use set theory e.g. intersection to check if two strings contain the same characters. BUT this alone migh not be enough need to also check that the chars have same frequency e.g. using collections.Counter()
 - When there is duplicate logic e.g. nested for loops, see if it can be pre-processed and results stored to dedupe logic
+- Cannot use list with Counter, must use string or tuple or dict as not hashable. Use tuple([]) to convert list to tuple.
+- Can use list(zip(`*`[[]])) to transpose a matrix. Placing an asterisk in front of grid unpacks the list, passing its individual rows as separate arguments. Writing `*`grid is equivalent to writing: [1, 2, 3], [4, 5, 6], [7, 8, 9]. zip() takes multiple iterables (like lists or tuples) and aggregates them by their index position. It pairs up the 1st element*s*, then the 2nd element*s*, then the 3rd element*s*, and so on.
+Before: grid is organized by rows: [[1, 2, 3], [4, 5, 6], [7, 8, 9]]. After: columns is organized by columns: [(1, 4, 7), (2, 5, 8), (3, 6, 9)]

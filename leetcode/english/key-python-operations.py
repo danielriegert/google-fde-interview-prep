@@ -190,6 +190,7 @@ l = list(s)  # l = [1, 2, 3] (order may vary)
 s = set("absca") # s = {a, b, s, c}
 
 # Use from collections import Counter to count frequencies
+# Note: cannot use list with Counter, must use string or tuple or dict as not hashable. Use tuple([]) to convert list to tuple.
 from collections import Counter
 
 c1 = Counter("abbcb") # returns counter Counter({"a": 1, "b": 3, "c": 1}) i.e. iterator
@@ -217,6 +218,9 @@ n = len(grid)
 for c in range(n):
     col = [grid[r][c] for r in range(n)]
     columns.append(col)
+
+# Getting columns from grid using zip
+columns = list(zip(*grid))  # Transpose the grid
 
 # Extract rows and columns in n^3 time complexity
 def has_matching_row_and_col(grid):
