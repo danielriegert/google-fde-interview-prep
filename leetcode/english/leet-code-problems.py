@@ -193,3 +193,34 @@ class Solution:
         right -= 1
 
     return max_water
+
+# Question 1657: Determine of Two Strings are Close. Set and Hashmap
+def closeStrinsg(word1: str, word2: str) -> bool:
+    # check if strings are of the same length
+    if len(word1) != len(word2):
+        return False
+    
+    # check if both strign contain the same characters
+    if set(word1) != set(word2):
+        return False
+    
+    # check if both string contain the same frequency for each character
+    frequency_word1 = {}
+    frequency_word2 = {}
+
+    for char in word1:
+        if char not in frequency_word1:
+            frequency_word1[char] = 1
+        else:
+            frequency_word1[char] += 1
+    
+     for char in word2:
+        if char not in frequency_word2:
+            frequency_word2[char] = 1
+        else:
+            frequency_word2[char] += 1
+
+    if frequncy_word1 != frequency_word2:
+        return False
+    else:
+        return True

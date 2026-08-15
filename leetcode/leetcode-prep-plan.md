@@ -290,6 +290,8 @@ peek at which category a problem belongs to before attempting it.
 - August 21: Dynamic programming (focus on 1D/2D grids & memoization)
 - August 22: Heap and priority queue (plus quick review of Intervals if time permits)
 
+Accross: all sections also study top google interview questions
+
 # Approach:
 
 Recommended Time Split: 30 / 70

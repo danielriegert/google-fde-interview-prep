@@ -113,6 +113,27 @@ Rough decision order once a pattern is identified:
 - Sketch the approach in a couple lines of pseudocode or bullet steps.
 - Decide on variable names for pointers/indices up front (left/right, slow/fast, i/j) to avoid confusion mid-write.
 
+### Template
+
+1. Problem
+
+- Inputs
+- Ouputs
+- Contsraints / Rules: e.g do not modify in place
+
+2. Test Cases
+
+- Standard
+- Edge Cases
+
+3. Approach
+
+- Patter / Algo
+- Stragegy / high level flow
+- Complexity
+
+4. Trace some examples to verfiy (optional)
+
 ## 8. While coding
 
 - Handle edge cases first (empty input, single element) if they'd otherwise crash the main logic.
@@ -128,6 +149,8 @@ Rough decision order once a pattern is identified:
 ---
 
 # Quick reference notes
+
+## Two Pointers
 
 - non-decreasing = can have duplicates, can increase, just not decrease e.g. [0, 2, 2, 3, 4, 4]
 - check if list is sorted
@@ -148,3 +171,27 @@ Rough decision order once a pattern is identified:
 - Use hashmap ONLY if order doesn't matter
 - Need to think about ALL edge cases e.g. duplicates, empty strings, end or beginning of string, conditions that might cause out of index
 - Think about conditions for early stop
+
+## Sliding Windows
+
+- Prefer sets over lists for membership checks (in).
+- del list[0] or list.pop(0) takes \mathcal{O}(k) time because every remaining element in the list must shift left in memory. Repeating this across an array of length n turns an optimal \mathcal{O}(n) algorithm into an \mathcal{O}(n \cdot k) runtime
+- When a problem asks for a quantity (e.g., maximum count, length, or sum) rather than the actual items, avoid storing the items themselves.
+- In a sliding window, updates at the right boundary (s[i]) and left boundary (s[window_start]) must evaluate the exact character entering or leaving
+- Instead of starting from 0 build the first window of size k e.g.
+  current_vowels = sum(1 for i in range(k) if s[i] in vowels)
+  max_vowels = current_vowels
+
+Then slide the window from index k to the end e.g. for i in range(k, len(s)): . First char of window will be s[i-k]
+
+- ​Count the constraint, not the target: Your original instinct was to count the 1s. The key unlock is to track your limited resource instead—the 0s you are allowed to flip. If you control the 0s, the 1s take care of themselves.
+  ​- Let the window length do the math: You don't need a dedicated counter for the maximum 1s seen. Because every element inside a valid window is either a native 1 or a flipped 0, the formula end - start + 1 automatically gives you the total length of the sequence.
+  ​- Maintain a strict "validity state": The logic for shrinking the window should directly match your constraint limit. As soon as zero_count > k, the window is invalid. A simple while loop cleanly advances the start pointer and reclaims your flips until the window is valid again.
+- ​Reclaim resources cleanly: Only update your constraint counter (zero_count -= 1) when the exact element leaving the window (at the start pointer) is the resource you were tracking (a 0).
+- When using indexes as count need to add 1 to result
+- Check if window has validity constraint that needs to be maintenance at all times e.g. only k number of 0s
+
+# Sets and Hashmap
+
+- can use set theory e.g. intersection to check if two strings contain the same characters. BUT this alone migh not be enough need to also check that the chars have same frequency e.g. using collections.Counter()
+- When there is duplicate logic e.g. nested for loops, see if it can be pre-processed and results stored to dedupe logic
