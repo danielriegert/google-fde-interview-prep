@@ -155,7 +155,7 @@ Rough decision order once a pattern is identified:
 - non-decreasing = can have duplicates, can increase, just not decrease e.g. [0, 2, 2, 3, 4, 4]
 - check if list is sorted
 - check if modify in place required (affects whether extra space is allowed)
-- Python strings are immutable — can't modify in place; convert to `list(s)`, mutate, then `''.join(...)` at the end
+- Python strings are **immutable** — can't modify in place; convert to `list(s)`, mutate, then `''.join(...)` at the end
 - `reversed(x)` returns a reverse iterator, not a list/string — wrap in `list(...)` or `''.join(list[])` to materialize it
 - Clearly articulate different cases and create placeholders in code for it.
 - Be careful with conteol flow if I only use `if` multiple cases might be triggered although not desired. Use `elif` or `else` with nested `if`. Can use `comtinue` alternatively to avoid deep nesting
@@ -198,3 +198,47 @@ Then slide the window from index k to the end e.g. for i in range(k, len(s)): . 
 - Cannot use list with Counter, must use string or tuple or dict as not hashable. Use tuple([]) to convert list to tuple.
 - Can use list(zip(`*`[[]])) to transpose a matrix. Placing an asterisk in front of grid unpacks the list, passing its individual rows as separate arguments. Writing `*`grid is equivalent to writing: [1, 2, 3], [4, 5, 6], [7, 8, 9]. zip() takes multiple iterables (like lists or tuples) and aggregates them by their index position. It pairs up the 1st element*s*, then the 2nd element*s*, then the 3rd element*s*, and so on.
 Before: grid is organized by rows: [[1, 2, 3], [4, 5, 6], [7, 8, 9]]. After: columns is organized by columns: [(1, 4, 7), (2, 5, 8), (3, 6, 9)]
+
+# Stack
+
+- Think of a stack whenever a problem involves "Undo," "Backtracking," "Cancellation," or "Matching" actions. Last-In, First-Out (LIFO) Dependency: The most recent element added is the very first one that needs to be affected, removed, or validated.
+- How to Apply a Stack (The Pattern)
+  - Step 1: Initialize an empty container. Use a simple Python list (stack = []).
+  - Step 2: Iterate through the sequence. Examine elements one by one from left to right.
+  - Step 3: Branch on conditions:
+    Trigger/Action Element (e.g., \*): Modify the stack (usually a .pop()). Note: Always trust that the problem constraints guarantee valid inputs, meaning you won't pop from an empty stack unless specified.
+    Normal Element (e.g., any letter): Push it onto the stack (.append()).
+  - Step 4: Reconstruct the result. Convert the stack back to the required data type at the end (e.g., "".join(stack) for strings).
+- In some cases a while loop might be needed if need to check other elements in stack as well not just top
+- Instead of using stack can also use a pointer that directly operate on the input:
+
+```python
+class Solution:
+    def asteroidCollision(self, asteroids: list[int]) -> list[int]:
+        # We will use the list itself as a stack, with 'j' pointing to the top element.
+        # Initially, the stack is empty, so pointer j starts at -1.
+        j = -1
+
+        for ast in asteroids:
+            # Handle collisions while the stack has a right-moving asteroid
+            # and current asteroid is left-moving
+            while j >= 0 and ast < 0 < asteroids[j]:
+                if asteroids[j] < -ast:
+                    # Top of stack is smaller, it explodes (move pointer back)
+                    j -= 1
+                    continue
+                elif asteroids[j] == -ast:
+                    # Both explode
+                    j -= 1
+                # Current asteroid is smaller or equal, so current asteroid dies.
+                # We break out of the collision check.
+                break
+            else:
+                # If the loop finished without breaking, the current asteroid survives.
+                # Place it in the next available position and increment pointer j.
+                j += 1
+                asteroids[j] = ast
+
+        # Return only the surviving portion of the array up to pointer j
+        return asteroids[:j + 1]
+```

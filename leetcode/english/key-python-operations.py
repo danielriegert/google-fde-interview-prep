@@ -271,6 +271,52 @@ def count_equal_row_col_pairs(grid):
 # =========================================================
 # Stack
 # =========================================================
+# Basic Stack Using List
+
+# Initialize a stack
+stack = []
+
+# 1. Push items onto the stack
+stack.append(10)
+stack.append(20)
+stack.append(30)
+print("Stack after pushes:", stack)  # Output: [10, 20, 30]
+
+# 2. Peek at the top item
+print("Top item (Peek):", stack[-1])  # Output: 30
+
+# 3. Pop an item from the stack
+removed_item = stack.pop()
+print("Popped item:", removed_item)     # Output: 30
+print("Stack after pop:", stack)      # Output: [10, 20]
+
+# 4. Check if empty
+if not stack:
+    print("Stack is empty")
+else:
+    print("Stack is not empty")
+
+# 5. Get the size
+print("Stack size:", len(stack))        # Output: 2
+
+# Basic Stack Using Deque (from collections)
+from collections import deque
+
+# Initialize a deque as a stack
+stack = deque()
+
+# Push items
+stack.append('a')
+stack.append('b')
+stack.append('c')
+
+# Peek
+print("Top:", stack[-1])  # Output: c
+
+# Pop items
+print("Popped:", stack.pop())  # Output: c
+print("Remaining stack:", list(stack))  # Output: ['a', 'b']
+
 # Monotonic Stack:
 """
 A monotonic stack is a stack whose elements are kept in a specific order—either strictly increasing or strictly decreasing. 
@@ -362,3 +408,21 @@ def next_smaller_element(nums):
 # Example usage:
 # nums = [4, 8, 5, 2, 25]
 # print(next_smaller_element(nums))  # Output: [2, 5, 2, -1, -1]
+
+
+# =========================================================
+#OTHER
+# =========================================================
+# while-else loop
+
+# else block only runs if the loop finishes naturally (meaning it finished without hitting a break).
+while stack and ast < 0 < stack[-1]:
+    ...
+    if stack[-1] < -ast:
+        stack.pop()
+        continue 
+    elif stack[-1] == -ast:
+        stack.pop()
+    break
+else:
+    stack.append(ast)

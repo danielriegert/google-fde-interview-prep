@@ -1,2 +1,5 @@
 - load balancing
-- db choices
+- db choices (sql vs no sql)
+- caching
+- networking
+- encryption
