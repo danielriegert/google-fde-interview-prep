@@ -1,13 +1,5 @@
 # Interview Structure, Scenario Choice & Discovery/Stakeholder Alignment
 
-Why this file exists: the generic system-design framework in the prep
-plan (section 5: 3-5 min clarify → 5-10 min high-level → 15-20 min deep
-dive) is a reasonable default for an unscoped "design X" prompt — but
-**this specific interview has a different, stated shape**, and rehearsing
-the wrong timing is a real risk (you either rush discovery and get graded
-down for jumping to architecture too fast, or you burn deep-dive time you
-don't have). Calibrate to the actual format below.
-
 ## 1. The actual shape of this interview
 
 ```
@@ -38,24 +30,6 @@ Two things this format changes versus a generic system-design rep:
    section 3) and happens before the clock described above really starts
    — don't spend discovery time re-litigating which one to pick.
 
-## 2. The two fixed scenarios (know both cold before the interview)
-
-**Option A — Agents & Workflow Automation**: increase employee
-productivity by automating tasks like sending client emails, analyzing
-market trends online, and processing spreadsheets from internal
-databases. **Some internal data is highly sensitive.**
-
-**Option B — GenMedia & Content Creation**: engage directly with
-advertisers to collaboratively generate on-brand images and videos. Must
-adapt to multiple brand guidelines and process uploaded client media
-containing sensitive information.
-
-Notice the shape both share: a productivity/creative win for the
-requester, sitting directly on top of a sensitive-data landmine the
-prompt is explicitly flagging. Both are testing whether you'll notice
-that landmine unprompted during discovery, not just when asked "how do
-you handle security."
-
 ## 3. Choosing a scenario — do this fast, don't relitigate it
 
 - **Decide in under a minute**, out loud, with a one-line reason ("I'll
@@ -64,20 +38,6 @@ you handle security."
   pipelines"). Deciding fast and stating why is itself a signal
   (decisiveness, self-awareness of your strengths) — waffling burns
   discovery time and reads as indecision.
-- **Pick the scenario where you have a genuine story**, not the one that
-  sounds more impressive. If you've actually built something adjacent to
-  RAG/agents/enterprise data, Option A lets you speak from real
-  experience under follow-up pressure. If your depth is generative
-  media/creative tooling, Option B is stronger. Interviewers will push
-  hardest exactly where your answers get generic — pick the side where
-  you have specifics.
-- **Prepare both anyway.** You may not get your first choice if this is a
-  panel adapting to what they want to probe, and cross-scenario fluency
-  (e.g. citing GenMedia's brand-consistency problem as an analogy while
-  deep in the Agents design) reads as breadth.
-- Don't announce the choice as final-final — it's fine to say "I'll
-  default to Option A unless you'd rather I take Option B" and let the
-  interviewer confirm. That's itself a small stakeholder-alignment move.
 
 ## 4. Discovery vs. stakeholder alignment — two different skills
 
@@ -191,36 +151,6 @@ Use these as a starting checklist, not a script to read verbatim:
 - Is there an existing audit/compliance process these workflows already
   go through as human-run tasks, that the agent needs to preserve?
 
-## 8. Discovery question bank — Option B (GenMedia & Content Creation)
-
-- Who's the end user in the loop — the advertiser directly, or an
-  internal account manager mediating? Changes how much raw model access
-  vs guided workflow you design.
-- "Collaboratively generate" — synchronous/interactive (chat-like,
-  iterate in real time) or async (submit brief, review draft later)?
-  Big latency/cost/UX implication.
-- How many distinct brand guideline sets exist, and how are they
-  currently encoded — a style guide PDF, a structured brand-kit system,
-  nothing formal yet?
-- What counts as "on-brand" objectively enough to check automatically —
-  color palette/logo rules are checkable; "brand voice" in an image is
-  much fuzzier. Where's the line between automated check and human
-  review?
-- "Uploaded client media containing sensitive information" — sensitive
-  how: unreleased products, real customer likenesses/faces, confidential
-  campaign data? Does that media get used only as a reference, or could
-  it end up embedded/regenerated into output (a much bigger exposure)?
-- Is there a legal/compliance review step for generated ad content today
-  (e.g. before it airs), and should the system's output gate feed into
-  that existing process or replace it?
-- Multi-tenant question: could one advertiser's uploaded media or brand
-  data ever leak into another advertiser's session/output? (This should
-  surface data-isolation as a first-class requirement, not an
-  afterthought.)
-- What's the acceptable failure mode — a generated image that's just
-  low-quality is very different from one that's off-brand-but-plausible
-  and could actually get published by mistake.
-
 ## 9. The deep-dive phase (30 min) — how it differs from a 15-20 min rep
 
 - **You likely cover more ground than a standard 15-20 min deep dive** —
@@ -259,6 +189,79 @@ Run this with a real stopwatch at least twice per scenario before the
 interview — the recap-before-drawing step (13:00-15:00) is the one
 candidates skip under time pressure, and it's the one that most clearly
 demonstrates discovery actually happened.
+
+---
+
+1. decide on scenario
+2. state overall breakdown I will start with gathering infromation and understanding the problem then move on to creating high level architecture, then a deep dive into key components
+3. Discovery
+
+- **Problem**: What is the pain point we are trying to address?
+- **Users & workflow**: Who exactly uses this — role, technical literacy?
+  What does the process look like _today_, without the system? Where in
+  that process does the pain actually live?
+- **Success criteria**: What does "working" look like in 3 months? Is
+  there a metric already, or do we need to define one?
+- **Scale**: How many users/requests today? Expected in 6-12 months? Peak
+  vs average load — any bursty pattern (e.g. end-of-quarter)? What regions are users located in?
+- **Data**: What data sources exist (systems, formats, structured vs
+  unstructured, multimodal)? Who owns/governs each? Any of it explicitly
+  restricted/sensitive, and by what classification?
+- **Constraints**: Latency expectations? Budget ceiling? Existing
+  infra/vendor commitments we should build on vs replace? Compliance
+  regime (SOC2, GDPR, industry-specific)?
+- **Risk tolerance**: What's the cost of the system being wrong — an
+  annoying error, a bad customer experience, a compliance incident? Does
+  that differ by task/feature within the same system?
+- **Human-in-the-loop appetite**: Where is full autonomy acceptable, and
+  where do they want a human to approve before anything external-facing
+  happens?
+- **Existing tooling**: What's already in place (cloud provider, identity
+  provider, ticketing/CRM, existing ML/AI usage) that the design should
+  integrate with rather than duplicate?
+- **Timeline**: Is this a prototype for one team, or committed to become
+  a company-wide rollout? Changes how much you over-build for scale now
+  vs later.
+
+-> push back on contradcitions e.g. no PII send to model but should be used in client email. if needed use sensitive data protection crypto-based tokenization which is reversible with keys in your KMS
+-> ask for prioritization / what is most important area to focus on (highest value)
+-> clearly define scope given time constraints e.g. what to build in first 4 weeks
+-> state any assumptions and falsifiers that influence decision and might change later
+-> clear quantifiable success metrics (time savings, adoption, quality e.g. accepted vs generated, hard stops e.g. no PII leakge)
+e.g. use existin authorization system and APIs
+
+4. High Level Architecture
+
+- Draw key components and describe interaction, high level tradeoffs:
+  - Cloud region, Frontend, Agent runtime, tool layer, guardrails, model runtime, memory, logging & tracing, evals (online , offline), IDP
+- Solution could also be plugin e.g outlook plugin
+
+5. Deep Dive into Key components
+
+- Suggest key components to discuss and validate before proceeding
+- Explain tradeoffs
+- Cover possible failure modes and how to address the,
+- Access control live not in agent but in source system e.g. BigQuey row level security, authorized views mapped against a suers existing permissions
+  - log all actions
+  - request reaches source system with users identity not agent identity (OAuth2.0 token exchange)
+  - NEVER have agent connect as super user
+- Data privacy:
+  - runs in client GCP project
+  - support for multi region and data does not leave region (importatn for GDPR, etc)
+  - VPC around service as additional defense mechanism
+  - Data not use for model training
+  - does data need to be seperated physically e.g. different gcp projects, VPCs, pipelines, etc.
+
+6. Troubelshooting
+
+- ask for log or trace informtion
+- any traffic peaks
+- no silent failures
+- if asked if still usabel err on cautious side
+
+7. Close
+
+- recap problem and how solution addresses it
 
 ---
 

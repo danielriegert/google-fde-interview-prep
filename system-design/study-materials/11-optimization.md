@@ -94,3 +94,30 @@ Catch hallucinations automatically before they reach the end user.
 - **Self-Correction / Reflection Loops:** Use a secondary agentic step (or a smaller, faster model) to audit the primary output. Prompt it: _"Verify if every claim in the following text is explicitly supported by the source text."_
 - **Programmatic Validation:** For structured data (like JSON or code), use programmatic parsers, Pydantic schemas, or syntax checkers. If the output fails validation, trigger an automatic regeneration loop.
 - **External Fact-Checking APIs:** Cross-reference generated entities, dates, or calculations against trusted databases or deterministic code execution environments (e.g., running generated math/code in a sandbox).
+
+### 5. Cost Calculation
+
+- Total Input Cost = (System Context) + (User Payload) + (Accumulated History) + (Tool/Grounding Responses)
+- Total Output Cost = (Visible Agent Response) + (Hidden Operational Tokens)
+- Cached tokes (exlcude for simplicity)
+- 100 words ~ 120 tokens
+
+| Model Tier                           | Input Cost (Per MTokens)                 | Output Cost (Per MTokens)                  | Context Window |
+| ------------------------------------ | ---------------------------------------- | ------------------------------------------ | -------------- |
+| Gemini Flash (e.g., Flash 3.5 / 3.6) | $1.50                                    | $7.50                                      | 1M tokens      |
+| Gemini Pro (e.g., Pro 3.1)           | $2.00 (Rises to $4.00 above 200k tokens) | $12.00 (Rises to $18.00 above 200k tokens) | —              |
+
+Example:
+
+- Total input tokens: 5k
+- Total output tokens: 500
+
+Gemini FlashInput Cost:
+5,000 \* $0.0000015 = 0.0075$
+Output Cost: 1000 \* $0.0000075 = 0.0075$
+Total Cost per Request: ~1.5 cents
+
+Option B: Gemini Pro
+Input Cost: $5,000 * $0.000002 = 0.0100$
+Output Cost: 1000 \* $0.000012 = 0.0120$
+Total Cost per Request: 2.2 cents
