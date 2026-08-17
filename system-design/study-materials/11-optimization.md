@@ -56,3 +56,41 @@ Deferred tool loading: instead of listing every possible tool's full schema in t
   third cost lever — but only applies where the workload can tolerate
   async, non-interactive turnaround; never use it for anything on a
   user-facing request path.
+
+## Troubleshooting Halucination
+
+Troubleshooting hallucinations in Large Language Models (LLMs) requires a systematic approach across your data, prompting strategy, model architecture, and inference parameters. Because hallucinations stem from gaps in training data, parametric memory limits, or decoding errors, mitigation happens at multiple layers of the stack.
+
+### 1. Data and Retrieval Layer (Grounding)
+
+The most effective way to eliminate hallucinations is to prevent the model from relying solely on its parametric memory.
+
+- **Implement RAG (Retrieval-Augmented Generation):** Feed authoritative, external documents, database records, or APIs directly into the context window so the model summarizes or extracts answers rather than inventing them.
+- **Optimize Chunking and Embeddings:** In a RAG pipeline, ensure your text chunks are appropriately sized (typically 300–500 tokens) with adequate overlap to prevent the loss of critical context.
+- **Use Hybrid Search:** Combine **dense vector search** (semantic similarity) with **sparse search** (keyword matching like BM25) to ensure critical entities, IDs, and numbers are correctly retrieved.
+
+### 2. Prompt Engineering and Workflow Layer
+
+How you instruct the model drastically dictates its tendency to extrapolate or guess.
+
+- **Enforce Strict Grounding Instructions:** Explicitly state in the system prompt: _"Answer solely based on the provided context. If the answer cannot be found in the text, state 'I do not know' rather than guessing."_
+- **Implement Chain-of-Thought (CoT) / Reasoning Steps:** Force the model to "think out loud" or quote specific passages from the source text before generating a final answer. This reduces the leap to incorrect conclusions.
+- **Use Few-Shot Prompting:** Provide examples of correct, factual responses alongside instances where the model should acknowledge a lack of information.
+- **Task Decomposition:** Break complex queries into smaller sub-tasks. Models hallucinate more when forced to juggle multiple complex logical leaps simultaneously.
+- **Enforce Workflows:** Use Langchain or similar to enforce worfklows / retrieval
+
+### 3. Generation and Inference Parameters
+
+Adjusting how the model samples tokens can prevent creative leaps into falsehoods.
+
+- **Lower the Temperature:** Set temperature closer to $0$ (e.g., $0.0$ to $0.2$) for factual, deterministic, or extraction tasks. Higher temperatures increase randomness and the likelihood of fabrication.
+- **Tune Top-p / Top-k:** Restrict the token sampling pool. Lowering `top_p` (e.g., to $0.85$ or $0.9$) removes long-tail, highly improbable tokens that often trigger hallucinations.
+- **Avoid Repetition Penalties Over-tuning:** Excessively high repetition penalties can force the model to pick sub-optimal or unusual tokens, inadvertently causing it to drift into untruthful phrasing.
+
+### 4. Verification and Guardrail Layer (Post-Processing)
+
+Catch hallucinations automatically before they reach the end user.
+
+- **Self-Correction / Reflection Loops:** Use a secondary agentic step (or a smaller, faster model) to audit the primary output. Prompt it: _"Verify if every claim in the following text is explicitly supported by the source text."_
+- **Programmatic Validation:** For structured data (like JSON or code), use programmatic parsers, Pydantic schemas, or syntax checkers. If the output fails validation, trigger an automatic regeneration loop.
+- **External Fact-Checking APIs:** Cross-reference generated entities, dates, or calculations against trusted databases or deterministic code execution environments (e.g., running generated math/code in a sandbox).

@@ -242,3 +242,42 @@ class Solution:
         # Return only the surviving portion of the array up to pointer j
         return asteroids[:j + 1]
 ```
+
+- Sometimes I moght have to use 2 stacks especially, when they are for different things
+- Might have to handle multi digit numbers e.g. ´k = k \* 10 + int(char)´
+
+# Linked List
+
+- Cannot jump directly to index (e.g. l[1]) need to follow the links
+- Cannot call len() on linked list
+- Deleting middle node (leetcode 2095). Step-by-Step Procedure
+
+1.  Handle the Edge Case
+    Check: If the linked list is empty (head is None) or has only one node (head.next is None), you cannot delete a middle node.
+    Action: Return None immediately, because removing the only element leaves an empty list.
+2.  Initialize the Pointers and Dummy Node
+    Create a Dummy Node: Instantiate a dummy node whose .next points to the head of the list (e.g., dummy = ListNode(0, head)).
+    Why? This ensures that if the middle node happens to be the very first node (or if the list is short), your tracking pointer has a valid node to sit on before the target.
+    Set Slow Pointer: Point slow to the dummy node.
+    Set Fast Pointer: Point fast to the head node.
+3.  Traverse the List (Finding the Middle)
+    Run a loop while fast and fast.next are not None:
+    Move the slow pointer forward by 1 step (slow = slow.next).
+    Move the fast pointer forward by 2 steps (fast = fast.next.next).
+    Why this works: Because fast travels twice as fast as slow, when fast reaches the end of the list (None), slow will have traveled exactly half the distance. Crucially, because slow started one step back at dummy, it will stop precisely one node before the middle node.
+4.  Delete the Target Node
+    Bypass the Middle Node: Update slow.next to point to the node after the middle node (slow.next = slow.next.next).
+    Result: The middle node is now completely unlinked from the chain, effectively deleting it. (Python's garbage collector will automatically clean up the orphaned node).
+5.  Return the Modified List
+    Return dummy.next, which points to the new head of your modified linked list (in case the original head was preserved or adjusted correctly).
+
+- Re-ordering a linked list (leetcode 328):
+
+1. First check `if not head and not head.next` if it only has one or two nodes it is laready in right order and can just return head
+2. Initialize even and odd. store curren head of even as in the end it will be merged with end of odd
+3. Iterate through linked list with while loop condition `while even and even.next` (use even as it is the fast pointer, odd is slow pointer)
+4. We start to build out two seperate linked lists. One for odd and one for even
+   `odd.next = even.next, odd = odd.next` -> set odd.next to next odd element which is the one after the even one, thenset current odd pointer to the same position
+   `even.next = odd.next, even = even.next` -> same as above but for even
+5. Merge the two lists `odd.next = even_head` -> we point then end off the odd list to the start of the even list
+6. Return the head
