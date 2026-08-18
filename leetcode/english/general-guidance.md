@@ -281,3 +281,28 @@ class Solution:
    `even.next = odd.next, even = even.next` -> same as above but for even
 5. Merge the two lists `odd.next = even_head` -> we point then end off the odd list to the start of the even list
 6. Return the head
+
+# Trees - DFS
+
+- If paths can start and end anywhere, a single top-down traversal is insufficient, and you need a mechanism (like prefix sums or a double-recursion pattern) to evaluate sub-paths from every possible starting point.
+- Whenever a problem asks for subarrays or sub-paths that sum to a target, think Prefix Sums combined with a Hash Map
+- Backtrack: State modification must be undone when exiting a node's subtree. Always reverse your changes (e.g., decrementing the frequency map) during the "unwinding" phase of recursion to keep your data structure localized to the current path.
+- Path starting directly at the current root/sub-root needs to be counted
+- When a problem has strict path constraints (like alternating directions), you need to pass state parameters down the recursion tree.
+  Tracking incoming direction: By passing both left-incoming (l) and right-incoming (r) path lengths, each node instantly knows how it was reached and whether a continuation is valid.
+- Look closely at the problem statement's guarantees. LeetCode 236 guarantees that both p and q exist in the tree.
+  This guarantee allows the algorithm to short-circuit safely. The moment you hit one of the target nodes, you don't need to look any further down that branch because the existence of the other node dictates the final outcome at the parent level.
+
+# Tree BFS
+
+- When using BFS level order traversal and I need to rack the level then I need to use seperate counter for level.
+  Can NOT use size of queue as it doesn't equal the level.
+
+# Trie
+
+- If order matters, might be beneficial to sort input before inserting into Trie
+
+# Other
+
+- .sort( ) -> sorts in place
+- sorted([]) -> creates new object. also works on strings and tuples
