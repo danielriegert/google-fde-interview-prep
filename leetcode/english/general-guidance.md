@@ -302,6 +302,53 @@ class Solution:
 
 - If order matters, might be beneficial to sort input before inserting into Trie
 
+# Graph DFS
+
+Exploring All Paths or Backtracking: When you need to find all possible solutions, combinations, or paths (e.g., solving Sudoku, N-Queens, or finding a path through a maze).
+Cycle Detection: Checking whether a graph contains a loop or cycle.
+Topological Sorting: Ordering tasks based on dependencies (prerequisites).
+Connected Components / Flood Fill: Finding how many distinct "islands" or groups exist in a grid, or filling a connected region with a new color.
+
+Note: Tree is a specialized, restricted type of graph. It is hierarchical, undirected, connected, and acyclic (meaning it has no loops or circuits).
+
+1. Recognizing Connected Components
+   The Pattern: Whenever a problem asks you to find "clusters," "groups," "islands," or "provinces" of connected elements, you are dealing with a Connected Components problem in graph theory.
+   The Strategy: The standard approach is to iterate through every node, and whenever you find an unvisited node, trigger a traversal (like DFS or BFS) to explore the entire component, incrementing your group counter by 1.
+
+2. Adjacency Matrix vs. Adjacency List
+   Matrix Representation (isConnected): The input gives us a 2D grid where rows and columns represent nodes, and cells represent edges ($1$ or $0$).
+   The Trade-off: While a matrix makes it easy to see all connections at a glance, checking a node's neighbors requires scanning an entire row of length $n$. This makes the time complexity $O(n^2)$, unlike an adjacency list which lets you iterate directly over actual neighbors.
+3. The Power of the visited Array
+   Avoiding Infinite Loops: In graph problems with cycles (like City A connecting to City B, and City B connecting back to City A), tracking visited nodes prevents your code from running infinitely.
+   Preventing Double-Counting: The visited array ensures that once a city is processed as part of a province, future iterations of the main loop will safely ignore it.
+
+- Dual-Direction Graph Modeling: When dealing with directed trees/graphs where you need to check alignment relative to a root, store edges in both directions in your adjacency list. Assign weights/costs (1 for moving away from the root, 0 for moving toward it) to easily evaluate edge correctness on the fly.
+
+# Graph BFS
+
+BFS explores the graph level by level, moving outward in expanding rings from the starting node. Use BFS when:
+Finding Shortest Paths: In an unweighted graph or grid, BFS guarantees that the first time you reach a target node, you have taken the shortest possible path.
+Level-Order Processing: When you need to process nodes grouped by their distance from the source (e.g., finding all friends within 2 degrees of connection).
+Multi-Source Scenarios: When multiple starting points need to spread outward simultaneously (like our Rotting Oranges problem or finding the nearest water cell).
+
+- Maze Solving Approach using BFS:
+  - get size of maaze (n,m)
+  - initiate queue and pop entrance doodrdinates with step = 0
+  - mark entrance as visited
+  - set up list of all possible directions we can move in
+  - while queue is not empty
+    - pop element from queue
+    - iterate over list of possible directions to move
+      - calcaulte new coordinates to move to
+      - check if in boundaries of maze
+      - check if at edge. if yes return step + 1. we are done
+      - if not at edge mark as visited and append() to queue
+  - if no entrance found return -1
+  - Time Complexity: O(m x n) and Space Complexity: O(m x n)
+
+- Multi-Source Breadth-First Search (BFS) e.g. Leetcode 994 is a variation of the standard BFS algorithm where, instead of starting your search from a single starting node, you start from multiple nodes simultaneously.
+  In a standard BFS, you typically push one starting coordinate or node into your queue and explore outward layer by layer. In a Multi-Source BFS, you seed your initial queue with all starting nodes at the very beginning (at step 0).
+
 # Other
 
 - .sort( ) -> sorts in place

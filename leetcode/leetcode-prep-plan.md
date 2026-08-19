@@ -284,8 +284,8 @@ peek at which category a problem belongs to before attempting it.
 - August 15: Hash map / set -> done
 - August 16: Stack, queue, and monotonic stacks -> queue missing
 - August 17: Linked list -> done
-- August 18: Binary tree DFS/BFS and Tries
-- August 19: Graph DFS/BFS and Topological Sort
+- August 18: Binary tree DFS/BFS and Tries -> done
+- August 19: Graph DFS/BFS and Topological Sort -> Topological sort missing
 - August 20: Binary search (focus on answer space)
 - August 21: Dynamic programming (focus on 1D/2D grids & memoization)
 - August 22: Heap and priority queue (plus quick review of Intervals if time permits), time and space complexity

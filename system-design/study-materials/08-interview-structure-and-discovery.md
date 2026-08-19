@@ -226,9 +226,8 @@ demonstrates discovery actually happened.
 -> push back on contradcitions e.g. no PII send to model but should be used in client email. if needed use sensitive data protection crypto-based tokenization which is reversible with keys in your KMS
 -> ask for prioritization / what is most important area to focus on (highest value)
 -> clearly define scope given time constraints e.g. what to build in first 4 weeks
--> state any assumptions and falsifiers that influence decision and might change later
--> clear quantifiable success metrics (time savings, adoption, quality e.g. accepted vs generated, hard stops e.g. no PII leakge)
-e.g. use existin authorization system and APIs
+-> state any assumptions and falsifiers that influence decision and might change later e.g. use existin authorization system and APIs
+-> clear quantifiable success metrics (time savings, adoption, quality e.g. accepted vs generated, hard stops e.g. no PII leakge) and benchmark in week one
 
 4. High Level Architecture
 
@@ -251,6 +250,16 @@ e.g. use existin authorization system and APIs
   - VPC around service as additional defense mechanism
   - Data not use for model training
   - does data need to be seperated physically e.g. different gcp projects, VPCs, pipelines, etc.
+- HOTL / Verification:
+  - When having user review drafts highlight ciritical discrepancies / items that need their review vs blank review. In the latter case people might just approve blindly
+  - If after a long period e.g. 90 days edits / rejections to draft are minimal suggest fully automating / removing control
+  - Rejections / edits should be tracked
+  - Can have cheap LLM extract numbers from draft and compare against source system
+- Personailzation can also be via few shot prompting where previous examples / interactions with user are injected
+- Cost:
+  - Could distill model to save cost
+  - See where tokens accrue e.g. on input see if it can be cut down by limiting what is retrieved, caching, batch requests where possible
+  - Frame against productivity savings
 
 6. Troubelshooting
 
