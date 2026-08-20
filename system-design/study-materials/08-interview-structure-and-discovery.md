@@ -196,12 +196,12 @@ demonstrates discovery actually happened.
 2. state overall breakdown I will start with gathering infromation and understanding the problem then move on to creating high level architecture, then a deep dive into key components
 3. Discovery
 
-- **Problem**: What is the pain point we are trying to address?
+- **Problem and business outcome**: What is the pain point we are trying to address? Solve for business outcome, not just feature
+- **Success criteria and priority**: What does "working" look like in 3 months? Is
+  there a metric already, or do we need to define one? What is the most important?
 - **Users & workflow**: Who exactly uses this — role, technical literacy?
   What does the process look like _today_, without the system? Where in
   that process does the pain actually live?
-- **Success criteria**: What does "working" look like in 3 months? Is
-  there a metric already, or do we need to define one?
 - **Scale**: How many users/requests today? Expected in 6-12 months? Peak
   vs average load — any bursty pattern (e.g. end-of-quarter)? What regions are users located in?
 - **Data**: What data sources exist (systems, formats, structured vs
@@ -231,8 +231,9 @@ demonstrates discovery actually happened.
 
 4. High Level Architecture
 
+- start with tracing request path first and dra high level as I go, then layer on infra, evals, etc
 - Draw key components and describe interaction, high level tradeoffs:
-  - Cloud region, Frontend, Agent runtime, tool layer, guardrails, model runtime, memory, logging & tracing, evals (online , offline), IDP
+  - Cloud region and availability zones, Frontend, Agent runtime, tool layer, guardrails, model runtime, memory, logging & tracing, evals (online , offline), IDP
 - Solution could also be plugin e.g outlook plugin
 
 5. Deep Dive into Key components
@@ -260,9 +261,22 @@ demonstrates discovery actually happened.
   - Could distill model to save cost
   - See where tokens accrue e.g. on input see if it can be cut down by limiting what is retrieved, caching, batch requests where possible
   - Frame against productivity savings
+- Eval
+  - Also have humans review and help provide samples / answers when creating golden dataset
+  - business metrics to monitor not just infra metrics
+- Logs:
+  - Logs need to include model and prompt versions, retrieval config etc in case something changed, version everything
+- Scaling:
+  - Caching, read replicas for internal systems when scaling, can we do 10 min snapshots vs real time
+  - Often internal legcy systems bottleneck. might need rate limiting
+  - multi tenant for platform play
+- Deployment:
+  - Shadow deployment to gain confidence
+  - pilot with small group of users
 
 6. Troubelshooting
 
+- notify users & stakeholders first, traces, potentially kill switch
 - ask for log or trace informtion
 - any traffic peaks
 - no silent failures
@@ -270,7 +284,7 @@ demonstrates discovery actually happened.
 
 7. Close
 
-- recap problem and how solution addresses it
+- recap problem / business outcome and how solution addresses it
 
 ---
 
