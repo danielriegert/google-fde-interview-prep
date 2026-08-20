@@ -129,7 +129,7 @@ Rough decision order once a pattern is identified:
 3. Approach
 
 - Patter / Algo
-- Stragegy / high level flow
+- Stragegy / high level flow / pseudo code
 - Complexity
 
 4. Trace some examples to verfiy (optional)
@@ -145,6 +145,39 @@ Rough decision order once a pattern is identified:
 - Trace through 1-2 of the test cases from step 3 against the actual code.
 - Restate final time/space complexity.
 - Sanity check: does it handle the trivial case (empty/single element) without special-casing bugs?
+
+---
+
+# Topic comparison — complexity & when to use
+
+Covers everything through the Aug 14-20 schedule (sliding window/two pointers
+through binary search). DP, heaps/priority queue, and intervals come later
+and aren't included yet.
+
+| Topic                        | Core idea                                                                                          | Time                                                               | Space                                                           | When to use / signal                                                                                                         |
+| ---------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Two Pointers                 | two indices moving toward each other or in step over a sorted/array structure                      | O(n)                                                               | O(1)                                                            | sorted array, pair/triplet sum, in-place partition, palindrome check                                                         |
+| Sliding Window               | window `[left, right]` expands/shrinks over a contiguous range instead of recomputing from scratch | O(n) — each pointer moves forward at most n times                  | O(1) or O(k) for window state                                   | "contiguous subarray/substring", min/max length under a constraint (sum ≤ k, ≤ k distinct chars)                             |
+| Hash Map / Set               | array + hash function for O(1) average key lookup                                                  | O(n) to build, O(1) avg per op                                     | O(n)                                                            | dedup, counting/frequency, one-pass lookup ("have I seen this"), anagrams, pairs summing to target when order doesn't matter |
+| Stack                        | LIFO, push/pop from one end (Python `list`)                                                        | O(n) traversal, O(1) per push/pop                                  | O(n)                                                            | matching/nesting (parentheses), undo, backtracking, monotonic stack base, iterative DFS                                      |
+| Queue                        | FIFO, enqueue one end / dequeue other (`collections.deque`, never `list`)                          | O(n) traversal, O(1) per enqueue/dequeue                           | O(n)                                                            | BFS frontier, level-order processing, task scheduling, rate limiting                                                         |
+| Monotonic Stack              | stack kept increasing or decreasing; pop while the invariant would break                           | O(n) amortized — each element pushed/popped at most once           | O(n)                                                            | "next greater/smaller element", histogram/rectangle problems, span problems                                                  |
+| Linked List                  | nodes with `val` + `next` pointer(s), no random access                                             | O(n) traversal/search, O(1) insert/delete at a known node          | O(n), O(1) extra if in-place                                    | frequent insert/delete at known position, LRU cache, reordering, fast/slow pointer problems (cycle detection, middle node)   |
+| Binary Tree DFS              | recurse into children, process pre/in/post-order                                                   | O(n) — visits every node once                                      | O(h) call stack — O(log n) balanced, O(n) worst case (skewed)   | path sums, subtree properties, tree backtracking, "explore full path before backtracking"                                    |
+| Binary Tree BFS              | level-by-level traversal via a queue                                                               | O(n)                                                               | O(w) queue width — worst case O(n) at the last level            | level-order output, shortest path/min depth in an unweighted tree, "process nodes grouped by distance"                       |
+| Trie                         | tree of characters, each path from root = a prefix                                                 | O(L) insert/search, L = word length, independent of n words stored | O(total characters stored across all words)                     | prefix matching, autocomplete, word search / dictionary problems                                                             |
+| Graph DFS                    | recurse/stack into unvisited neighbors, backtrack on dead ends                                     | O(V + E)                                                           | O(V) for visited set + O(V) recursion/explicit stack worst case | connected components, cycle detection, topological sort, "all paths", flood fill/islands                                     |
+| Graph BFS                    | level-by-level traversal via a queue, optionally multi-source                                      | O(V + E)                                                           | O(V) for visited set + queue                                    | shortest path in an unweighted graph, "fewest steps", multi-source spread (rotting oranges, nearest water cell)              |
+| Topological Sort             | DFS post-order reversed, or Kahn's BFS with in-degree counts                                       | O(V + E)                                                           | O(V)                                                            | ordering tasks with dependencies/prerequisites, detecting a cycle in a DAG, build/scheduling systems                         |
+| Binary Search (index space)  | halve a _sorted_ search space each step                                                            | O(log n)                                                           | O(1)                                                            | searching a sorted array, peak finding, rotated sorted arrays                                                                |
+| Binary Search (answer space) | halve the range of _possible answers_, using a monotonic feasibility check                         | O(log(range)) × O(cost of feasibility check)                       | O(1)                                                            | "minimum/maximum X such that condition holds" where feasibility is monotonic (min capacity, min speed, min time)             |
+
+**Quick disambiguation:**
+
+- Stack vs. Queue vs. Monotonic Stack: stack = undo/matching (LIFO), queue = BFS/ordering (FIFO), monotonic stack = "next greater/smaller" (maintains an invariant, not just insertion order).
+- Tree DFS vs. Tree BFS: DFS for path/subtree properties and backtracking, BFS for level-order or shortest-path-by-edges.
+- Graph DFS vs. Graph BFS vs. Topological Sort: DFS for components/cycles/all-paths, BFS for shortest path (unweighted), topo sort specifically for dependency ordering (and it's really DFS or BFS underneath).
+- Binary search index space vs. answer space: index space searches an already-sorted array; answer space searches a range of candidate answers using a pass/fail check per candidate (the array itself need not be sorted).
 
 ---
 
@@ -348,6 +381,34 @@ Multi-Source Scenarios: When multiple starting points need to spread outward sim
 
 - Multi-Source Breadth-First Search (BFS) e.g. Leetcode 994 is a variation of the standard BFS algorithm where, instead of starting your search from a single starting node, you start from multiple nodes simultaneously.
   In a standard BFS, you typically push one starting coordinate or node into your queue and explore outward layer by layer. In a Multi-Source BFS, you seed your initial queue with all starting nodes at the very beginning (at step 0).
+
+# Binary Search
+
+- Might not alway be exat match e.g. we are only looking for lower boundary
+- Array needs to be sorted for binray search to work. In some cases we will be able to still perform binary search by using a modified version of the algo were we check if we are on an upward or donwward slope amnd move the pointer closer to each other unitl peak is found
+- Remember array can also contain DUPLICATES
+- Use below when need to dviide and round up when float
+
+```python
+import math
+min_potion = math.ceil(success / spell)
+```
+
+| Feature       | `right = len(arr) - 1` | `right = len(arr)` |
+| ------------- | ---------------------- | ------------------ |
+| Interval Type | Closed `[0, n-1]`      | Half-Open `[0, n)` |
+
+- Type of Binary Search
+  | Type of Binary Search | What low and high represent | When to use |
+  | --- | --- | --- |
+  | Index Space | Array indices (0 to N-1) | Searching inside a sorted array, peak finding, rotated arrays. |
+  | Value Space | Numerical bounds of the solution (e.g., min/max possible answers) | Optimization problems ("find the minimum/maximum capacity/speed/time"). |
+
+- In binary search on the answer (often called binary search on the solution space), the search space is always the range of possible values for the answer you are trying to find (in this case, the time $T$).
+  Here is why this rule of thumb works so well:
+  - Identify the target: You ask yourself, "What is the final value I am trying to minimize or maximize?" (e.g., minimum time, maximum capacity, minimum speed).
+  - Determine the bounds: Find the absolute minimum and absolute maximum possible values that this target could possibly take.
+  - Monotonicity check: Verify if the problem has a "threshold" property—meaning if a value $X$ works, does every value greater than $X$ also work (for minimization) or vice versa?
 
 # Other
 
