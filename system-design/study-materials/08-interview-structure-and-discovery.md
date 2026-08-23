@@ -235,6 +235,7 @@ demonstrates discovery actually happened.
 - Draw key components and describe interaction, high level tradeoffs:
   - Cloud region and availability zones, Frontend, Agent runtime, tool layer, guardrails, model runtime, memory, logging & tracing, evals (online , offline), IDP
 - Solution could also be plugin e.g outlook plugin
+- Mention tradeoffs!!! Especially when choosing agent architecture single vs multi (latency, complexity). more determninistic vs react
 
 5. Deep Dive into Key components
 

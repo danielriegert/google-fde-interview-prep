@@ -115,9 +115,20 @@ Rough decision order once a pattern is identified:
 
 ### Template
 
+Step Candidate Behavior
+1 Restate the problem.
+2 Clarify inputs, outputs, constraints, and edge cases.
+3 Explain brute force briefly.
+4 Propose optimized approach.
+5 State time and space complexity.
+6 Write clean code.
+7 Dry run with a normal case.
+8 Test edge cases.
+9 Handle follow-up changes
+
 1. Problem
 
-- Inputs
+- Inputs: sorted, positive, negative, empty values, Can $N$ exceed $10^9$?" or "Will memory limits be a constraint?", arrive at stream or not
 - Ouputs
 - Contsraints / Rules: e.g do not modify in place
 
@@ -125,14 +136,30 @@ Rough decision order once a pattern is identified:
 
 - Standard
 - Edge Cases
+  - empty input, single element, very large or very small, duplicates, all the same elements, out of bounds, divide by 0, odd vs even lenght, first and last elements in a list
+  - if there are multiple functions, edge cases for all of them e.g. when querying for range out of range
 
 3. Approach
 
 - Patter / Algo
-- Stragegy / high level flow / pseudo code
-- Complexity
+- Stragegy / high level flow / pseudo code (don't write down)
+  - focus on examples
+  - state idea before writing
+- Mention complexity while talking through approach
 
 4. Trace some examples to verfiy (optional)
+
+5. System Extension
+
+- optimize read or write (tradeoffs)
+- Out of sync check
+
+6. Other
+
+- can use multiple list instead of tuple (also helps to shorten the list if I need to search on it)
+- insert element in middle of list split in before and after and add new list with element in the middle
+- don't write down process approach / only say it. Move faster
+- think about all edge cases. make sure you have variety of cases
 
 ## 8. While coding
 
@@ -235,6 +262,9 @@ Before: grid is organized by rows: [[1, 2, 3], [4, 5, 6], [7, 8, 9]]. After: col
 # Stack
 
 - Think of a stack whenever a problem involves "Undo," "Backtracking," "Cancellation," or "Matching" actions. Last-In, First-Out (LIFO) Dependency: The most recent element added is the very first one that needs to be affected, removed, or validated.
+- Cascading deleted, removing element to left
+- In some cases might need while loop to repeatedly update stack
+- In some cases need multiple stacks e.g. one for number and one for string
 - How to Apply a Stack (The Pattern)
   - Step 1: Initialize an empty container. Use a simple Python list (stack = []).
   - Step 2: Iterate through the sequence. Examine elements one by one from left to right.
@@ -283,7 +313,9 @@ class Solution:
 
 - Cannot jump directly to index (e.g. l[1]) need to follow the links
 - Cannot call len() on linked list
-- Deleting middle node (leetcode 2095). Step-by-Step Procedure
+- Deleting middle node (leetcode 2095). Can insert dummy node ahead of head then use slwo fast pointer to arrive at node just before middle.
+  Without dummy node I would arrive at middle.
+  Step-by-Step Procedure
 
 1.  Handle the Edge Case
     Check: If the linked list is empty (head is None) or has only one node (head.next is None), you cannot delete a middle node.
@@ -314,6 +346,8 @@ class Solution:
    `even.next = odd.next, even = even.next` -> same as above but for even
 5. Merge the two lists `odd.next = even_head` -> we point then end off the odd list to the start of the even list
 6. Return the head
+
+- Might only need to reverse second half of list
 
 # Trees - DFS
 
@@ -410,7 +444,15 @@ min_potion = math.ceil(success / spell)
   - Determine the bounds: Find the absolute minimum and absolute maximum possible values that this target could possibly take.
   - Monotonicity check: Verify if the problem has a "threshold" property—meaning if a value $X$ works, does every value greater than $X$ also work (for minimization) or vice versa?
 
+# DP
+
+- when optimizing space:
+  - for 1D array turns into variables
+  - for 2D gird turns into array
+    we only ever need current and previous
+
 # Other
 
 - .sort( ) -> sorts in place
 - sorted([]) -> creates new object. also works on strings and tuples
+- can use reversed index e.g. instead of mapping doc id to word I can map word to doc ids. Use what we will search on as key
