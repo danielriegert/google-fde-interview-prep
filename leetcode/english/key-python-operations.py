@@ -200,6 +200,7 @@ c1.items() # returns items
 # Add items to a set
 s = {1, 2, 3}
 s.add(4) # s = {1, 2, 3, 4}
+s.remove(2) # s = {1, 3, 4}
 
 # Add multiple items to a set
 s.update([5, 6]) # s = {1, 2, 3, 4, 5, 6}

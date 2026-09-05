@@ -292,6 +292,49 @@ peek at which category a problem belongs to before attempting it.
 
 Accross: all sections also study top google interview questions
 
+### 4.1 Second Round
+
+## Week 1: Core Fundamentals & Data Structures
+
+| Day       | Focus Area                                     | Key Concepts & Target Problems                                                                                                                                                                   |
+| --------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Day 1** | Arrays, Strings, Sliding Window & Two Pointers | Contiguous subarrays/substrings, window state maintenance. Practice **Longest Substring Without Repeating Characters (LC 3)**, **Container With Most Water (LC 11)**, and **3Sum (LC 15)**.      |
+| **Day 2** | Hash Maps, Sets & Linked Lists                 | Frequency counting, fast & slow pointers, and dummy node manipulation. Practice **Subarray Sum Equals K (LC 560)**, **Linked List Cycle II (LC 142)**, and **LRU Cache (LC 146)**.               |
+| **Day 3** | Stacks, Queues, & Monotonic Stacks             | LIFO/FIFO structures, next greater elements, and window maximums. Practice **Daily Temperatures (LC 739)**, **Sliding Window Maximum (LC 239)**, and **Valid Parentheses (LC 20)**.              |
+| **Day 4** | Binary Trees, DFS/BFS & Tries                  | Tree traversals, root-to-leaf paths, prefix matching. Practice **Binary Tree Maximum Path Sum (LC 124)**, **Lowest Common Ancestor of a Binary Tree (LC 236)**, and **Implement Trie (LC 208)**. |
+| **Day 5** | Graphs, DFS/BFS & Topological Sort             | Component traversal, unweighted shortest paths, and dependency DAG ordering. Practice **Number of Islands (LC 200)**, **Word Ladder (LC 127)**, and **Course Schedule II (LC 210)**.             |
+| **Day 6** | Intervals                                      | Start/end time sorting, interval overlapping, and merging logic. Practice **Merge Intervals (LC 56)**, **Insert Interval (LC 57)**, and **Meeting Rooms II (LC 253)**.                           |
+| **Day 7** | Week 1 Review                                  | Re-attempt any missed problems on a blank page with a strict 30-minute timer.                                                                                                                    |
+
+Week1 problem review:
+
+---
+
+## Week 2: Advanced Paradigms & Algorithms
+
+| Day        | Focus Area                             | Key Concepts & Target Problems                                                                                                                                                                                           |
+| ---------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Day 8**  | Time & Space Complexity                | Analyzing recursion trees, amortized array/hash map operations, and bit manipulation constraints. Practice **Single Number (LC 136)** and **Counting Bits (LC 338)**.                                                    |
+| **Day 9**  | Binary Search (Answer Space)           | Defining low/high bounds on monotonic predicates, minimization/maximization. Practice **Koko Eating Bananas (LC 875)**, **Capacity To Ship Packages Within D Days (LC 1011)**, and **Split Array Largest Sum (LC 410)**. |
+| **Day 10** | Heaps & Priority Queues                | Min/max heaps, custom comparators, dynamic streaming stats. Practice **Top K Frequent Elements (LC 347)**, **Find Median from Data Stream (LC 295)**, and **Merge k Sorted Lists (LC 23)**.                              |
+| **Day 11** | Dynamic Programming (1D & Memoization) | State definitions, overlapping subproblems, and bottom-up iterations. Practice **Coin Change (LC 322)**, **Longest Increasing Subsequence (LC 300)**, and **Word Break (LC 139)**.                                       |
+| **Day 12** | Dynamic Programming (2D Grids)         | Matrix coordinate states and string alignment sequences. Practice **Unique Paths II (LC 63)**, **Longest Common Subsequence (LC 1143)**, and **Edit Distance (LC 72)**.                                                  |
+| **Day 13** | Backtracking & Greedy Algorithms       | Exhaustive search pruning vs. local invariant choices. Practice **Letter Combinations of a Phone Number (LC 17)**, **Word Search (LC 79)**, and **Jump Game II (LC 45)**.                                                |
+| **Day 14** | Week 2 Review                          | Focus heavily on identifying hidden DP states and writing clean backtracking templates.                                                                                                                                  |
+
+---
+
+## Week 3: Top Google Problems & Mock Interviews
+
+| Day           | Focus Area                              | Key Concepts & Target Problems                                                                                                                                                               |
+| ------------- | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Day 15**    | Top Google Practice Set (Part 1)        | High-frequency array and string challenges. Practice **Trapping Rain Water (LC 42)**, **Next Permutation (LC 31)**, and **Minimum Window Substring (LC 76)**.                                |
+| **Day 16**    | Top Google Practice Set (Part 2)        | Complex multi-system data structures. Practice **Serialize and Deserialize Binary Tree (LC 297)**, **Design Add and Search Words Data Structure (LC 211)**, and **Word Search II (LC 212)**. |
+| **Day 17**    | Hard Edge Cases & Optimization          | Drills on space-time trade-offs and code modularization. Practice **Median of Two Sorted Arrays (LC 4)** and **Binary Tree Maximum Path Sum (LC 124)**.                                      |
+| **Day 18**    | Mock Interview 1 (Timed Loop)           | Simulate a full 45-minute Google interview. Code entirely on a plain text editor without syntax highlighting, state your assumptions early, and talk through trade-offs.                     |
+| **Day 19**    | Mock Interview 2 (Post-Mortem & Polish) | Run another simulation focusing on code quality, variable naming, and proactive time/space complexity disclosure. Review errors from Mock 1.                                                 |
+| **Day 20–21** | Final Review & Rest                     | Lightly review your personal error log and key template structures. Prioritize rest over cramming before your loop.                                                                          |
+
 # Approach:
 
 Recommended Time Split: 30 / 70

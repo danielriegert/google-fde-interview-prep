@@ -190,18 +190,19 @@ diagnostic depth.
 
 ### 5.1 Three evaluation approaches
 
-| Approach | What it evaluates | Pros | Cons |
-|---|---|---|---|
-| Final response | treats the agent as a black box; grades only the final output vs. a reference answer (LLM-as-judge) | matches what the user actually experiences; simple to set up | doesn't reveal *where* a failure happened; slow/expensive to run the full agent for every candidate change |
-| Single-step | one decision in isolation — e.g. did the router/intent-classifier pick the right tool, given a fixed prior state | pinpoints the exact failing component; cheap and fast (one LLM call, no full run needed) | only tests one step, not compounding errors across a real run; datasets get harder to build for steps deep in a trajectory |
-| Trajectory | the full sequence of steps (tool calls + routing decisions) vs. a reference trajectory | most comprehensive; catches errors invisible in the final answer (right answer via the wrong/unsafe path) | most effort to build reference trajectories for and to score |
+| Approach       | What it evaluates                                                                                                | Pros                                                                                                      | Cons                                                                                                                       |
+| -------------- | ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Final response | treats the agent as a black box; grades only the final output vs. a reference answer (LLM-as-judge)              | matches what the user actually experiences; simple to set up                                              | doesn't reveal _where_ a failure happened; slow/expensive to run the full agent for every candidate change                 |
+| Single-step    | one decision in isolation — e.g. did the router/intent-classifier pick the right tool, given a fixed prior state | pinpoints the exact failing component; cheap and fast (one LLM call, no full run needed)                  | only tests one step, not compounding errors across a real run; datasets get harder to build for steps deep in a trajectory |
+| Trajectory     | the full sequence of steps (tool calls + routing decisions) vs. a reference trajectory                           | most comprehensive; catches errors invisible in the final answer (right answer via the wrong/unsafe path) | most effort to build reference trajectories for and to score                                                               |
 
 ### 5.2 Trajectory evaluation in detail
 
 LangSmith's `evaluate-complex-agent` tutorial (a LangGraph customer-support
 agent handling refunds and music lookups) works like this:
+
 - **Dataset**: each example's `inputs` is the user request; `outputs`
-  contains both a reference final answer *and* a reference trajectory (the
+  contains both a reference final answer _and_ a reference trajectory (the
   ordered list of expected node/tool names).
 - **Capturing the actual trajectory**: stream the LangGraph run in debug
   mode, recording every node visited, and — whenever the tools node
@@ -216,8 +217,8 @@ agent handling refunds and music lookups) works like this:
   where a binary pass/fail would zero it out entirely.
 - **Why this catches what final-response grading misses**: an agent that
   skips the refund-eligibility check tool but still happens to return
-  answer text that matches the reference would *pass* a final-response
-  evaluator but *fail* (correctly) on trajectory. This is the agent
+  answer text that matches the reference would _pass_ a final-response
+  evaluator but _fail_ (correctly) on trajectory. This is the agent
   equivalent of the RAG "high correctness / low groundedness" trap in
   §4.1 — the right answer arrived at via the wrong process, and only a
   process-aware evaluator catches it.
@@ -272,6 +273,8 @@ messier). You need live visibility.
 - **Sampling for human review**: continuously sample a percentage of live
   traffic (plus 100% of flagged/low-confidence responses) for human
   review — feeds back into the golden dataset.
+  Run evals / checks on small percentage of prod traffic traces and if there are novel cases add back to eval data set.
+  (e.g., 5% to 10% of standard flows, but 100% of flows that encounter tool errors, 429 exceptions, or user-triggered thumbs-down feedback
 
 ## 7. Guardrails
 
