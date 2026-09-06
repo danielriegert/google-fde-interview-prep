@@ -250,6 +250,8 @@ Then slide the window from index k to the end e.g. for i in range(k, len(s)): . 
 - ​Reclaim resources cleanly: Only update your constraint counter (zero_count -= 1) when the exact element leaving the window (at the start pointer) is the resource you were tracking (a 0).
 - When using indexes as count need to add 1 to result
 - Check if window has validity constraint that needs to be maintenance at all times e.g. only k number of 0s
+- Don't need if else
+- if max then update max (leetcode 3) outside of while loop if min then inside while loop (leetcode 209)
 
 # Sets and Hashmap
 

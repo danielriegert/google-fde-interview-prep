@@ -297,8 +297,8 @@ Accross: all sections also study top google interview questions
 ## Week 1: Core Fundamentals & Data Structures
 
 | Day       | Focus Area                                     | Key Concepts & Target Problems                                                                                                                                                                   |
-| --------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Day 1** | Arrays, Strings, Sliding Window & Two Pointers | Contiguous subarrays/substrings, window state maintenance. Practice **Longest Substring Without Repeating Characters (LC 3)**, **Container With Most Water (LC 11)**, and **3Sum (LC 15)**.      |
+| --------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---- |
+| **Day 1** | Arrays, Strings, Sliding Window & Two Pointers | Contiguous subarrays/substrings, window state maintenance. Practice **Longest Substring Without Repeating Characters (LC 3)**, **Container With Most Water (LC 11)**, and **3Sum (LC 15)**.      | Done |
 | **Day 2** | Hash Maps, Sets & Linked Lists                 | Frequency counting, fast & slow pointers, and dummy node manipulation. Practice **Subarray Sum Equals K (LC 560)**, **Linked List Cycle II (LC 142)**, and **LRU Cache (LC 146)**.               |
 | **Day 3** | Stacks, Queues, & Monotonic Stacks             | LIFO/FIFO structures, next greater elements, and window maximums. Practice **Daily Temperatures (LC 739)**, **Sliding Window Maximum (LC 239)**, and **Valid Parentheses (LC 20)**.              |
 | **Day 4** | Binary Trees, DFS/BFS & Tries                  | Tree traversals, root-to-leaf paths, prefix matching. Practice **Binary Tree Maximum Path Sum (LC 124)**, **Lowest Common Ancestor of a Binary Tree (LC 236)**, and **Implement Trie (LC 208)**. |
@@ -306,7 +306,7 @@ Accross: all sections also study top google interview questions
 | **Day 6** | Intervals                                      | Start/end time sorting, interval overlapping, and merging logic. Practice **Merge Intervals (LC 56)**, **Insert Interval (LC 57)**, and **Meeting Rooms II (LC 253)**.                           |
 | **Day 7** | Week 1 Review                                  | Re-attempt any missed problems on a blank page with a strict 30-minute timer.                                                                                                                    |
 
-Week1 problem review:
+Week1 problem review: leetcode 5, 3, 15, 55, 122, 105
 
 ---
 

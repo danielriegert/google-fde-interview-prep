@@ -2,6 +2,18 @@ Here is the comprehensive guide combining the core approaches, operational seque
 
 ---
 
+# ToDo: Meerge GuiGui Two Pointer Sheet
+
+## Quick decision checklist
+
+| Question                                                                     | If yes ->                                           |
+| ---------------------------------------------------------------------------- | --------------------------------------------------- |
+| Sorted array + looking for pair/triplet by sum?                              | Opposite-direction pointers                         |
+| Need to compact/filter array in place, no extra space?                       | Fast-slow, same start                               |
+| Linked list, need O(1) space cycle/midpoint detection?                       | Fast-slow, different speeds                         |
+| Contiguous subarray/substring, constraint monotonic as window grows/shrinks? | Sliding window                                      |
+| None of the above but "two things converge/compare"?                         | Probably not two pointers -- check hashmap/DP first |
+
 ## **1. Opposite Direction (Converging Pointers)**
 
 ### **Core Approach**
