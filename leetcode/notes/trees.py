@@ -3,6 +3,18 @@ Key Python operations: Trees.
 Covers DFS/BFS traversal, BST operations, general tree helpers, and Tries.
 """
 
+# ==========================================================
+# Trees - Edge Cases
+# ==========================================================
+"""
+- **Empty tree (`root = None`):** The tree has no nodes. The algorithm should immediately handle this and return an empty list `[]` without throwing errors.
+- **Single-node tree:** The tree only contains the root node (`root.val = 1`, no left or right children). The output should be `[[1]]`.
+- **Skewed tree (Left-heavy or Right-heavy):** Every node only has a left child or only has a right child (essentially a linked list). 
+    The algorithm needs to correctly alternate directions level by level even when each level has a width of exactly 1.
+- **Complete/Balanced binary tree:** A tree where all levels are fully populated. This tests the core alternating logic across multiple levels (e.g., Level 0 left-to-right, Level 1 right-to-left, Level 2 left-to-right).
+- **Unbalanced or asymmetric tree:** A tree where some subtrees are deeper than others, resulting in varying queue sizes and level counts across different branches.
+"""
+
 from typing import List, Optional
 from collections import deque
 
@@ -13,6 +25,63 @@ class TreeNode:
         self.left = left
         self.right = right
 
+# ==========================================================
+# Tree General Operations
+# ==========================================================
+# Get node count of tree using dfs
+def count_nodes(root):
+    if not root:
+        return 0
+
+    left_count = count_nodes(root.left)
+    right_count = count_nodes(root.right)
+
+    return left_count + 1 + right_count
+
+# Get height of a binary tree using dfs
+def get_tree_height(root):
+    if not root:
+        return 0
+
+    left_height = get_tree_height(root.left)
+    right_height = get_tree_height(root.right)
+
+    return max(left_height, right_height) + 1
+
+# Get height of a complete binary tree. A complete binary tree is a binary tree in which every level, except possibly the last, is completely filled, and all nodes are as far left as possible.
+# Can just traverse down the leftmost path to get the height, since all levels are filled except possibly the last.
+# Time complexity: O(log n) where n is the number of nodes in the tree.
+def get_complete_tree_height(root):
+    height = 0
+    while root:
+        height += 1
+        root = root.left
+    return height
+
+# Count nodes in a complete binary tree. A complete binary tree is a binary tree in which every level, except possibly the last, is completely filled, and all nodes are as far left as possible.
+# Time complexity: O(log^2 n)
+# Space complexity: O(log n)
+# Leetcode 222. Count Complete Tree Nodes
+def countNodes(self, root: Optional[TreeNode]) -> int:
+    if not root:
+        return 0
+    
+    def get_height(node, go_left):
+        h = 0
+        while node:
+            h += 1
+            node = node.left if go_left else node.right
+        return h
+    
+    left_height = get_height(root, True)
+    right_height = get_height(root, False)
+    
+    # If left and right heights are equal, the subtree is a "perfect" binary tree
+    if left_height == right_height:
+        return (1 << left_height) - 1
+    
+    # Otherwise, recurse on left and right subtrees + 1 for the current root
+    return 1 + self.countNodes(root.left) + self.countNodes(root.right)
 
 # ==========================================================
 # Trees - DFS (Depth-First Search)
@@ -40,6 +109,20 @@ def inorder_recursive(root):
     print(root.val)                # 2. Process root
     inorder_recursive(root.right)  # 3. Traverse right
 
+class Solution:
+    def in_order_traversal(self, root: Optional[TreeNode], result: List[int]):
+        if not root:
+            return
+        
+        self.in_order_traversal(root.left, result)
+        result.append(root.val)
+        self.in_order_traversal(root.right, result)
+
+    def kthSmallest(self, root: Optional[TreeNode], k: int) -> int:
+        elements = []
+        self.in_order_traversal(root, elements)
+
+        return elements[k - 1]
 
 # Recursive DFS - Pre-Order (Root -> Left -> Right)
 # Order of visiting: Process the current node first, then go down the left branch completely, then the right branch.
@@ -239,8 +322,47 @@ Time Complexity:Average Case: O(log n) for search, insertion,
 and deletion (when the tree is balanced).Worst Case: O(n) (when the tree becomes skewed, resembling a linked list).
 
 In-Order Traversal: Visiting nodes in the order: Left $\rightarrow$ Root $\rightarrow$ Right. For a BST, 
-this always yields elements in sorted ascending order.
+this always yields elements in sorted ascending order!!!.
 """
+def isValidBST(self, root: Optional[TreeNode]) -> bool:
+        """
+        Time complexity: O(n) - We visit each node exactly once.
+        Space complexity: O(h) - The space used by the stack is proportional to the height
+        """
+        stack = []
+        prev = -float('inf')
+        curr = root
+        
+        while curr or stack:
+            # Reach the leftmost node of the current subtree
+            while curr:
+                stack.append(curr)
+                curr = curr.left
+            
+            # Process the node
+            curr = stack.pop()
+            if curr.val <= prev:
+                return False
+            prev = curr.val
+            
+            # Move to the right subtree
+            curr = curr.right
+            
+        return True
+
+# Using bounds to validate the BST property. Each node must be within a specific range defined by its ancestors.
+def isValidBST(self, root: Optional[TreeNode]) -> bool:
+    def validate(node, low=float('-inf'), high=float('inf')):
+        if not node:
+            return True
+        if not (low < node.val < high):
+            return False
+        
+        return (validate(node.left, low, node.val) and 
+                validate(node.right, node.val, high))
+        
+    return validate(root)
+
 def searchBST(self, root: Optional[TreeNode], val: int) -> Optional[TreeNode]:
         
         def dfs(current):
@@ -300,40 +422,6 @@ class Solution:
             root.right = self.deleteNode(root.right, curr.val)
             
         return root
-
-
-# ==========================================================
-# Tree Other
-# ==========================================================
-# Get node count of tree using dfs
-def count_nodes(root):
-    if not root:
-        return 0
-
-    left_count = count_nodes(root.left)
-    right_count = count_nodes(root.right)
-
-    return left_count + 1 + right_count
-
-# Get height of a binary tree using dfs
-def get_tree_height(root):
-    if not root:
-        return 0
-
-    left_height = get_tree_height(root.left)
-    right_height = get_tree_height(root.right)
-
-    return max(left_height, right_height) + 1
-
-# Get height of a complete binary tree. A complete binary tree is a binary tree in which every level, except possibly the last, is completely filled, and all nodes are as far left as possible.
-# Can just traverse down the leftmost path to get the height, since all levels are filled except possibly the last.
-# Time complexity: O(log n) where n is the number of nodes in the tree.
-def get_complete_tree_height(root):
-    height = 0
-    while root:
-        height += 1
-        root = root.left
-    return height
 
 
 # ==========================================================

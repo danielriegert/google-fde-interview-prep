@@ -218,7 +218,7 @@ and aren't included yet.
 - Python strings are **immutable** — can't modify in place; convert to `list(s)`, mutate, then `''.join(...)` at the end
 - `reversed(x)` returns a reverse iterator, not a list/string — wrap in `list(...)` or `''.join(list[])` to materialize it
 - Clearly articulate different cases and create placeholders in code for it.
-- Be careful with conteol flow if I only use `if` multiple cases might be triggered although not desired. Use `elif` or `else` with nested `if`. Can use `comtinue` alternatively to avoid deep nesting
+- Be careful with conteol flow if I only use `if` multiple cases might be triggered although not desired. Use `elif` or `else` with nested `if`. Can use `continue` alternatively to avoid deep nesting
 - With arrays pay attention to first and last elements. These often require special logic
 - When using two pointers / sliding window be very clear about **when** and **where** to move pointers
 - After initial implementation work interviewer through non trivial test cases to verify solution / edge cases
@@ -364,8 +364,8 @@ class Solution:
 
 # Tree BFS
 
-- When using BFS level order traversal and I need to rack the level then I need to use seperate counter for level.
-  Can NOT use size of queue as it doesn't equal the level.
+- When using BFS level order traversal and I need to track the level then I need to use seperate counter for level.
+  Can NOT use size of queue as it doesn't equal the level!
 
 # Trie
 

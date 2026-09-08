@@ -306,7 +306,8 @@ Accross: all sections also study top google interview questions
 | **Day 6** | Intervals                                      | Start/end time sorting, interval overlapping, and merging logic. Practice **Merge Intervals (LC 56)**, **Insert Interval (LC 57)**, and **Meeting Rooms II (LC 253)**.                           |
 | **Day 7** | Week 1 Review                                  | Re-attempt any missed problems on a blank page with a strict 30-minute timer.                                                                                                                    |
 
-Week1 problem review: leetcode 5, 3, 15, 55, 122, 105, 236, 222, practice recursion
+Week1 problem review: leetcode 5, 3, 15, 55, 122, 105, 236, 222, practice recursion, 103, 98
+ToDos: define common edge cases for each data structure, learn time and space complexity for each, review data structure general knowledge, practive iterative dfs versions
 
 ---
 
