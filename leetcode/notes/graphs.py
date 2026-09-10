@@ -24,7 +24,7 @@ Recursive Exploration: Look at an unvisited adjacent neighbor of the current nod
 Backtracking Step: When a vertex has no remaining unvisited neighbors, the algorithm pops it or returns from the recursive function to resume exploration from the parent node.
 """
 # Recursive DFS Implementation
-def dfs_recursive(graph, vertex, visited=None):
+def dfs_recursive_adjacency_list(graph, vertex, visited=None):
     if visited is None:
         visited = set()
     
@@ -36,11 +36,46 @@ def dfs_recursive(graph, vertex, visited=None):
     for neighbor in graph[vertex]:
         if neighbor not in visited:
             # Backtracking happens automatically when the recursive call returns
-            dfs_recursive(graph, neighbor, visited)
+            dfs_recursive_adjacency_list(graph, neighbor, visited)
+            
+    return visited
+
+def dfs_recursive_adjacency_matrix(graph, vertex, visited=None):
+    if visited is None:
+        visited = set()
+    
+    # 1. Initialization/Visit operation
+    visited.add(vertex)
+    print(f"Visited: {vertex}")
+    
+    # 2. Recursive exploration of neighbors
+    # Iterate through all possible node indices in the matrix row
+    for neighbor in range(len(graph)):
+        # Check if a connection exists and the neighbor is unvisited
+        if graph[vertex][neighbor] == 1 and neighbor not in visited:
+            dfs_recursive_adjacency_matrix(graph, neighbor, visited)
+            
+    return visited
+
+def dfs_recursive_matrix(graph, vertex, visited=None):
+    if visited is None:
+        visited = set()
+    
+    # 1. Initialization/Visit operation
+    visited.add(vertex)
+    print(f"Visited: {vertex}")
+    
+    # 2. Recursive exploration of neighbors
+    # Iterate through all possible node indices in the matrix row
+    for neighbor in range(len(graph)):
+        # Check if a connection exists and the neighbor is unvisited
+        if graph[vertex][neighbor] == 1 and neighbor not in visited:
+            dfs_recursive_matrix(graph, neighbor, visited)
             
     return visited
 
 # Example graph represented as an adjacency list
+# Use for non-integer problems
 graph = {
     'A': ['B', 'C'],
     'B': ['D', 'E'],
@@ -49,6 +84,15 @@ graph = {
     'E': [],
     'F': []
 }
+
+# Node 0 connects to 1 and 2; Node 1 connects to 0 and 3, etc.
+# Use for integer problems
+graph = [
+    [1, 2],
+    [0, 3],
+    [0],
+    [1]
+]
 
 # Run DFS starting from 'A'
 dfs_recursive(graph, 'A')
@@ -80,7 +124,80 @@ def dfs_iterative(graph, start_vertex):
 dfs_iterative(graph, 'A')
 
 #-----------------------------------------------------
-# Connected Components in an Undirected Graph using DFS
+# Clonging a graph using DFS (LeetCode 133. Clone Graph)
+"""
+1. **Handle Edge Cases**
+Check if the input node is `None`. If the graph is empty, immediately return `None` to prevent attribute errors during traversal.
+2. **Initialize a Tracking Hash Map**
+Create a hash map (or dictionary) to map every original node reference to its newly created clone (`old_to_new`). T
+his data structure serves a dual purpose: it acts as a visited set to prevent infinite loops in cyclic graphs, and it stores references to the clones so they can be reused.
+3. **Choose a Traversal Strategy**
+Decide whether to use Depth-First Search (DFS) or Breadth-First Search (BFS) to explore the graph's structure node by node.
+4. **Instantiate and Cache Clones**
+When encountering a node for the first time, immediately create its clone using its value (`Node(curr.val)`) and save it in the hash map *before* exploring any of its neighbors. 
+This ensures the clone exists in memory if a neighbor tries to reference it back.
+5. **Reconstruct Neighbor Connections**
+Iterate through all the neighbors of the current node. For each neighbor, recursively or iteratively fetch its corresponding clone from the hash map (creating it if it doesn't exist yet) and append it to the current clone's `neighbors` list.
+"""
+class Solution:
+    def cloneGraph(self, node: Optional['Node']) -> Optional['Node']:
+        if not node:
+            return None
+        
+        old_to_new = {}
+        return self.dfs(node, old_to_new)
+        
+    def dfs(self, curr, old_to_new):
+        # If the node is already cloned, return its copy from the hash map
+        if curr in old_to_new:
+            return old_to_new[curr]
+        
+        # Create the clone for the current node and save it before exploring neighbors
+        copy = Node(curr.val)
+        old_to_new[curr] = copy
+        
+        # Recursively clone all neighbors and add them to the copy's neighbor list
+        for neighbor in curr.neighbors:
+            copy.neighbors.append(self.dfs(neighbor, old_to_new))
+            
+        return copy
+
+#-----------------------------------------------------
+# Template finding the number of connected components in an undirected graph for Matrix problems (DFS).
+# e.g. LeetCode 133,  LeetCode 200. Number of Islands, Leetcode 261. Graph Valid Tree
+class Solution:
+    def solveMatrixProblem(self, grid: list[list[str]]) -> int:
+        if not grid or not grid[0]:
+            return 0
+        
+        rows, cols = len(grid), len(grid[0])
+        # 4-directional movement vectors (Up, Down, Left, Right)
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+        
+        result = 0
+        for r in range(rows):
+            for c in range(cols):
+                # Trigger condition (e.g., finding an unvisited target)
+                if grid[r][c] == 'target_condition':
+                    result += 1
+                    self.dfs(grid, r, c, rows, cols, directions)
+                    
+        return result
+
+    def dfs(self, grid: list[list[str]], r: int, c: int, rows: int, cols: int, directions: list[tuple[int, int]]) -> None:
+        # 1. Base case: Check bounds and problem-specific termination conditions
+        if r < 0 or c < 0 or r >= rows or c >= cols or grid[r][c] == 'invalid_condition':
+            return
+        
+        # 2. Mark current cell as visited (in-place modification)
+        grid[r][c] = 'visited_condition'
+        
+        # 3. Explore all valid neighbors
+        for dr, dc in directions:
+            self.dfs(grid, r + dr, c + dc, rows, cols, directions)
+#-----------------------------------------------------
+# Connected Components in an Undirected Graph using DFS Adjacency Matrix
+# LeetCode 547. Number of Provinces:
 class Solution:
     def findCircleNum(self, isConnected: List[List[int]]) -> int:
         # Get the total number of cities (n) from the size of the adjacency matrix.
@@ -122,6 +239,93 @@ class Solution:
                 # passing along the exact same state references.
                 self.dfs(neighbor, isConnected, visited)
 
+#-----------------------------------------------------
+# Weighted Graphs e.g. LC 399. Evaluate Division
+"""
+Weighted graphs extend standard graph theory by assigning numerical values (weights) to edges, representing costs, distances, capacities, or relative ratios.
+Core ComponentsNodes / Vertices ($V$): 
+- The fundamental entities or points in the network (e.g., cities, variables, network routers).
+- Edges / Arcs ($E$): The connections between nodes. In a weighted graph, each edge $e = (u, v)$ is associated with a weight function $w(e)$ or $w(u, v)$.
+- Directed vs. Undirected Weighted Edges: Edges can be bidirectional with symmetric weights (e.g., physical distance between two towns) or unidirectional with asymmetric or directional relationships (e.g., currency exchange rates or division ratios like LeetCode 399, where $a / b = k$ implies $b / a = 1 / k$).
+
+Fundamental Properties
+- Path Weight: The total cost or accumulated value of a path, calculated either by summing individual edge weights (additive, e.g., shortest path problems) or multiplying them (multiplicative, e.g., probability or conversion ratios).
+Adjacency Representation: Typically stored using Adjacency Lists where each node points to a list of pairs (neighbor, weight), or Adjacency Matrices where the cell at matrix[i][j] holds the edge weight between node $i$ and node $j$ (or infinity/null if no edge exists).
+"""
+from collections import defaultdict
+from typing import List
+
+class Solution:
+    def calcEquation(self, equations: List[List[str]], values: List[float], queries: List[List[str]]) -> List[float]:
+        
+        # ==========================================
+        # STEP 1: Build the Adjacency List Graph
+        # ==========================================
+        # defaultdict(dict) creates a nested dictionary where missing keys 
+        # automatically initialize as empty dictionaries. 
+        # Structure will look like: { node: { neighbor: weight } }
+        graph = defaultdict(dict)
+        
+        # zip() pairs each equation pair [A, B] with its corresponding division value
+        for (A, B), value in zip(equations, values):
+            # Direction A -> B: A / B = value (e.g., a / b = 2.0 means a = 2 * b)
+            graph[A][B] = value
+            
+            # Direction B -> A: B / A = 1.0 / value (the inverse relationship)
+            graph[B][A] = 1.0 / value
+            
+        # ==========================================
+        # STEP 2: Define the DFS Traversal Function
+        # ==========================================
+        # This recursive function searches for a path from 'curr' to 'target'
+        def dfs(curr: str, target: str, seen: set) -> float:
+            
+            # Base Case 1: If our current node is already the target, 
+            # we've successfully reached the destination. We return 1.0 
+            # because multiplying by 1.0 does not change our accumulated product.
+            if curr == target:
+                return 1.0
+                
+            # Mark the current node as visited so we don't loop infinitely 
+            # (e.g., going back and forth between A and B).
+            seen.add(curr)
+            
+            # Explore all direct neighbors of the current node
+            for neighbor, weight in graph[curr].items():
+                
+                # Only visit neighbors we haven't explored in this path yet
+                if neighbor not in seen:
+                    
+                    # Recursively search from the neighbor to the target
+                    res = dfs(neighbor, target, seen)
+                    
+                    # If res != -1.0, it means a valid path was found downstream!
+                    if res != -1.0:
+                        # Multiply the edge weight to get to this neighbor 
+                        # by the result obtained from the rest of the path.
+                        return weight * res
+                        
+            # Base Case 2: If we check all neighbors and find no valid path to the target,
+            # return -1.0 to signify that this path is a dead end.
+            return -1.0
+
+        # ==========================================
+        # STEP 3: Process Each Query
+        # ==========================================
+        ans = []
+        
+        for A, C in queries:
+            # Check if either variable in the query doesn't exist in our graph at all.
+            # If it's missing, it's impossible to evaluate, so we immediately output -1.0.
+            if A not in graph or C not in graph:
+                ans.append(-1.0)
+            else:
+                # Otherwise, trigger our DFS traversal starting from variable A,
+                # looking for variable C, and passing a fresh 'set()' to track visited nodes.
+                ans.append(dfs(A, C, set()))
+                
+        # Return the final list of evaluated query results
+        return ans
 #-----------------------------------------------------
 # Reversing directions of edges in a tree to ensure all paths lead to the root (city 0).
 
@@ -341,57 +545,189 @@ class Solution:
 # ==========================================================
 # Graph Topological Sort
 # ==========================================================
-# Topological Sort using Kahn's Algorithm
+# Topological Sort using Kahn's Algorithm (BFS)
+# LC 207 & 210. Course Schedule I & II
+"""
+Note: Yes, topological sorting only works on directed graphs, specifically Directed Acyclic Graphs (DAGs).
+If there are cycles no topological ordering exists.
 
+Time Complexity: O(V + E)
+* V is the number of vertices (nodes/courses).
+* E is the number of edges (prerequisites/connections).
 
-def find_order(num_courses: int, prerequisites: List[List[int]]) -> List[int]:
-  """Returns a valid topological sort order for a DAG.
+**Breakdown:**
+* Calculating initial in-degrees and building the adjacency list takes O(E) time.
+* Pushing the initial nodes with an in-degree of 0 into the queue takes O(V) time.
+* The BFS traversal processes each vertex once (O(V)) and iterates through every outgoing edge for each node exactly once (O(E)).
 
-  If a cycle exists, returns an empty list.
-  """
-  # STEP 1: Graph Representation Setup
-  # Create an empty adjacency list for each course (0 to num_courses - 1).
-  adj = {i: [] for i in range(num_courses)}
-  # Track incoming edge counts (prerequisite count) for every course, initialized to 0.
-  in_degree = [0] * num_courses
+Space Complexity: O(V + E)
 
-  # STEP 2: Building the Graph from Edge List
-  # Each prerequisite pair is given as [course, prereq], meaning "prereq must be taken before course".
-  for course, prereq in prerequisites:
-    # Add a directed edge from prerequisite -> course in our adjacency list.
-    adj[prereq].append(course)
-    # Increment the in-degree count of the target course because it has one more dependency.
-    in_degree[course] += 1
+**Breakdown:**
 
-  # STEP 3: Seeding the Queue
-  # Find all nodes that have an in-degree of 0 (no prerequisites/dependencies).
-  # These are our starting points because they can be processed immediately.
-  queue = deque([i for i in range(num_courses) if in_degree[i] == 0])
+* The adjacency list requires O(V + E) space to store all nodes and their directed edges.
+* The in-degree array or dictionary takes O(V) space to keep track of the count for each node.
+* The BFS queue holds up to V elements in the worst-case scenario, taking O(V) space.
 
-  # List to store the final topological order sequence.
-  top_order = []
+1. **Initialize graph and in-degrees:** Create an adjacency list to represent directed edges and an array to track the incoming edge count for each node.
+2. **Build the graph:** Loop through the edges to populate the adjacency list and increment the in-degree count for target nodes.
+3. **Queue root nodes:** Find all nodes with an in-degree of `0` (nodes with no dependencies) and push them into a queue.
+4. **Process via BFS:** Pop a node from the queue, record it in your output/processed count, and decrement the in-degree of all its neighbors.
+5. **Add newly unlocked nodes:** If a neighbor's in-degree drops to `0` after decrementing, push it into the queue.
+6. **Check for cycles:** Ensure all nodes were successfully processed; if the count of visited nodes doesn't match the total number of nodes, a cycle exists and a valid topological sort is impossible.
 
-  # STEP 4: BFS Processing Loop
-  while queue:
-    # Pop the node from the front of the queue (it has 0 unresolved prerequisites).
-    curr = queue.popleft()
-    # Add it to our valid topological order.
-    top_order.append(curr)
+Edge Cases:
+* Empty Graph: If there are no nodes, return an empty list.
+* Single Node: If there's only one node with no edges, return that node as the topological order.
+* Cyclic Graph: If a cycle is detected (i.e., not all nodes are processed), return an empty list or indicate that a topological sort is impossible.
+"""
 
-    # For every course that depends on 'curr' (its neighbors):
-    for neighbor in adj[curr]:
-      # Since 'curr' is now processed, we remove its dependency constraint.
-      in_degree[neighbor] -= 1
-      # If all prerequisites for this neighbor are now satisfied (in-degree hits 0):
-      if in_degree[neighbor] == 0:
-        # Push it to the queue so it can be processed next.
-        queue.append(neighbor)
+from collections import deque
+from typing import List
 
-  # STEP 5: Cycle Detection & Validation
-  # If the total number of nodes in our topological order equals the total number of courses,
-  # it means we successfully processed every node (no cycles trapped any nodes).
-  if len(top_order) == num_courses:
-    return top_order
+def topological_sort(num_nodes: int, edges: List[List[int]]) -> List[int]:
+    # 1. Initialize adjacency list and in-degree array
+    adj = [[] for _ in range(num_nodes)]
+    in_degree = [0] * num_nodes
+    
+    # 2. Build the graph and compute in-degrees i.e. number of dependencies for each node
+    # adjacencey list asks for each node, which nodes it points to (outgoing edges)
+    # in_degree counts how many edges point to each node (incoming edges)
+    for u, v in edges:
+        adj[u].append(v)
+        in_degree[v] += 1
+        
+    # 3. Find all nodes with 0 in-degree (no prerequisites)
+    queue = deque([i for i in range(num_nodes) if in_degree[i] == 0])
+    result = []
+    
+    # 4. Process the queue (BFS)
+    while queue:
+        curr = queue.popleft()
+        result.append(curr)
+        
+        # Reduce in-degree for all neighboring nodes
+        for neighbor in adj[curr]:
+            in_degree[neighbor] -= 1
+            if in_degree[neighbor] == 0:
+                queue.append(neighbor)
+                
+    # 5. Cycle check: if result doesn't include all nodes, a cycle exists
+    if len(result) != num_nodes:
+        return []  # Cycle detected, valid topological order impossible
+        
+    return result
 
-  # If length doesn't match, a cycle exists (deadlock where remaining nodes have in-degree > 0).
-  return []
+#-----------------------------------------------------
+from collections import deque
+
+def topological_sort_dict(adj):
+    # 1. Initialize in_degree dictionary for all nodes
+    in_degree = {node: 0 for node in adj}
+    
+    # Ensure any node that only appears as a neighbor (value) is also tracked
+    for u in adj:
+        for v in adj[u]:
+            if v not in in_degree:
+                in_degree[v] = 0
+
+    # 2. Calculate in-degrees from the adjacency list
+    for u in adj:
+        for v in adj[u]:
+            in_degree[v] += 1
+            
+    # 3. Find all nodes with 0 in-degree
+    queue = deque([node for node in in_degree if in_degree[node] == 0])
+    result = []
+    
+    # 4. Process the queue (BFS)
+    while queue:
+        curr = queue.popleft()
+        result.append(curr)
+        
+        for neighbor in adj.get(curr, []):
+            in_degree[neighbor] -= 1
+            if in_degree[neighbor] == 0:
+                queue.append(neighbor)
+                
+    # 5. Cycle check
+    if len(result) != len(in_degree):
+        return []  # Cycle detected
+        
+    return result
+
+#-----------------------------------------------------
+# Example Course Schedule I
+def canFinish(self, numCourses: int, prerequisites: List[List[int]]) -> bool:
+        from collections import deque
+
+        # init adjacency list and indegree
+        adjacency_list = [[] for _ in range(numCourses)]
+        in_degree = [0] * numCourses
+
+        # adjacency list: [[1], []] -> meaning course 0 is prerequisite for course 1, course 1 is not prerquisite for anything
+        # asks for each course (index), which courses depend on it (outgoing edges)
+        # in degree:[0, 1] -> course 0 has no prerequisites, course 1 has 1 prerequisite
+        # counts number of prerequisites for each course (incoming edges)
+        for course, pre in prerequisites:
+            adjacency_list[pre].append(course)
+            in_degree[course] += 1
+        
+        # Add courses with no dependencies i.e. indegree of 0
+        # could also write range(len(in_degree))
+        queue = deque([i for i in range(numCourses) if in_degree[i] == 0])
+
+        processed_courses = 0
+
+        while queue:
+            current = queue.popleft()
+            processed_courses += 1
+
+            for neighbour in adjacency_list[current]:
+                in_degree[neighbour] -= 1
+
+                if in_degree[neighbour] == 0:
+                    queue.append(neighbour)
+        
+        return processed_courses == numCourses
+
+#-----------------------------------------------------
+# Example Course Schedule II
+class Solution:
+    def findOrder(self, numCourses: int, prerequisites: List[List[int]]) -> List[int]:
+        from collections import deque
+
+        # init adjacency list (for each course what other courses depend on it) and in degree (counts for each course (index) how many prerequisites)
+        adjacency_list = [[] for _ in range(numCourses)]
+        in_degree = [0] * numCourses
+
+        # built full adjacnency list and in degrees
+        # adjacency list asks: for each course what other courses depend on it (outgoing edges)
+        # in degree asks: how many dependencies does a course have (incoming edges)
+        for course, pre in prerequisites:
+            adjacency_list[pre].append(course)
+            in_degree[course] += 1
+        
+        # add courses with no prerequisites into the queue. this is our starting point
+        queue = deque([i for i in range(numCourses) if in_degree[i] == 0])
+
+        course_order = []
+        while queue:
+            # pope element and add to course order
+            current = queue.popleft()
+            course_order.append(current)
+
+            # start to visit dependencies of current course
+            for neighbour in adjacency_list[current]:
+                # decrese dependency for preqresuisite by one as we visited one of them
+                in_degree[neighbour] -= 1
+
+                # if neighbour has no univisted dependencies we can add it to queue and process next
+                if in_degree[neighbour] == 0:
+                    queue.append(neighbour)
+        
+        # Check if valid topological sort i.e. no cycles
+        if len(course_order) == numCourses:
+            return course_order
+        
+        # if no valid topological sort exists
+        return []
