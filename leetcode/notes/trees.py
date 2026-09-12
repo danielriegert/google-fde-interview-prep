@@ -37,6 +37,17 @@ def count_nodes(root):
     right_count = count_nodes(root.right)
 
     return left_count + 1 + right_count
+# Example
+#    1
+# 2     3
+
+# add 1 to call stack, call f on 2, explore left and right of 2 which are both None,
+# now we hit return left_count + 1 + right_count = 0 + 1 + 0 = 1, return to call stack for 1, 
+# now call f on 3, explore left and right of 3 which are both None,
+# now we hit return left_count + 1 + right_count = 0 + 1 + 0 = 1
+# now return to call stack for 1, we have explored both left (1) and right (1) of 1, 
+# so return left_count + 1 + right_count = 1 + 1 + 1 = 3
+
 
 # Get height of a binary tree using dfs
 def get_tree_height(root):
@@ -230,6 +241,22 @@ def pathSum(self, root: Optional[TreeNode], targetSum: int) -> int:
             
         return dfs(root, 0)
 
+# Build Binary Tree from Preorder and Inorder Traversal LC 105:
+class Solution:
+    def buildTree(self, preorder: List[int], inorder: List[int]) -> Optional[TreeNode]:
+        # Base case
+        if not preorder or not inorder:
+            return None
+
+        root = preorder[0]
+        mid = inorder.index(root)
+
+        # left subtree are elemnts in inorder up to mid, for preorder, skip the first element (root) and take the same number of elements as in the left subtree
+        # right subtree are elements in inorder after mid, for preorder, take the remaining elements after the left subtree
+        root.left = self.buildTree(preorder[1: mid + 1], inorder[:mid])
+        root.right = self.buildTree(preorder[mid + 1:], inorder[mid + 1:])
+
+        return root
 
 # ==========================================================
 # Trees - BFS

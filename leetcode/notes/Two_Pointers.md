@@ -2,7 +2,11 @@ Here is the comprehensive guide combining the core approaches, operational seque
 
 ---
 
-# ToDo: Meerge GuiGui Two Pointer Sheet
+## Key Variations
+
+- Left / Right (Converging)
+- Slow / Fast same start point
+- Slow 7 Fast different speeds
 
 ## Quick decision checklist
 
@@ -20,6 +24,11 @@ Here is the comprehensive guide combining the core approaches, operational seque
 
 Place pointers at opposite ends of a collection (e.g., the start and end of a sorted array) and move them toward each other to systematically shrink the search space until they meet.
 
+Pre-requisite:
+
+- Array needs to be sorted or can be sorted
+- Searching for pair/ triplet satisfying a sum or comparison
+
 ### **Sequence of Operations**
 
 1. Initialize `left = 0` and `right = n - 1`.
@@ -27,6 +36,18 @@ Place pointers at opposite ends of a collection (e.g., the start and end of a so
 3. Evaluate the pair `(left, right)` against the target condition.
 4. Move **one** pointer inward based on the evaluation (increment `left` if the value is too small; decrement `right` if it is too large).
 5. Stop and return the result when the pointers meet or cross.
+
+### Template
+
+```python
+left, right = 0, len(nums) -1
+while left < right:
+  s = nums[left] + nums[right]
+  if s == target: ...
+  if s < target: l += 1
+  else: right -= 1
+
+```
 
 ### **Code Snippet & Example** (_Two Sum II - LeetCode 167_)
 
@@ -54,6 +75,7 @@ def twoSum(numbers: list[int], target: int) -> list[int]:
 ### **Core Approach**
 
 Use two pointers starting at the same origin. The `fast` pointer scans ahead to explore or find elements, while the `slow` pointer trails behind to track positions for in-place modifications or filtering.
+**Use when:** you need to **overwrite an array in place** to keep only elements matching some condition, without extra space, preserving order.
 
 ### **Sequence of Operations**
 
@@ -62,6 +84,16 @@ Use two pointers starting at the same origin. The `fast` pointer scans ahead to 
 3. Evaluate the element at `fast` against a specific condition.
 4. If the condition is met, process or swap the element into the `slow` index, then increment `slow`.
 5. Always increment `fast` to keep scanning.
+
+### Template
+
+```python
+slow = 0
+for fast in range(len(nums)):
+  if keep_condition(nums[fast]):
+    nums[slow] = nums[fast]
+    slow += 1
+```
 
 ### **Code Snippet & Example** (_Move Zeroes - LeetCode 283_)
 
@@ -86,6 +118,10 @@ def moveZeroes(nums: list[int]) -> None:
 
 Maintain a dynamic window defined by a `left` and `right` pointer over a contiguous sequence. The `right` pointer expands the window to capture data, and the `left` pointer shrinks it the moment a constraint is violated.
 
+**Use when:** contiguous subarray/substring problem with a constraint that's monotonic — i.e. if the window satisfies the constraint, shrinking it from the left still satisfies it (or the reverse). That monotonicity is the prerequisite; without it, sliding window gives wrong answers and you need prefix sums / DP instead.
+
+**Signals:** "longest/shortest substring/subarray with property X," "at most K distinct," "minimum window containing."
+
 ### **Sequence of Operations**
 
 1. Initialize `left = 0`, an optimal tracking variable, and a state tracker (like a hash map or set).
@@ -93,6 +129,21 @@ Maintain a dynamic window defined by a `left` and `right` pointer over a contigu
 3. Add the element at `right` to your tracker state.
 4. Run a `while` loop checking if the window violates a constraint. If violated, increment `left` to shrink the window and update the state.
 5. Record or update your optimal metric at each step.
+
+### Template
+
+```python
+left = 0
+for right in range(len(nums)):
+  # expand window
+  add(s[r])
+  # shrink window unitl valid again
+  while window_invalid():
+    remove(s[l])
+    l += 1
+  # update answer
+  update_answer(r - l + 1)
+```
 
 ### **Code Snippet & Example** (_Longest Substring Without Repeating Characters - LeetCode 3_)
 
@@ -118,7 +169,25 @@ def lengthOfLongestSubstring(s: str) -> int:
 
 ---
 
-## **4. Two-Array / Merge Pattern**
+## 4. Fast-slow, different speeds (cycle detection)
+
+**Use when:** linked list / functional graph, and you need to detect a cycle or find a midpoint **without extra memory** (the O(n) hashset approach is the "obvious" alternative, so this pattern is specifically the space-optimized answer).
+
+**Signals:** "find duplicate number" (287 — treats array as implicit linked list via indices), "linked list cycle" (141/142 — Floyd's algorithm, then reset one pointer to head to find the cycle start), "find middle of linked list."
+
+```python
+slow = fast = head
+while fast and fast.next:
+    slow = slow.next
+    fast = fast.next.next
+    if slow == fast: break  # cycle found
+```
+
+---
+
+# ToDo -> practice
+
+## **5. Two-Array / Merge Pattern**
 
 ### **Core Approach**
 
@@ -154,7 +223,9 @@ def merge(nums1: list[int], m: int, nums2: list[int], n: int) -> None:
 
 ---
 
-## **5. Expand Around Center**
+# ToDo -> practice. leetcode 5
+
+## **6. Expand Around Center**
 
 ### **Core Approach**
 

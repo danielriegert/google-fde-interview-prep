@@ -17,3 +17,9 @@ while stack and ast < 0 < stack[-1]:
     break
 else:
     stack.append(ast)
+
+# ==========================================================
+# while-else loop
+# ==========================================================
+# Square a number in python
+squared = n ** 2  # Using the exponentiation operator

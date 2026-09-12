@@ -385,7 +385,7 @@ class Solution:
 Key Concepts of BFSBreadth-First Search (BFS) is a graph traversal algorithm that explores a graph level by level, visiting all neighbor nodes at the current depth before moving on to the nodes at the next depth level.
 Queue (FIFO): The core data structure that manages traversal order using a First-In, First-Out approach, ensuring nodes are processed in the exact order they are discovered.
 Visited Tracking: A hash set used to keep track of nodes already visited, which prevents infinite loops in graphs with cycles.
-Time & Space Complexity: Operates in $O(V + E)$ time and $O(V)$ space (where $V$ is vertices and $E$ is edges), as every vertex and edge is visited and stored in memory.
+Time & Space Complexity: Operates in O(V + E) time and O(V) space (where V is vertices and E is edges), as every vertex and edge is visited and stored in memory.
 Algorithm Operations
 1. Initialization: Add the starting node to a queue and mark it as visited.
 2. Removal: Dequeue the front node from the queue to make it the current active node.
@@ -425,7 +425,9 @@ graph = {
 
 print("BFS Traversal:", bfs(graph, 'A')) # Output: BFS Traversal: ['A', 'B', 'C', 'D', 'E', 'F']
 
-# Shortest Path in Unweighted Graph using BFS
+# Shortest Path in Unweighted Graph using BFS.
+# This is when we actually need to return the path not just the step count.
+# ToDo: practice this with matrix problems
 
 def bfs_shortest_path(graph, start, target):
     # Base case: If the starting node is already the target node,
@@ -493,8 +495,51 @@ graph = {
 path = bfs_shortest_path(graph, 'A', 'F')
 print("Shortest Path:", path) # Output: Shortest Path: ['A', 'C', 'F']
 
-# Maze Solving
+# Maze Solving. Find nearest exit from the entrance.
+# This is also BFS shortest path problem but we usually only need to return the step count not the actual path.
+# BFS will guarantee the shortest path in an unweighted graph like a maze.
 
+# Template
+"""
+1. Define the State Space: Determine what a single "state" represents (e.g., coordinates (r, c) for a 2D grid maze, or an integer square for linear board games).
+2. Initialize Tracking Structures:
+    A FIFO queue (via collections.deque) to process states level-by-level, ensuring shortest-path discovery.
+    A visited set to prevent infinite loops and redundant expansions.
+3. Seed the Search: Add the starting state to both the queue and the visited set, tracking initial cost or step counts alongside it.
+4. Process Level-by-Level (BFS Loop): Pop from the front of the queue and immediately check if the current state satisfies the target condition.
+5. Generate and Filter Neighbors: Compute all legal transitions from the current state. For each neighbor, check boundaries, game rules (like walls, snakes, or ladders), and the visited set before pushing it to the queue.
+
+Key Variations to Keep in Mind:
+- Multi-Source BFS: If you can start from multiple locations (e.g., nearest exit problems with multiple exits), seed the queue with all starting positions simultaneously and add them all to visited at the very beginning.
+- State Compression: If your state requires multiple variables (e.g., (r, c, keys_held)), ensure the entire state tuple is hashable so it can be safely stored in the visited set.
+
+Time and Space Complexity: O(N^2) dereived from BFS (V + E)
+
+"""
+from collections import deque
+
+def bfs_shortest_path(start_state, target_condition):
+    # Queue stores tuples of (state, distance/steps)
+    queue = deque([(start_state, 0)])  
+    visited = {start_state}
+    
+    while queue:
+        current, steps = queue.popleft()
+        
+        # 1. Check if we've reached the target
+        if current == target_condition:
+            return steps
+            
+        # 2. Generate and evaluate all valid next moves
+        for neighbor in get_neighbors(current):
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append((neighbor, steps + 1))
+                
+    # Target is unreachable
+    return -1
+
+# LC ?
 class Solution:
     def nearestExit(self, maze: List[List[str]], entrance: List[int]) -> int:
         # Get the dimensions of the maze: m rows and n columns
@@ -542,6 +587,40 @@ class Solution:
         # it means no exit is reachable. Return -1.
         return -1
 
+# LC 909
+class Solution:
+    def get_coordinates(self, square, n):
+        r = n - 1 - (square - 1) // n
+        c = (square - 1) % n
+        if (n - 1 - r) % 2 == 1:
+            c = n - 1 - c
+        return r, c
+
+    def snakesAndLadders(self, board: List[List[int]]) -> int:
+        from collections import deque
+        n = len(board)
+        target_square = n * n
+        # Keep track of visited squares to avoid cycles and redundant work
+        visited = {1}
+        queue = deque([(1, 0)])
+        
+        while queue:
+            current_square, steps = queue.popleft()
+            # Check if current is target
+            if current_square == target_square:
+                return steps
+
+            # Visit next squares based on dice rolls (1 to 6)
+            for next_square in range(current_square + 1, min(current_square + 6, target_square) + 1):
+                # Need to check if we are jumping to a ladder or snake
+                r, c = self.get_coordinates(next_square, n)
+                destination = board[r][c] if board[r][c] != -1 else next_square
+                
+                if destination not in visited:
+                    visited.add(destination)
+                    queue.append((destination, steps + 1))
+        
+        return -1
 # ==========================================================
 # Graph Topological Sort
 # ==========================================================

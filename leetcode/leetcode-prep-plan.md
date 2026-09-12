@@ -307,8 +307,8 @@ Accross: all sections also study top google interview questions
 | **Day 7** | Week 1 Review                                  | Re-attempt any missed problems on a blank page with a strict 30-minute timer.                                                                                                                    |
 
 Week1 problem review:
-leetcode 5, 3, 15, 55, 122, 105, 236, 222, practice recursion, 103, 98
-Graph: 200, 547, 130, 399, 133, 207 (Topological sort)
+leetcode 5, 3 (done), 15 (done - review de-dedupe), 55 (done - review greedy), 122, 105 (done), 236, 222, practice recursion, 103, 98 (done)
+Graph: 200, 547, 130, 399, 133, 207 & 210 (Topological sort). 433 (understan teim and space)
 ToDos: define common edge cases for each data structure, learn time and space complexity for each, review data structure general knowledge, practive iterative dfs versions
 
 ---
