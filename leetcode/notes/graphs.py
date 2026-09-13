@@ -124,7 +124,7 @@ def dfs_iterative(graph, start_vertex):
 dfs_iterative(graph, 'A')
 
 #-----------------------------------------------------
-# Clonging a graph using DFS (LeetCode 133. Clone Graph)
+# Cloning a graph using DFS (LeetCode 133. Clone Graph)
 """
 1. **Handle Edge Cases**
 Check if the input node is `None`. If the graph is empty, immediately return `None` to prevent attribute errors during traversal.
@@ -136,6 +136,7 @@ Decide whether to use Depth-First Search (DFS) or Breadth-First Search (BFS) to 
 4. **Instantiate and Cache Clones**
 When encountering a node for the first time, immediately create its clone using its value (`Node(curr.val)`) and save it in the hash map *before* exploring any of its neighbors. 
 This ensures the clone exists in memory if a neighbor tries to reference it back.
+If a node is already cloned, just return it (recursion base case)
 5. **Reconstruct Neighbor Connections**
 Iterate through all the neighbors of the current node. For each neighbor, recursively or iteratively fetch its corresponding clone from the hash map (creating it if it doesn't exist yet) and append it to the current clone's `neighbors` list.
 """
@@ -186,6 +187,7 @@ class Solution:
 
     def dfs(self, grid: list[list[str]], r: int, c: int, rows: int, cols: int, directions: list[tuple[int, int]]) -> None:
         # 1. Base case: Check bounds and problem-specific termination conditions
+        # Important >= and <= as this len and gird is 0 indexed
         if r < 0 or c < 0 or r >= rows or c >= cols or grid[r][c] == 'invalid_condition':
             return
         

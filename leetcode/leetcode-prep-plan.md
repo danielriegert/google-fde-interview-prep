@@ -307,9 +307,13 @@ Accross: all sections also study top google interview questions
 | **Day 7** | Week 1 Review                                  | Re-attempt any missed problems on a blank page with a strict 30-minute timer.                                                                                                                    |
 
 Week1 problem review:
-leetcode 5, 3 (done), 15 (done - review de-dedupe), 55 (done - review greedy), 122, 105 (done), 236, 222, practice recursion, 103, 98 (done)
-Graph: 200, 547, 130, 399, 133, 207 & 210 (Topological sort). 433 (understan teim and space)
-ToDos: define common edge cases for each data structure, learn time and space complexity for each, review data structure general knowledge, practive iterative dfs versions
+Tow pointers: leetcode 5
+3 (done), 15 (done - review de-dedupe), 105 (done), 236 (done - review again), 222 (done), practice recursion (done), 103 (done), 98 (done), 437 (done- review)
+Pathsum problems: 112, 64, 113,437
+
+Graph: 200 (done), 547 (done - review again), 130 (done), 399, 133 (done), 207 & 210 (Topological sort). 433 (understan teim and space)
+
+ToDos: define common edge cases for each data structure, learn time and space complexity for each, review data structure general knowledge,
 
 ---
 
@@ -325,7 +329,7 @@ ToDos: define common edge cases for each data structure, learn time and space co
 | **Day 13** | Backtracking & Greedy Algorithms       | Exhaustive search pruning vs. local invariant choices. Practice **Letter Combinations of a Phone Number (LC 17)**, **Word Search (LC 79)**, and **Jump Game II (LC 45)**.                                                |
 | **Day 14** | Week 2 Review                          | Focus heavily on identifying hidden DP states and writing clean backtracking templates.                                                                                                                                  |
 
----
+## Greedy: 55, 122
 
 ## Week 3: Top Google Problems & Mock Interviews
 

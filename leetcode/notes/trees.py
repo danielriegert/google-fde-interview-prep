@@ -2,7 +2,15 @@
 Key Python operations: Trees.
 Covers DFS/BFS traversal, BST operations, general tree helpers, and Tries.
 """
-
+# ==========================================================
+# Trees - Types
+# ==========================================================
+"""
+- Perfect Binary Tree	All internal nodes have two children, and all leaves are at the exact same depth (every level is completely full)
+- Complete Binary Tree	Every level, except possibly the last, is completely filled, and all nodes in the last level are as far left as possible.
+- Balanced Binary Tree	The height difference between the left and right subtrees of any node is at most 1, and all subtrees are also balanced
+- Skewed (Degenerate) Tree	Every parent node has only one child, causing the tree to lean entirely to one side (essentially a linked list).
+"""
 # ==========================================================
 # Trees - Edge Cases
 # ==========================================================
@@ -87,12 +95,35 @@ def countNodes(self, root: Optional[TreeNode]) -> int:
     left_height = get_height(root, True)
     right_height = get_height(root, False)
     
-    # If left and right heights are equal, the subtree is a "perfect" binary tree
+    # If left and right heights are equal, the subtree is a "perfect" binary tree i.e. (every level is completely filled).
     if left_height == right_height:
-        return (1 << left_height) - 1
+        # formula for the total number of nodes in a perfect binary tree of height h.
+        return 2**left_height - 1
     
     # Otherwise, recurse on left and right subtrees + 1 for the current root
     return 1 + self.countNodes(root.left) + self.countNodes(root.right)
+
+# LC 236
+# Use post order traversal i.e. left, right, root.
+# Time complexity O(n) where n is the number of nodes in the tree.
+# Space complexity O(h) where h is the height of the tree.
+def lowestCommonAncestor(self, root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -> 'TreeNode':
+        # Base case: if root is null, or we found p or q
+        if not root or root == p or root == q:
+            return root
+        
+        # Recursively search left and right subtrees
+        left = self.lowestCommonAncestor(root.left, p, q)
+        right = self.lowestCommonAncestor(root.right, p, q)
+        
+        # If both left and right are non-null, p and q are on separate sides; root is the LCA
+        if left and right:
+            return root
+        
+        # Otherwise, return the non-null child (or null if both were null)
+        # p and q are on the same side of the tree are good one we found one as guranteed 
+        # that the other one is in the same subtree, so we return the non-null child.
+        return left if left else right
 
 # ==========================================================
 # Trees - DFS (Depth-First Search)
@@ -107,6 +138,12 @@ and then dives into its right subtree. Depending on the problem, you can process
       2   5
      / \   
     1   3
+
+Time Complexity: O(n) - Each node is visited exactly once.
+Space Complexity: O(h) - The maximum depth of the recursion stack is equal to the height
+
+For a balanced binary tree, the height is O(log N), making the space complexity logarithmic.
+For a skewed binary tree (resembling a linked list), the height equals the number of nodes (H = N), resulting in a worst-case space complexity of O(N).
 """
 
 # Recursive DFS - In-Order (Left -> Root -> Right)
@@ -346,39 +383,20 @@ A Binary Search Tree (BST) is a node-based binary tree data structure that satis
     Both the left and right subtrees must also be binary search trees.
 
 Time Complexity:Average Case: O(log n) for search, insertion, 
-and deletion (when the tree is balanced).Worst Case: O(n) (when the tree becomes skewed, resembling a linked list).
+and deletion (when the tree is balanced).
+Worst Case: O(n) (when the tree becomes skewed, resembling a linked list).
+Space Complexity: O(h) where h is the height of the tree, due to the recursion stack during operations.
 
 In-Order Traversal: Visiting nodes in the order: Left $\rightarrow$ Root $\rightarrow$ Right. For a BST, 
 this always yields elements in sorted ascending order!!!.
 """
-def isValidBST(self, root: Optional[TreeNode]) -> bool:
-        """
-        Time complexity: O(n) - We visit each node exactly once.
-        Space complexity: O(h) - The space used by the stack is proportional to the height
-        """
-        stack = []
-        prev = -float('inf')
-        curr = root
-        
-        while curr or stack:
-            # Reach the leftmost node of the current subtree
-            while curr:
-                stack.append(curr)
-                curr = curr.left
-            
-            # Process the node
-            curr = stack.pop()
-            if curr.val <= prev:
-                return False
-            prev = curr.val
-            
-            # Move to the right subtree
-            curr = curr.right
-            
-        return True
 
 # Using bounds to validate the BST property. Each node must be within a specific range defined by its ancestors.
 def isValidBST(self, root: Optional[TreeNode]) -> bool:
+    """
+    Time complexity: O(n) - We visit each node exactly once.
+    Space complexity: O(h) - The space used by the stack is proportional to the height
+    """
     def validate(node, low=float('-inf'), high=float('inf')):
         if not node:
             return True
@@ -406,21 +424,21 @@ def searchBST(self, root: Optional[TreeNode], val: int) -> Optional[TreeNode]:
         # Call the nested function starting from the root
         return dfs(root)
 
-"""
-Base Case: If the root is None, return None (target not found).
-Search Phase:
-    If the target key is smaller than root.val, look in the left subtree: root.left = deleteNode(root.left, key).
-    If the target key is larger than root.val, look in the right subtree: root.right = deleteNode(root.right, key).
-Deletion Phase (Target Found):
-    Case 1 & 2 (Zero or One Child): If root.left is None, return root.right. If root.right is None, return root.left.
-    Case 3 (Two Children):
-        Find the minimum node in the right subtree (curr = root.right, loop while curr.left is not None).
-        Copy its value to root.val.
-        Recursively delete that minimum node from the right subtree: root.right = deleteNode(root.right, root.val).
-Return: Return the updated root node.
 
-"""
 class Solution:
+    """
+    Base Case: If the root is None, return None (target not found).
+    Search Phase:
+        If the target key is smaller than root.val, look in the left subtree: root.left = deleteNode(root.left, key).
+        If the target key is larger than root.val, look in the right subtree: root.right = deleteNode(root.right, key).
+    Deletion Phase (Target Found):
+        Case 1 & 2 (Zero or One Child): If root.left is None, return root.right. If root.right is None, return root.left.
+        Case 3 (Two Children):
+            Find the minimum node in the right subtree (curr = root.right, loop while curr.left is not None).
+            Copy its value to root.val.
+            Recursively delete that minimum node from the right subtree: root.right = deleteNode(root.right, root.val).
+    Return: Return the updated root node.
+    """
     def deleteNode(self, root: TreeNode | None, key: int) -> TreeNode | None:
         if not root:
             return None
