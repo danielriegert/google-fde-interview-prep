@@ -485,6 +485,12 @@ Root ("")
       └── 'a'
            ├── 't' (is_end_of_word = True)
            └── 'r' (is_end_of_word = True)
+
+Operation Time Complexity Description
+Insertion O(m) Traverses or creates nodes for each character of the word of length m.
+Search O(m) Traverses nodes matching each character of the word of length m.
+Starts With (Prefix) O(m) Traverses nodes matching each character of the prefix of length m.
+Deletion O(m) Traverses to the end of the word and recursively removes unused nodes upward.
 """
 class TrieNode:
     """Represents a single node in the Trie data structure."""
@@ -512,7 +518,15 @@ class Trie:
         self.root = TrieNode()
 
     def insert(self, word: str) -> None:
-        """Inserts a word into the trie character by character."""
+        """
+        Inserts a word into the trie character by character.
+        1. Start at the root node.
+        2. Iteratethrough each char in the word
+        3. For each char, check if it exists in the current node's children:
+            - If it does, move to that child node.
+            - If it doesn't, create a new TrieNode for that char and link it as a child.
+        4. After processing all characters, mark the last node's is_end_of_word as True to signify the completion of a valid word.
+        """
         # Start the traversal pointer at the root node.
         current = self.root
 
@@ -707,3 +721,46 @@ class Solution:
 
     return res
 
+# LC 211
+class TrieNode:
+    def __init__(self):
+        self.children = {}
+        self.is_end = False
+
+class WordDictionary:
+
+    def __init__(self):
+        self.root = TrieNode()
+
+    def addWord(self, word: str) -> None:
+        current = self.root
+
+        for char in word:
+            if char not in current.children:
+                current.children[char] = TrieNode()
+            
+            current = current.children[char]
+        
+        current.is_end = True
+
+    def search(self, word: str) -> bool:
+        def dfs(node, index):
+            # If we've reached the end of the word, check if it's a valid end node
+            if index == len(word):
+                return node.is_end
+            
+            char = word[index]
+            
+            if char == '.':
+                # Try all possible children nodes for the wildcard
+                for child in node.children.values():
+                    if dfs(child, index + 1):
+                        return True
+                return False
+            else:
+                # Regular character match
+                if char not in node.children:
+                    return False
+                return dfs(node.children[char], index + 1)
+
+        return dfs(self.root, 0)

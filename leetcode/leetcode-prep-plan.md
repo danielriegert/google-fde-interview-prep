@@ -329,6 +329,11 @@ ToDos: define common edge cases for each data structure, learn time and space co
 | **Day 13** | Backtracking & Greedy Algorithms       | Exhaustive search pruning vs. local invariant choices. Practice **Letter Combinations of a Phone Number (LC 17)**, **Word Search (LC 79)**, and **Jump Game II (LC 45)**.                                                |
 | **Day 14** | Week 2 Review                          | Focus heavily on identifying hidden DP states and writing clean backtracking templates.                                                                                                                                  |
 
+Trie: 211
+Binary Search:
+DP 1D:
+DP 2D:
+
 ## Greedy: 55, 122
 
 ## Week 3: Top Google Problems & Mock Interviews
