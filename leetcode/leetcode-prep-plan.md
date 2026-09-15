@@ -330,7 +330,7 @@ ToDos: define common edge cases for each data structure, learn time and space co
 | **Day 14** | Week 2 Review                          | Focus heavily on identifying hidden DP states and writing clean backtracking templates.                                                                                                                                  |
 
 Trie: 211
-Binary Search:
+Binary Search: 162, 34,
 DP 1D:
 DP 2D:
 

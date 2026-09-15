@@ -60,7 +60,11 @@ if result:
 else:
     print("No elements found in this range")
 
-# Manual Implementation of Binary Search
+# Binary Search: Inclusive Bounds
+# This is a closed interval [left, right] binary search, meaning both ends of the search space are inclusive.
+# Use this when working with unique elements (no duplicates) and you only care whether the exact item exists.
+# If the target is not in the array, it tells you it's missing (usually by returning -1),
+#  though it can be adapted to return the insertion point i.e. return left instead of -1.
 def binary_search_iterative(arr, target):
     left = 0
     right = len(arr) - 1
@@ -80,7 +84,7 @@ def binary_search_iterative(arr, target):
         else:
             right = mid - 1
 
-    return -1  # Target is not present in the array
+    return -1  # Target is not present in the array or return left if the insertion point is needed.
 
 
 # Example usage:
@@ -89,7 +93,11 @@ target_val = 23
 result = binary_search_iterative(numbers, target_val)
 print(f"Index of {target_val}: {result}")  # Output: Index of 23: 5
 
-# Lower Bound Using Binary Search
+# Binary Search: Lower Bound
+# Finds the first position where an element is greater than or equal to the target.
+# Uses half-open interval [left, right)
+# Use this when you need to find an insertion position to maintain sorted order (like LeetCode 35)
+# or when you need to find the first occurrence of a target in an array with duplicate values.
 def lower_bound(arr: list[int], target: int) -> int:
     left = 0
     right = len(arr)
@@ -110,6 +118,84 @@ def lower_bound(arr: list[int], target: int) -> int:
     # It can equal len(arr) if all elements are smaller than target.
     return left
 
+# Binary Search: Upper Bound
+# Finds the first position where an element is strictly greater than the target.
+# Uses half-open interval [left, right)
+# Useful when you want to find the upper boundary of a range of duplicate elements (e.g., Finding the cut-off point where elements exceed a maximum limit.)
+def upperBound(nums: list[int], target: int) -> int:
+    left, right = 0, len(nums)
+    
+    while left < right:
+        mid = left + (right - left) // 2
+        
+        if nums[mid] <= target:
+            # Target or smaller elements are at mid or to the left; 
+            # move right to search for something strictly greater
+            left = mid + 1
+        else:
+            # nums[mid] is strictly greater than target, 
+            # but there might be an earlier valid element on the left
+            right = mid
+            
+    return left
+
+# Binary Search: Upper and Lower Bound Combined
+#  Use both together when you need to find the entire range (start and end indices) of a duplicate element, such as in LeetCode 34 (Find First and Last Position of Element in Sorted Array).
+# How it works: The lower bound gives you the starting index of the target, and the upper bound minus one (upper_bound - 1) gives you the ending index
+
+# LC 34: Find First and Last Position of Element in Sorted Array
+class Solution:
+    # Check lower bound. This will find index of the first occurrence of the target in the sorted array if it exists,
+    # or the index where it could be inserted to maintain sorted order if it doesn't exist.
+    def lower_bound(self, nums: List[int], target: int):
+        left = 0
+        right = len(nums)
+
+        while left < right:
+            mid = (left + right) // 2
+
+            if nums[mid] < target:
+                left = mid + 1
+            else:
+                right = mid
+        
+        return left
+
+    # Check upper bound. This will find index of the first element that is strictly greater than the target in the sorted array if it exists,
+    # or the index where it could be inserted to maintain sorted order if it doesn't exist.
+    # !!!We will need to subtract 1 from the result of upper_bound to get the last occurrence of the target.!!!
+    def upper_bound(self, nums: List[int], target: int):
+        left = 0
+        right = len(nums)
+
+        while left < right:
+            mid = (left + right) // 2
+
+            if nums[mid] <= target:
+                left = mid + 1
+            else:
+                right = mid
+        
+        return left
+
+    def searchRange(self, nums: List[int], target: int) -> List[int]:
+        left_idx = self.lower_bound(nums, target)
+        right_idx = self.upper_bound(nums, target)
+
+        # We need to check if the target exists in the range (NOT if valid range)
+        # 1. check if left_idx is out of bounds (greater than the last index)
+        # 2. check if the element at left_idx is not equal to the target (meaning the target doesn't exist in the array)
+        if left_idx > len(nums) - 1 or nums[left_idx] != target:
+            return [-1, -1]
+        else:
+            return [left_idx, right_idx - 1]
+
+#--------------------------------
+# LeetCode 162: Find Peak Element
+# In this case we don't need to sort the array instead we rely on the slope of the array to find a peak element.
+# lower_bound / upper_bound are designed to find the insertion point, first occurrence, or last occurrence of a specific target value in a sorted array.
+# In LC 162, there is no target value. You are looking for an arbitrary peak based on a local property rather than matching a specific number.
+#--------------------------------
 def findPeakElement(self, nums: list[int]) -> int:
     # Initialize two pointers: 
     # 'left' starts at the beginning of the array (index 0).
@@ -170,7 +256,63 @@ def findPeakElement(self, nums: list[int]) -> int:
     # This index represents our peak element, so we return it.
     return left
 
+# LC 162: Find Peak Element (Brute Force)
+def findPeakElement(nums: list[int]) -> int:
+    n = len(nums)
+    for i in range(n):
+        # Check left neighbor (or treat as -inf if out of bounds)
+        is_greater_left = (i == 0) or (nums[i] > nums[i - 1])
+        # Check right neighbor (or treat as -inf if out of bounds)
+        is_greater_right = (i == n - 1) or (nums[i] > nums[i + 1])
+        
+        if is_greater_left and is_greater_right:
+            return i
+            
+    return 0
+
+#--------------------------------
+# LC 74: 2D Matrix
+class Solution:
+    """
+    Approach: Treat the 2D matrix as a 1D sorted array (virtually flatten it) and perform binary search.
+    1. Calculate the total number of elements in the matrix (m * n).
+    2. Use binary search on the range [0, m * n - 1].
+    3. For each mid index, map it back to 2D coordinates using:
+       row = mid // n -> integer division to get the row index. Since each row has $n$ elements, dividing the 1D index by n tells you how many full rows precede your target index.
+       col = mid % n -> modulo operation to get the column index. The remainder after dividing by n tells you how far into the current row your target index is.
+    4. Compare the value at matrix[row][col] with the target.
+    5. Adjust the search space based on the comparison.
+    6. If the target is found, return True; otherwise, return False after the loop ends.
+
+    Time complexity: O(log(m * n))
+    Space complexity: O(1)
+    """
+    def searchMatrix(self, matrix: list[list[int]], target: int) -> bool:
+        if not matrix or not matrix[0]:
+            return False
+        
+        m, n = len(matrix), len(matrix[0])
+        left, right = 0, (m * n) - 1
+        
+        while left <= right:
+            mid = (left + right) // 2
+            # Map 1D index 'mid' back to 2D coordinates
+            row = mid // n
+            col = mid % n
+            val = matrix[row][col]
+            
+            if val == target:
+                return True
+            elif val < target:
+                left = mid + 1
+            else:
+                right = mid - 1
+                
+        return False
+# --------------------------------
 # Answer Space Problem
+#--------------------------------
+# Template
 def solve_answer_space_problem(constraints) -> int:
     # Step 1: Define search space
     # This is usually the min and max of the variable we are trying to find.
