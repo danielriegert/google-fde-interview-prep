@@ -422,6 +422,7 @@ Multi-Source Scenarios: When multiple starting points need to spread outward sim
 
 - Might not alway be exat match e.g. we are only looking for lower boundary
 - Array needs to be sorted for binray search to work. In some cases we will be able to still perform binary search by using a modified version of the algo were we check if we are on an upward or donwward slope amnd move the pointer closer to each other unitl peak is found
+- If not strictly sorted look if subset is sorted e.g. left or right half. slope, etc.
 - Remember array can also contain DUPLICATES
 - Use below when need to dviide and round up when float
 

@@ -309,6 +309,64 @@ class Solution:
                 right = mid - 1
                 
         return False
+
+# ----------------------------------------
+# LC 33: Search in Rotated Sorted Array
+"""
+Time: O(log n)
+Space: O(1)
+
+Key insight is that either left or right half will still be sorted.
+Determine which half is sorted and if target lasy with in it
+"""
+def search(self, nums: list[int], target: int) -> int:
+    left, right = 0, len(nums) - 1
+
+    while left <= right:
+        mid = (left + right) // 2
+
+        if nums[mid] == target:
+            return mid
+
+        # Check if the left half is sorted
+        if nums[left] <= nums[mid]:
+            # Check if the target lies within the sorted left half
+            if nums[left] <= target and target < nums[mid]:
+                right = mid - 1
+            else:
+                left = mid + 1
+        # Otherwise, the right half must be sorted
+        else:
+            # Check if the target lies within the sorted right half
+            if nums[mid] < target and target <= nums[right]:
+                left = mid + 1
+            else:
+                right = mid - 1
+
+        return -1
+#--------------------------------
+# LC 153: Find Minimum in Rotated Sorted Array
+"""
+Time: O(log n)
+Space: O(1)
+
+Key insigt is again that we can divide it into two regions.
+If nums[mid] > nums[right] we know the minimum needs to be in the right half
+else we check the left half
+"""
+def findMin(self, nums: list[int]) -> int:
+    left = 0
+    right = len(nums) - 1
+
+    while left < right:
+        mid = (left + right) // 2
+
+        if nums[mid] > nums[right]:
+            left = mid + 1
+        else:
+            right = mid
+    
+    return nums[left]
 # --------------------------------
 # Answer Space Problem
 #--------------------------------
