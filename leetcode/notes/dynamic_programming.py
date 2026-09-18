@@ -9,6 +9,7 @@ Covers 1D DP, 2D DP (grid and subsequence problems), and top-down memoization.
 """
 Important: Instead of asking "Where can I go from here?", dynamic programming asks "How could I have possibly arrived here?"
 When problem can be thought of decision tree. DP is a clever way to solve that tree without actually building it or recalculating duplicate branches.
+Brute force approach is usually DFS using recursion.
 Check:
 - Can I break it into smaller subproblems?
 - Do past choices restrict future choices?
@@ -31,6 +32,9 @@ Initialize dp[0] and often dp[1] manually before entering a loop.
 Step 4: Determine the Final Answer & Optimize Space
 The final answer is typically at the end of your DP array (e.g., dp[-1]).S
 pace Optimization Trick: If dp[i] only depends on the previous 1 or 2 values (i-1, i-2), you can drop the array entirely and use variables to achieve $O(1)$ space.
+
+Time Complexity: O(n) where n is the length of the input array.
+Space Complexity: O(n) for the DP array, or O(1) if optimized to use variables instead of an array.
 """
 
 def solveSimilarProblem(self, nums: list[int]) -> int:
@@ -72,6 +76,54 @@ def solveSpaceOptimized(self, nums: list[int]) -> int:
     # Step 5: Return the final state variable
     return prev1
 
+
+# ---------------------------------
+# LC 322
+"""
+Coin Change is a classic introduction to the Unbounded Knapsack Pattern (where an item can be used an unlimited number of times).
+
+In dynamic programming, you use the array index as the target value (like the amount in Coin Change) when the value itself is the state you are trying to optimize or reach, rather than a position in an input list.
+    Use it when: The problem asks you to find a combination, count, or minimum/maximum cost to reach a specific numerical target (e.g., amount = 11, target sum = 7). 
+    The index i directly represents "amount i".
+    Do not use it when: The problem gives you a fixed array and wants you to pick elements based on their spatial position or sequence (e.g., House Robber, where index i means "house i").
+
+State: Fewest numbers of coins need to maek up to given sub amount i
+Base: number of coins to make up amount 0
+Transition: For every amount i from 1 to amount, we look at each available coin:
+If the coin can fit into the current amount (coin <= i), we check whether using this coin gives us a smaller total number of coins than what we currently have recorded for dp[i].
+
+Formula:
+dp[i] = min(dp[i], dp[i - coin] + 1)
+
+Time complexity: O(a∗c)
+    a is number of amount and c is number of coins
+Space complexity: O(a)
+
+"""
+def coinChange(self, coins: list[int], amount: int) -> int:
+    # Inint array with current amount + 1 representing not reachable to ensure
+    # min() will work
+    # Index represents amount and value min number of coins to make it
+    min_coins = [amount + 1] * (amount + 1)
+
+    # Base case is number of coins needed for amount 0
+    min_coins[0] = 0
+
+    # iterate through all possible amounts including actual amount
+    for i in range(1, amount + 1):
+        # for each sub amount check all coin combinations to get min number to reach sub amount
+        for coin in coins:
+            # check if coin is less than amount. if yes we update table
+            if i - coin >= 0:
+                min_coins[i] = min(min_coins[i], 1 + min_coins[i - coin])
+    
+    # Check if we found valid combination
+    return min_coins[-1] if min_coins[-1] != amount + 1 else -1
+
+# -------------------------------
+# LC 300
+
+
 # ==========================================================
 # DP 2D
 # ==========================================================
@@ -80,7 +132,14 @@ Can think of it as graph. DP optimized way of solving it.
 Brute force: DFS with memoization. DP: Bottom up tabulation.
 """
 # ----------------Grid Problems: 2D DP-----------------------
-# See Leetcode 62. Unique Paths
+"""
+Grid based problems: 2D DP:
+Base case for bottom up: first row and first column (or first cell)
+    - Often, the first row and first column are initialized based on the problem's constraints (e.g., only one way to reach any cell in the first row or column).
+Transition: For each cell (r, c), the value is derived from its neighbors (usually the cell above and the cell to the left). The specific formula depends on the problem (e.g., sum, min, max, count).
+    - Example: dp[r][c] = dp[r-1][c] + dp[r][c-1] for counting paths, or dp[r][c] = min(dp[r-1][c], dp[r][c-1]) + grid[r][c] for minimum path sum problems.
+"""
+# Templates
 def gridDPProblem(m: int, n: int) -> int:
     # Step 1 & 2: Initialize DP table with base cases
     dp = [[0] * n for _ in range(m)]
@@ -124,6 +183,128 @@ def spaceOptimizedGridDP(self, m: int, n: int) -> int:
     # Step 5: The final answer rests in the last element of the 1D array
     return dp[-1]
 
+# LC 62: Unique Paths
+def uniquePaths(self, m: int, n: int) -> int:
+    # Initialize a 2D DP table with dimensions m x n, filled with 1s
+    # Each cell dp[r][c] will represent the number of unique paths to reach that cell from the top-left corner (0, 0)
+    dp = [[1] * n for _ in range(m)]
+
+    # start at 1 as there is only one way to reach right and bottom for col and row 1
+    # can never come from left or above
+    for r in range(1, m):
+        for c in range(1, n):
+            dp[r][c] = dp[r -1][c] + dp[r][c-1]
+    
+    return dp[m-1][n-1]
+
+ # LC 63: Unique Paths II
+ 
+    
+
+# LC 120: Triangle
+"""
+Bottom up approach: start solving the problem from the smallest, base-case subproblems (the beginning of the array, houses 0 and 1) and iteratively build your way up to the final answer
+
+State: minimum path sum from r,c to the bottom
+Base case: first element in triangle
+Transition: dp[row][col] = triangle[row][col] + min(dp[row + 1][col], dp[row + 1][col + 1])
+
+Time: O(N^2)
+Space: O(1)
+"""
+def minimumTotal(self, triangle: list[list[int]]) -> int:
+    # in place solution instead of using dp table to achive O(1) space complexity
+    # Iterate from bottom (starting at second-to-last row) to top, updating each cell with the minimum path sum to the bottom
+    # for each element in the current row, add the minimum of the two adjacent numbers from the row below
+    for row in range(len(triangle) - 2, -1 , -1 ):
+        for column in range(len(triangle[row])):
+            triangle[row][column] = triangle[row][column] + min(triangle[row + 1][column], triangle[row + 1][column + 1])
+
+    return triangle[0][0]
+
+
+
+# Graph DFs with memo top down approach
+"""
+Time: O(N^2)
+Space: O(N^2)
+"""
+def minimumTotal(self, triangle: List[List[int]]) -> int:
+    n = len(triangle)
+    # Alternatively: 
+    # Initialize a 2D memo table matching the triangle's shape with None
+    # memo = [[None] * len(row) for row in triangle]
+    memo = {}
+    
+    def dfs(row, col):
+        if row == n - 1:
+            return triangle[row][col]
+        
+        if (row, col) in memo:
+            return memo[(row, col)]
+        
+        res = triangle[row][col] + min(dfs(row + 1, col), dfs(row + 1, col + 1))
+        memo[(row, col)] = res
+        return res
+    
+    return dfs(0, 0)
+
+# LC 64: Minimum Path Sum
+"""
+State: min path sum to reach row,col
+Transition: grid[row][col] += min(grid[row - 1][col], grid[row][col - 1])
+Base case: first row and first column
+
+Space: O(1) if we modify the grid in place, otherwise O(m*n) for a separate dp table
+Time: O(m*n) where m is number of rows and n is number of columns as we visit each cell once
+"""
+def minPathSum(self, grid: list[list[int]]) -> int:
+    # Base case 1: Top row can only be reached by going left
+    for col in range(1, len(grid[0])):
+        grid[0][col] += grid[0][col - 1]
+
+        # Base case 2: First column can only be reached by going down
+    for row in range(1, len(grid)):
+        grid[row][0] += grid[row - 1][0]
+
+    # Start at second row and column
+    for row in range(1, len(grid)):
+        for col in range(1, len(grid[0])):
+            # We look at how we could have reach this cell which is either from the left or from the top
+            grid[row][col] += min(grid[row - 1][col], grid[row][col - 1])
+    
+    return grid[-1][-1]
+
+
+def minPathSum(self, grid: list[list[int]]) -> int:
+        """ 
+        Graph DFS Top down approach with memo.
+        Space: O(m*n) as the memoization dictionary stores up to m * n states. 
+        Recursion stack space is O(m+n) in the worst case, but this is dominated by the memoization space.
+        Time: O(m*n) where m is number of rows and n is number of columns as we visit each cell once
+        """
+        rows, columns = len(grid), len(grid[0])
+        memo = {}
+
+        def dfs(row, col):
+            # Base Case: bottom rihgt corner
+            if row == rows - 1 and col == columns -1:
+                return grid[row][col]
+            
+            # Base Case: Out of bounds
+            if row == rows or col == columns:
+                return float('inf')
+
+            # Check if result alread computed
+            if (row, col) in memo:
+                return memo[(row, col)]
+            
+            result = grid[row][col] + min(dfs(row + 1, col), dfs(row, col + 1))
+            memo[(row, col)] = result
+
+            return result
+        
+        return dfs(0, 0)
 # ----------------Subsequence Problems: 2D DP (Leetcode 1143)-----------------------
 # Longest Common Subsequence (LCS) Problem
 def subsequenceProblem(self, text1: str, text2: str) -> int:
@@ -262,6 +443,7 @@ for length in range(2, n + 1):
             dp[i][j] = max(dp[i + 1][j], dp[i][j - 1])
 
 return dp[0][n - 1]
+
 
 # ==========================================================
 # Memoization with DFS (Top-Down DP)

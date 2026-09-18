@@ -331,8 +331,8 @@ ToDos: define common edge cases for each data structure, learn time and space co
 
 Trie: 211
 Binary Search: 162, 34, 74, 33, 153, practice answer space problems
-DP 1D:
-DP 2D:
+DP 1D: 139, 140, 322 and Coin Change 2, different flavours of 1d DP, 300
+DP 2D: 120, 62 & 63, 64
 
 ## Greedy: 55, 122
 
