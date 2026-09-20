@@ -126,7 +126,7 @@ def upperBound(nums: list[int], target: int) -> int:
     left, right = 0, len(nums)
     
     while left < right:
-        mid = left + (right - left) // 2
+        mid = (right + left) // 2
         
         if nums[mid] <= target:
             # Target or smaller elements are at mid or to the left; 
@@ -356,6 +356,7 @@ else we check the left half
 """
 def findMin(self, nums: list[int]) -> int:
     left = 0
+    # use -1 as otherwise out of bounds as we are using nums[right]
     right = len(nums) - 1
 
     while left < right:
@@ -370,13 +371,17 @@ def findMin(self, nums: list[int]) -> int:
 # --------------------------------
 # Answer Space Problem
 #--------------------------------
+"""
+Steps:
+
+"""
 # Template
 def solve_answer_space_problem(constraints) -> int:
     # Step 1: Define search space
     # This is usually the min and max of the variable we are trying to find.
     left = min_possible_answer
     right = max_possible_answer
-    res = -1
+    res = -1 # or max / min
     
     # Step 2: Binary search loop
     while left <= right:
@@ -392,3 +397,30 @@ def solve_answer_space_problem(constraints) -> int:
             
     return res
 
+# LC 875: Koko Eating Banana
+def minEatingSpeed(self, piles: List[int], h: int) -> int:
+    # Min i.e. eat 1 banane per minute
+    left = 1
+    # Max i.e. eat number of bananas in biggest pile per minute
+    right = max(piles)
+    res = right
+
+    # closed interval
+    # Ensures that the loop runs even when left and right converge on the exact same index (left == right).
+    #  That final candidate value of k still needs to be tested
+    while left <= right:
+        # k is mid
+        k = (left + right) // 2
+        
+        # Calculate total hours needed for speed k
+        total_hours = sum(math.ceil(p / k) for p in piles)
+        
+        if total_hours <= h:
+            res = k         # Valid speed, try a smaller one
+            right = k - 1
+        else:
+            left = k + 1    # Too slow, try a faster speed
+            
+    return res
+
+# LC 2300: Successful Pairs of Spells and Potions

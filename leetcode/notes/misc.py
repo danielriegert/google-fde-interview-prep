@@ -23,3 +23,12 @@ else:
 # ==========================================================
 # Square a number in python
 squared = n ** 2  # Using the exponentiation operator
+
+# ==========================================================
+# Division
+# ==========================================================
+# Performs ceiling division (rounding up to the nearest whole integer).
+math.ceil(p / k)  
+
+# Performs floor division (integer division, rounding down). For the same pile, $7 // 3$ evaluates to $2$.
+p // k

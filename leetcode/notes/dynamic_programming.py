@@ -128,6 +128,12 @@ def coinChange(self, coins: list[int], amount: int) -> int:
 # DP 2D
 # ==========================================================
 """
+Key signs:
+Optimization Objective: e..g minimum number of operations.
+Choices at Every Step: you have multiple valid choices at a given step that branch out into future states.
+Overlapping Subproblems: A recursive solution without memoization would repeatedly compute the result for the same inputs.
+You know a problem requires 2D DP when your state depends on two independent, changing inputs
+
 Can think of it as graph. DP optimized way of solving it.
 Brute force: DFS with memoization. DP: Bottom up tabulation.
 """
@@ -197,9 +203,101 @@ def uniquePaths(self, m: int, n: int) -> int:
     
     return dp[m-1][n-1]
 
- # LC 63: Unique Paths II
- 
+# LC 63: Unique Paths II
+# Bottom up:
+# Time Complexity O(MxN) where M is number of rows and N is number of columns as we visit each cell once
+# Space Complexity O(MxN) where M is number of rows and N is number of
+def uniquePathsWithObstacles(self, obstacleGrid: list[list[int]]) -> int:
+    if not obstacleGrid or obstacleGrid[0][0] == 1:
+        return 0
+
+    m, n = len(obstacleGrid), len(obstacleGrid[0])
+    dp = [[0] * n for _ in range(m)]
     
+    # Initialize the starting point
+    dp[0][0] = 1
+    
+    # Initialize the first column
+    # Set it to 1 if reachable,0 if blocked
+    for r in range(1, m):
+        if obstacleGrid[r][0] == 0 and dp[r - 1][0] == 1:
+            dp[r][0] = 1
+            
+    # Initialize the first row
+    # Set it to 1 if reachable,0 if blocked
+    for c in range(1, n):
+        if obstacleGrid[0][c] == 0 and dp[0][c - 1] == 1:
+            dp[0][c] = 1
+
+    for r in range(1, m):
+        for c in range(1, n):
+            if obstacleGrid[r][c] == 1:
+                dp[r][c] = 0
+            else:
+                dp[r][c] = dp[r -1][c] + dp[r][c-1]
+    
+    return dp[m-1][n-1]
+
+# Bottom Up: Space Optimized
+# Time Complexity O(MxN) where M is number of rows and N is number of columns as we visit each cell once
+# Space Complexity O(N) where N is number of columns as we only store the current row
+def uniquePathsWithObstacles(self, obstacleGrid: list[list[int]]) -> int:
+    # Edge case: If the grid is empty or the starting cell is blocked, 
+    # there are 0 possible paths to the destination.
+    if not obstacleGrid or obstacleGrid[0][0] == 1:
+        return 0
+    
+    # Get the dimensions of the grid (m rows, n columns)
+    m, n = len(obstacleGrid), len(obstacleGrid[0])
+    
+    # Create a 1D array of size n to store path counts for the current row.
+    # This optimizes space from O(m * n) to O(n) by only keeping track of the previous row's values.
+    dp = [0] * n
+    
+    # There is 1 way to be at the starting position (0, 0)
+    dp[0] = 1
+    
+    # Iterate through every row and column of the grid
+    for r in range(m):
+        for c in range(n):
+            # If there is an obstacle at the current cell, set the path count to 0.
+            if obstacleGrid[r][c] == 1:
+                dp[c] = 0
+            # If it's a valid cell and not the very first column, 
+            # add the paths coming from the left cell (dp[c - 1]) 
+            # to the paths coming from the cell above (stored currently in dp[c]).
+            elif c > 0:
+                dp[c] += dp[c - 1]
+                
+    # Return the total number of paths to reach the bottom-right corner (n - 1)
+    return dp[n - 1]
+
+# DFS with memoization (Top-down DP)
+# Space and Time complexity: O(m*n) where m is number of rows and n is number of columns as we visit each cell once
+def uniquePathsWithObstacles(self, obstacleGrid: list[list[int]]) -> int:
+    rows, columns = len(obstacleGrid), len(obstacleGrid[0])
+    memo = {}
+
+    def dfs(row, column):
+        # Base case: Out of bounds or hit an obstacle
+        if row >= rows or column >= columns or obstacleGrid[row][column] == 1:
+            return 0
+        
+        # Base case: Reached the bottom-right destination
+        if row == rows - 1 and column == columns - 1:
+            return 1
+        
+        # Check if result is already memoized
+        if (row, column) in memo:
+            return memo[(row, column)]
+        
+        # Recurse down and right, then save to memo
+        # IMPORTANT: here it is +1 vs in bottom up it is -1 as we are looking back there!!!
+        memo[(row, column)] = dfs(row + 1, column) + dfs(row, column + 1)
+        
+        return memo[(row, column)]
+
+    return dfs(0, 0)
 
 # LC 120: Triangle
 """
@@ -305,7 +403,14 @@ def minPathSum(self, grid: list[list[int]]) -> int:
             return result
         
         return dfs(0, 0)
-# ----------------Subsequence Problems: 2D DP (Leetcode 1143)-----------------------
+
+# ----------------Subsequence / String Problems: 2D DP (Leetcode 1143)-----------------------
+"""
+State: 
+Initialize 2d dp with all 0s
+Base Case: usually empty string, potentially intit base case in 2d grid if not 0
+Transition:
+"""
 # Longest Common Subsequence (LCS) Problem
 def subsequenceProblem(self, text1: str, text2: str) -> int:
     m, n = len(text1), len(text2)
@@ -444,6 +549,76 @@ for length in range(2, n + 1):
 
 return dp[0][n - 1]
 
+# LC 72: Edit Distance
+"""
+State: The minimum number of operations required to convert the first i characters of word1 into the first j characters of word2.
+Base case: one string is empty 
+Minimum number of operations to get from horse to ros?
+         " "  r    o   s
+    " "   0   1    2   3
+    h     1   1    2   3
+    o     2   2    1   2
+    r     3   2    2   2
+    s     4   3    3   2
+    e     5   4    4   3
+"""
+def minDistance(self, word1: str, word2: str) -> int:
+    m, n = len(word1), len(word2)
+    
+    # Initialize a 2D DP array with dimensions (m+1) x (n+1)
+    dp = [[0] * (n + 1) for _ in range(m + 1)]
+    
+    # Base case empty string: filling the first row and first column
+    for i in range(m + 1):
+        dp[i][0] = i
+    for j in range(n + 1):
+        dp[0][j] = j
+        
+    # Fill the DP table
+    # need to do +1 as we added empty string, start at second row and column
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            # if characters match then cary over cost from last cell
+            # need to do -1 to get right chars
+            if word1[i - 1] == word2[j - 1]:
+                dp[i][j] = dp[i - 1][j - 1]
+            # otherwise min of 3 possible operations
+            else:
+                dp[i][j] = 1 + min(
+                    dp[i - 1][j],    # Delete / move above
+                    dp[i][j - 1],    # Insert / move left
+                    dp[i - 1][j - 1] # Replace / move diagonal above left
+                )
+                
+    return dp[m][n]
+
+def minDistance(self, word1: str, word2: str) -> int:
+        m, n = len(word1), len(word2)
+        
+        # Instead of a 2D grid, we just keep track of two rows:
+        # 'prev_row' starts as the base case for row 0 (0, 1, 2, ..., n)
+        prev_row = list(range(n + 1))
+        
+        for i in range(1, m + 1):
+            # Create a new row for the current step, starting with [i]
+            curr_row = [i] + [0] * n
+            
+            for j in range(1, n + 1):
+                # need -1 to account for additional row we added for base case
+                if word1[i - 1] == word2[j - 1]:
+                    curr_row[j] = prev_row[j - 1]
+                else:
+                    curr_row[j] = 1 + min(
+                        prev_row[j],     # Delete (comes from row above)
+                        curr_row[j - 1], # Insert (comes from left in current row)
+                        prev_row[j - 1]  # Replace (comes from diagonal above-left)
+                    )
+            
+            # Move curr_row to prev_row for the next loop iteration
+            prev_row = curr_row
+            
+        # The final answer is the last number in our final row
+        return prev_row[n]
 
 # ==========================================================
 # Memoization with DFS (Top-Down DP)
