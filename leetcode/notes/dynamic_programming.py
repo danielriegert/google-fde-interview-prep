@@ -7,6 +7,18 @@ Covers 1D DP, 2D DP (grid and subsequence problems), and top-down memoization.
 # DP 1D
 # ==========================================================
 """
+1. The Two Core Mathematical Properties
+For a problem to be solvable by DP, it must possess two specific traits:
+- Overlapping Subproblems: The same smaller subproblems are repeatedly encountered and solved when exploring different choices. If you draw a recursive tree and see identical nodes repeating across different branches, DP will save you from redundant work.
+- Optimal Substructure: The optimal solution to the overall problem can be built using the optimal solutions of its subproblems. For example, knowing if a string up to index 4 can be broken helps you determine if the string up to index 8 can be broken.
+
+2. Clues in the Problem Statement
+When reading a coding problem description, certain phrases and requirements strongly hint at DP:
+- Finding Extremes: Words like minimum cost, maximum profit, longest path, or shortest distance.
+- Counting Combinations: Questions that ask "How many ways are there to..." (e.g., Coin Change, Climbing Stairs).
+- Existence Questions: Questions that ask "Is it possible to reach the target?" or "Can this be formed?" (like the Word Break problem we just looked at).
+- Sequence Decisions: Problems where you make a series of choices (e.g., "take this item or leave it", "cut the rope here or there"), and each choice alters the state of what remains.
+
 Important: Instead of asking "Where can I go from here?", dynamic programming asks "How could I have possibly arrived here?"
 When problem can be thought of decision tree. DP is a clever way to solve that tree without actually building it or recalculating duplicate branches.
 Brute force approach is usually DFS using recursion.
@@ -37,6 +49,56 @@ Time Complexity: O(n) where n is the length of the input array.
 Space Complexity: O(n) for the DP array, or O(1) if optimized to use variables instead of an array.
 """
 
+# Lesson Learned
+"""
+General:
+- Transition might involve iterating wiht nested for loop about all possible combinations e.g. coin exchange, word break where we have two inputs
+ or where we skip elements e.g. longest subsequeunce (LC 3000)
+- state table usually tracks what we need to return as final result
+- trying to decompose into sub problems that build up to final solution
+- we look back at how we could have arrived at the current point
+- can space optimize if we only rely on i previous results
+String problems:
+- For string problems base case is usually empty string for array check samallest possible value e.g. 0
+
+Array problems:
+- Index of dp might be the target value (like the amount in Coin Change) 
+
+"""
+
+# Common Transitions
+"""
+1. Liner choice (House Robber LC198, Climbing Stairs 70)
+Decide whether to take the current element and combine with immediate neighbors.
+Transition examples: 
+- dp[i] = max(dp[i-1], dp[i-2] + nums[i])
+- dp[i] = dp[i - 1] + dp[i - 2]
+
+2. Partition / Jump (WordBreak LC139)
+Build current state by checking all valid previous split or jump points.
+Might need nested for loop
+Transition examples:
+
+3. Subsequeune
+
+
+4. Longest Increasing Subsequeunce
+Check all previous elements to see if the current one can extend an increasing sequence.
+Might need nested for loop
+
+5. Subarray (Kadane)
+Decide whether to extend the previous contiguous subarray or start fresh.
+Transition examples:
+dp[i] = max(nums[i], dp[i-1] + nums[i])
+
+6. String prefix
+Count valid decodings/paths by looking back 1 or 2 characters in a string.
+
+7. State machine
+Track mutually exclusive actions or states (e.g., holding vs. not holding) at step $i$.
+"""
+
+# Template
 def solveSimilarProblem(self, nums: list[int]) -> int:
     # Step 2: Handle edge cases and base cases
     if not nums: return 0
@@ -113,7 +175,8 @@ def coinChange(self, coins: list[int], amount: int) -> int:
     for i in range(1, amount + 1):
         # for each sub amount check all coin combinations to get min number to reach sub amount
         for coin in coins:
-            # check if coin is less than amount. if yes we update table
+            # check if coin is less than amount. if yes we update table by checking how many steps we needed for current amount - coin
+            # then we add 1 for current coin
             if i - coin >= 0:
                 min_coins[i] = min(min_coins[i], 1 + min_coins[i - coin])
     
@@ -122,7 +185,92 @@ def coinChange(self, coins: list[int], amount: int) -> int:
 
 # -------------------------------
 # LC 300
+"""
+State: lenght longest subsequence that ends at index i. init with all 1s
+Base case: dp[i] = 1 for all indices i
+Transition: For each index i, loop through all previous indices j from 0 to i-1. 
+If nums[i] > nums[j], update dp[i] to be the maximum of its current value or dp[j] + 1.
 
+Time: O(n^2)
+Space: O(n)
+
+Can also be solve using binray search.
+Can NOT be solved with slidign window
+"""
+def lengthOfLIS(self, nums: list[int]) -> int:
+    longest_sub_so_far = [1] * len(nums)
+
+    for i in range(len(nums)):
+        for j in range(i):
+            if nums[i] > nums[j]:
+                longest_sub_so_far[i] = max(longest_sub_so_far[i], longest_sub_so_far[j] + 1)
+    
+    return max(longest_sub_so_far)
+
+# -------------------------------
+# LC 139
+"""
+State: If it is a match so far i.e. True or False
+Base case: epmty string
+Transition: Can we form a valid prefix of length i if we already know whether smaller prefixes can be formed?
+
+Time complexity: O(n∗m∗k)
+    n is length of input string.
+    m is number of words in wordDict
+    k is average size of substrings.
+
+Space complexity: O(n)
+
+"""
+def wordBreak(self, s: str, wordDict: list[str]) -> bool:
+    # init with False and len + 1 to account for empty sting
+    match_so_far = [False] * (len(s) + 1)
+    # base case empty string
+    match_so_far[0] = True
+
+    # iterate through all prefixes of s
+    for i in range(1, len(s) + 1):
+        # check if last chars of s can make up a word in dict
+        for word in wordDict:
+            # calculate start of prefix to check
+            start = i -len(word)
+
+            # check if word is at least same size as prefix, if previous prefix before current one can be segmented, if current prefix is a match
+            if start >= 0 and match_so_far[start] and s[start:i] ==  word:
+                match_so_far[i] = True
+                break
+
+    return match_so_far[-1]
+
+
+def wordBreak(self, s: str, wordDict: list[str]) -> bool:
+    memo = {}
+
+    def dfs(i: int) -> bool:
+        # Base case: if we've reached the end of the string, it's a valid break
+        if i == len(s):
+            return True
+        
+        # Return cached result if we've already solved for this index
+        if i in memo:
+            return memo[i]
+
+        for word in wordDict:
+            # Check if the dictionary word fits and matches the substring starting at index i
+            if s.startswith(word, i):
+                # Recursively check the rest of the string starting after this word
+                if dfs(i + len(word)):
+                    memo[i] = True
+                    return True
+
+        # If no words work from this index, cache as False and return
+        memo[i] = False
+        return False
+
+    return dfs(0)
+
+
+# LC 790
 
 # ==========================================================
 # DP 2D

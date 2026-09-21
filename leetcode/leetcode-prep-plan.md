@@ -330,11 +330,11 @@ ToDos: define common edge cases for each data structure, learn time and space co
 | **Day 14** | Week 2 Review                          | Focus heavily on identifying hidden DP states and writing clean backtracking templates.                                                                                                                                  |
 
 Trie: 211
-Binary Search: 162, 34, 74, 33, 153, practice answer space problems
-DP 1D: 139, 140, 322 and Coin Change 2, different flavours of 1d DP, 300
+Binary Search: 162 (done), 34 (done), 74 (done), 33 (done), 153 (done), practice answer space problems (did Kok eating banana, spells & potions)
+DP 1D: 139 (done - review), 322 (done- review) and Coin Change 2, different flavours of 1d DP, 300 (done - review)
 DP 2D: 120, 62 & 63, 64
-
-## Greedy: 55, 122
+Greedy: 55, 122
+ToDo: summaries of different flavours of BS, DP (string, grid, array) and common transitions, how to proce that dp can be applied
 
 ## Week 3: Top Google Problems & Mock Interviews
 
