@@ -314,6 +314,7 @@ Pathsum problems: 112, 64, 113,437
 Graph: 200 (done), 547 (done - review again), 130 (done), 399, 133 (done), 207 & 210 (Topological sort). 433 (understan teim and space)
 
 ToDos: define common edge cases for each data structure, learn time and space complexity for each, review data structure general knowledge,
+inserting and deleting from trees, graphs
 
 ---
 
@@ -346,6 +347,8 @@ ToDo: summaries of different flavours of BS, DP (string, grid, array) and common
 | **Day 18**    | Mock Interview 1 (Timed Loop)           | Simulate a full 45-minute Google interview. Code entirely on a plain text editor without syntax highlighting, state your assumptions early, and talk through trade-offs.                     |
 | **Day 19**    | Mock Interview 2 (Post-Mortem & Polish) | Run another simulation focusing on code quality, variable naming, and proactive time/space complexity disclosure. Review errors from Mock 1.                                                 |
 | **Day 20–21** | Final Review & Rest                     | Lightly review your personal error log and key template structures. Prioritize rest over cramming before your loop.                                                                          |
+
+Linked List: 138, 2, 141
 
 # Approach:
 
