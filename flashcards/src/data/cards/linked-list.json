@@ -1,0 +1,160 @@
+[
+  {
+    "id": "linked-list-node-basics",
+    "theme": "linked-list",
+    "kind": "concept",
+    "front": "What is a singly linked list node in Python, and what can you NOT do with a linked list?",
+    "back": "```python\nclass ListNode:\n    def __init__(self, val=0, next=None):\n        self.val = val\n        self.next = next\n```\n\n - Nodes live at scattered memory addresses; each holds a value and a reference to the next node.\n - **No random access** (`l[i]` and `len(l)` do not exist) - you must follow `next` links, O(n).\n - Compare nodes with `is` (identity) when detecting cycles/intersections, not by `.val`.\n - Always guard the empty list (`head is None`) and single-node cases.",
+    "source": "notes/linked_list.py"
+  },
+  {
+    "id": "linked-list-operation-costs",
+    "theme": "linked-list",
+    "kind": "complexity",
+    "front": "Singly linked list operation costs: access, search, insert at head, insert/delete after a known node, insert at tail?",
+    "back": "| Operation | Cost |\n|---|---|\n| Access k-th / search by value | O(n) |\n| Insert at head | O(1) |\n| Insert/delete **after a node you already hold** | O(1) |\n| Insert at tail | O(n) (O(1) if you keep a `tail` pointer) |\n| Delete by value | O(n) (find it first) |\n| Traversal | O(n) |\n\n- Advantage over arrays: O(1) splice once you hold the node. Disadvantage: no O(1) index access, poor cache locality.\n- Deleting node X needs its **predecessor** (singly linked) - hence the dummy head / `prev` trick.\n- Recursion over a list uses O(n) call-stack space; iteration is O(1).",
+    "source": "notes/linked_list.py"
+  },
+  {
+    "id": "linked-list-dummy-head",
+    "theme": "linked-list",
+    "kind": "concept",
+    "front": "Why use a dummy (sentinel) head node, and when do you reach for it?",
+    "back": "`dummy = ListNode(0, head)` gives the real head a **predecessor**, so head insertions/deletions need no special case.\n\n- Use it when the head might change or be deleted (LC 19, 21, 82, 86, 2095) or when building a new list (`tail = dummy`, `tail.next = ...`).\n- Return `dummy.next`, never `dummy`.\n- Deleting is easier by acting on `cur.next` (via a predecessor) instead of `cur`.\n- Cost: one extra node, O(1) space.",
+    "source": "english/Array_String_LinkedList.ipynb"
+  },
+  {
+    "id": "linked-list-reverse-iterative-template",
+    "theme": "linked-list",
+    "kind": "template",
+    "front": "Template: reverse a singly linked list iteratively (LC 206). What are the four steps and in what order?",
+    "back": "```python\ndef reverse_list(head):                   # LC 206\n    prev, cur = None, head\n    while cur:\n        nxt = cur.next                    # 1. save the rest\n        cur.next = prev                   # 2. flip the pointer\n        prev = cur                        # 3. advance prev\n        cur = nxt                         # 4. advance cur\n    return prev                           # new head\n```\n\n - Order matters: save `nxt` **before** overwriting `cur.next`.\n - Mindset: \"the part before me is already reversed; hook myself onto its front and become the new head\".\n - O(n) time, O(1) space. On exit `cur is None` and `prev` is the new head.\n - Variants: reverse only a sub-range (LC 92, keep a `pre` node before `left`), or reverse only the second half (LC 234, 143).",
+    "lc": 206,
+    "source": "english/Array_String_LinkedList.ipynb"
+  },
+  {
+    "id": "linked-list-reverse-recursive",
+    "theme": "linked-list",
+    "kind": "concept",
+    "front": "Recursive reversal of a linked list: what do you assume about the recursive call, and what are the two pointer fixes?",
+    "back": "Mindset: \"if the rest of the list after me is already reversed, put myself at its end.\"\n\n ```python\ndef reverse_list(head):\n    if not head or not head.next:         # empty or single node\n        return head\n    new_head = reverse_list(head.next)    # the rest is already reversed\n    head.next.next = head                 # my successor now points back to me\n    head.next = None                      # I become the tail\n    return new_head\n```\n\n - `head.next.next = head` re-points my successor at me; `head.next = None` prevents a cycle.\n - O(n) time but **O(n) call-stack space** (and Python's recursion limit ~1000), so prefer iterative for long lists.",
+    "lc": 206,
+    "source": "english/Array_String_LinkedList.ipynb"
+  },
+  {
+    "id": "linked-list-middle-fast-slow",
+    "theme": "linked-list",
+    "kind": "template",
+    "front": "Template: find the middle node with fast/slow pointers (LC 876). Which middle do you get for even length?",
+    "back": "```python\ndef middle_node(head):                    # LC 876 (2nd middle when length is even)\n    slow = fast = head\n    while fast and fast.next:\n        slow = slow.next\n        fast = fast.next.next\n    return slow\n    # first middle when even: use `while fast.next and fast.next.next`\n```\n\n - `fast` moves 2x speed, so when it hits the end `slow` is halfway.\n - Both start at `head`: length 2n -> the **second** middle; use `fast.next and fast.next.next` for the first middle.\n - Starting `slow` at a dummy head lands it one node **before** the middle - what you want for deletion (LC 2095) or for splitting a list in two (LC 148).\n - O(n) time, O(1) space, single pass.",
+    "lc": 876,
+    "source": "english/Array_String_LinkedList.ipynb"
+  },
+  {
+    "id": "linked-list-remove-nth-from-end",
+    "theme": "linked-list",
+    "kind": "problem",
+    "front": "LC 19 Remove Nth Node From End of List: how do you do it in one pass, and why the dummy head?",
+    "back": "Two pointers with a gap of n: advance `fast` n nodes, then move both until `fast` is `None`; `slow` is then the node **before** the target.\n\n ```python\ndef remove_nth_from_end(head, n):         # LC 19\n    dummy = ListNode(0, head)\n    fast, slow = head, dummy\n    for _ in range(n):                    # open a gap of n nodes\n        fast = fast.next\n    while fast:                           # fast falls off the end ...\n        fast = fast.next\n        slow = slow.next                  # ... slow stops BEFORE the target\n    slow.next = slow.next.next\n    return dummy.next\n```\n\n - The dummy handles deleting the real head (when `n == length`).\n - `fast` runs until `None` (one step past the last node), which is what puts `slow` at the predecessor.\n - O(n) time, O(1) space, one pass (no need to compute the length first).",
+    "lc": 19,
+    "source": "english/Array_String_LinkedList.ipynb"
+  },
+  {
+    "id": "linked-list-floyd-detect-cycle",
+    "theme": "linked-list",
+    "kind": "template",
+    "front": "Template: detect a cycle in a linked list with Floyd's tortoise and hare (LC 141). Why must they meet?",
+    "back": "```python\ndef has_cycle(head):                      # LC 141\n    slow = fast = head\n    while fast and fast.next:\n        slow = slow.next\n        fast = fast.next.next\n        if slow is fast:                  # compare node identity, not values\n            return True\n    return False\n```\n\n - No cycle: `fast` reaches `None` and the loop ends.\n - Cycle: once both are inside, the gap shrinks by 1 each step (fast gains 1 node per iteration), so it hits 0 - they cannot leap over each other.\n - Loop guard is `fast and fast.next`, because `fast` advances two nodes.\n - O(n) time, O(1) space (a `set` of visited nodes is O(n) space).",
+    "lc": 141,
+    "source": "notes/linked_list.py"
+  },
+  {
+    "id": "linked-list-floyd-find-cycle-start",
+    "theme": "linked-list",
+    "kind": "template",
+    "front": "Template: find the node where a cycle begins (LC 142). What do you do after the pointers meet?",
+    "back": "```python\ndef detect_cycle(head):                   # LC 142: return the entrance node or None\n    slow = fast = head\n    while fast and fast.next:\n        slow = slow.next\n        fast = fast.next.next\n        if slow is fast:                  # phase 1: meet inside the cycle\n            p = head\n            while p is not slow:          # phase 2: one from head, one from meeting point\n                p = p.next\n                slow = slow.next\n            return p                      # they meet at the entrance\n    return None\n```\n\n - Reset one pointer to `head`, keep the other at the meeting point, advance **both one step at a time**; they meet at the entrance.\n - To find the cycle's last node: walk from the entrance until `cur.next is entrance`.\n - O(n) time, O(1) space. Same trick powers LC 287 on an array.",
+    "lc": 142,
+    "source": "notes/linked_list.py"
+  },
+  {
+    "id": "linked-list-floyd-meeting-point-math",
+    "theme": "linked-list",
+    "kind": "gotcha",
+    "front": "In Floyd's algorithm the slow/fast meeting point is NOT the cycle start. Why does resetting one pointer to head still find it?",
+    "back": "Let `a` = head to entrance, `b` = entrance to meeting point (along the cycle), `c` = cycle length.\n\n- Slow walked `a + b`; fast walked `2(a + b)` = `a + b + k*c` for some `k >= 1`.\n- So `a + b = k*c`, i.e. `a = (k-1)*c + (c - b)`.\n- `c - b` is the distance from the meeting point **forward to the entrance**. A pointer from head takes `a` steps to reach the entrance; a pointer from the meeting point takes `c - b` plus whole laps -> both arrive together.\n- The meeting point is just some node inside the loop; `a` and `b` are unknown, so do not return it.",
+    "source": "notes/linked_list.py"
+  },
+  {
+    "id": "linked-list-merge-two-sorted",
+    "theme": "linked-list",
+    "kind": "problem",
+    "front": "LC 21 Merge Two Sorted Lists: iterative solution with a dummy head?",
+    "back": "```python\ndef merge_two_lists(a, b):                # LC 21\n    dummy = tail = ListNode()\n    while a and b:\n        if a.val <= b.val:                # <= keeps the merge stable\n            tail.next, a = a, a.next\n        else:\n            tail.next, b = b, b.next\n        tail = tail.next\n    tail.next = a or b                    # attach the leftover run\n    return dummy.next\n```\n\n - Splice existing nodes (no allocation); `tail.next = a or b` attaches the remaining run in O(1).\n - O(m + n) time, O(1) space. Recursive version costs O(m + n) stack.\n - This is the building block for LC 148 (sort list) and the merge step of merge sort.",
+    "lc": 21,
+    "source": "english/Array_String_LinkedList.ipynb"
+  },
+  {
+    "id": "linked-list-sort-list-merge-sort",
+    "theme": "linked-list",
+    "kind": "problem",
+    "front": "LC 148 Sort List in O(n log n): which algorithm, and how do you split the list?",
+    "back": "**Merge sort** - it needs no random access, and merging linked lists is O(1) space (unlike arrays). Quick/heap sort need random access.\n\n ```python\ndef sort_list(head):                      # LC 148: top-down merge sort\n    if not head or not head.next:\n        return head\n    slow, fast = head, head.next          # slow ends at the FIRST middle\n    while fast and fast.next:\n        slow, fast = slow.next, fast.next.next\n    right, slow.next = slow.next, None    # cut the list in two\n    return merge_two_lists(sort_list(head), sort_list(right))\n```\n\n - Split with fast/slow, starting `fast = head.next` so 2-node lists split 1+1 (avoids infinite recursion); cut with `slow.next = None`.\n - Time O(n log n). Top-down uses O(log n) recursion stack; bottom-up merge sort (merge runs of size 1, 2, 4, ...) gets **true O(1)** extra space.",
+    "lc": 148,
+    "source": "english/Array_String_LinkedList.ipynb"
+  },
+  {
+    "id": "linked-list-palindrome",
+    "theme": "linked-list",
+    "kind": "problem",
+    "front": "LC 234 Palindrome Linked List in O(1) space: what are the three steps?",
+    "back": "Find the middle, reverse the second half in place, compare the halves.\n\n ```python\ndef is_palindrome(head):                  # LC 234\n    slow = fast = head\n    while fast and fast.next:             # slow -> 2nd middle\n        slow, fast = slow.next, fast.next.next\n    prev = None\n    while slow:                           # reverse the second half in place\n        slow.next, prev, slow = prev, slow, slow.next\n    a, b = head, prev\n    while b:                              # compare half vs reversed half\n        if a.val != b.val:\n            return False\n        a, b = a.next, b.next\n    return True\n```\n\n - Odd length: the middle node ends up in the second half; comparison stops when the reversed half runs out, so the extra middle is ignored.\n - O(n) time, O(1) space (array copy would be O(n) space). Reverse the half back afterwards if the input must stay intact.",
+    "lc": 234,
+    "source": "english/Array_String_LinkedList.ipynb"
+  },
+  {
+    "id": "linked-list-add-two-numbers",
+    "theme": "linked-list",
+    "kind": "problem",
+    "front": "LC 2 Add Two Numbers (digits in reverse order): loop condition and carry handling?",
+    "back": "Digit-by-digit addition with a dummy head; the reverse order means the head is the ones digit, so no reversal is needed.\n\n ```python\ndef add_two_numbers(l1, l2):              # LC 2: digits stored in reverse order\n    dummy = cur = ListNode()\n    carry = 0\n    while l1 or l2 or carry:              # `or carry` handles a final carry digit\n        total = (l1.val if l1 else 0) + (l2.val if l2 else 0) + carry\n        carry, digit = divmod(total, 10)\n        cur.next = ListNode(digit)\n        cur = cur.next\n        l1 = l1.next if l1 else None\n        l2 = l2.next if l2 else None\n    return dummy.next\n```\n\n - `while l1 or l2 or carry` covers unequal lengths and a leftover carry (999 + 1).\n - O(max(m, n)) time and output space.\n - If digits were stored most-significant first (LC 445), reverse the lists first (or use stacks).",
+    "lc": 2,
+    "source": "notes/linked_list.py"
+  },
+  {
+    "id": "linked-list-copy-random-hashmap",
+    "theme": "linked-list",
+    "kind": "problem",
+    "front": "LC 138 Copy List with Random Pointer: hash-map approach and why two passes?",
+    "back": "Map each original node to its clone. Pass 1 creates all clones; pass 2 wires `next`/`random`, because a `random` pointer may target a node that has not been cloned yet.\n\n ```python\ndef copy_random_list(head):               # LC 138, O(n) extra space\n    if not head:\n        return None\n    old_to_new = {}\n    cur = head\n    while cur:                            # pass 1: clone every node (no links yet)\n        old_to_new[cur] = Node(cur.val)\n        cur = cur.next\n    cur = head\n    while cur:                            # pass 2: wire next / random via the map\n        old_to_new[cur].next = old_to_new.get(cur.next)      # None -> None\n        old_to_new[cur].random = old_to_new.get(cur.random)\n        cur = cur.next\n    return old_to_new[head]\n```\n\n - `dict.get(None)` returns `None`, so null pointers need no branching.\n - O(n) time, O(n) space for the map.",
+    "lc": 138,
+    "source": "notes/linked_list.py"
+  },
+  {
+    "id": "linked-list-copy-random-interleave",
+    "theme": "linked-list",
+    "kind": "problem",
+    "front": "LC 138 in O(1) extra space: what is the interleaving trick?",
+    "back": "Weave each clone right after its original (`A -> A' -> B -> B'`); then `clone.random = original.random.next`, because the clone of any node is simply its `.next`. Finally unweave.\n\n ```python\ndef copy_random_list(head):               # LC 138, O(1) extra space\n    if not head:\n        return None\n    cur = head\n    while cur:                            # 1. A -> A' -> B -> B' ...\n        cur.next = Node(cur.val, cur.next)\n        cur = cur.next.next\n    cur = head\n    while cur:                            # 2. clone.random = original.random's clone\n        if cur.random:\n            cur.next.random = cur.random.next\n        cur = cur.next.next\n    dummy = tail = Node()\n    cur = head\n    while cur:                            # 3. split the lists and restore the original\n        tail.next = cur.next\n        tail = tail.next\n        cur.next = cur.next.next\n        cur = cur.next\n    return dummy.next                     # return AFTER the loop\n```\n\n - Three passes: interleave, set randoms, separate (and restore the input).\n - O(n) time, O(1) extra space (excluding the output). Return the new head **after** the separation loop, not inside it.",
+    "lc": 138,
+    "source": "notes/linked_list.py"
+  },
+  {
+    "id": "linked-list-odd-even-reorder",
+    "theme": "linked-list",
+    "kind": "problem",
+    "front": "LC 328 Odd Even Linked List: how do you regroup in place with two pointers?",
+    "back": "Build an odd chain and an even chain by skipping over each other, then attach the even head to the odd tail.\n\n ```python\ndef odd_even_list(head):                  # LC 328: group odd positions, then even\n    if not head or not head.next:\n        return head\n    odd, even = head, head.next\n    even_head = even                      # remember where the even list starts\n    while even and even.next:             # even is the faster pointer\n        odd.next = even.next\n        odd = odd.next\n        even.next = odd.next\n        even = even.next\n    odd.next = even_head                  # stitch odd list -> even list\n    return head\n```\n\n - Loop on `even and even.next` (the faster pointer), and save `even_head` first.\n - Guard the empty/1-node list with `not head or not head.next` (note: `and` would crash on an empty list).\n - O(n) time, O(1) space; order within each group is preserved. Positions are by index, not by value.",
+    "lc": 328,
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "linked-list-delete-middle",
+    "theme": "linked-list",
+    "kind": "problem",
+    "front": "LC 2095 Delete the Middle Node: how does a dummy head make slow/fast stop at the predecessor?",
+    "back": "Start `slow` on a dummy (one node behind `head`) and `fast` at `head`. When `fast` runs out, `slow` is just before the middle.\n\n ```python\ndef delete_middle(head):                  # LC 2095\n    dummy = ListNode(0, head)\n    slow, fast = dummy, head              # slow starts one step BEHIND the middle\n    while fast and fast.next:\n        slow = slow.next\n        fast = fast.next.next\n    slow.next = slow.next.next            # single node: dummy.next becomes None\n    return dummy.next\n```\n\n - Single-node list: loop never runs, `dummy.next = None`, so the edge case is free.\n - Middle is index `n // 2` (0-based): for length 4 it deletes the third node.\n - O(n) time, O(1) space.",
+    "lc": 2095,
+    "source": "notes/general-guidance.md"
+  }
+]

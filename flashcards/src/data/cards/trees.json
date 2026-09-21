@@ -1,0 +1,292 @@
+[
+  {
+    "id": "trees-types-perfect-complete-balanced-skewed",
+    "theme": "trees",
+    "kind": "concept",
+    "front": "Binary tree types: perfect vs complete vs balanced vs skewed - definitions?",
+    "back": "- **Perfect**: every internal node has 2 children and all leaves are at the same depth (every level full). A perfect tree with `h` levels has `2^h - 1` nodes.\n- **Complete**: every level is full except possibly the last, which is filled left to right (heap shape, storable in an array).\n- **Balanced**: for every node, the heights of its left and right subtrees differ by at most 1, so height is `O(log n)`.\n- **Skewed / degenerate**: every node has only one child. It is a linked list, height = `n`.\n\nPerfect implies complete and balanced. A skewed BST turns `O(log n)` operations into `O(n)`.",
+    "source": "notes/trees.py"
+  },
+  {
+    "id": "trees-dfs-bfs-complexity",
+    "theme": "trees",
+    "kind": "complexity",
+    "front": "Time and space complexity of DFS vs BFS on a binary tree with n nodes and height h?",
+    "back": "Both take **O(n) time**: every node is visited exactly once.\n\n- **DFS space: O(h)** for the recursion stack (or explicit stack). Balanced tree: `O(log n)`. Skewed tree: `O(n)` (worst case).\n- **BFS space: O(w)** for the queue, where `w` is the maximum width. A perfect tree's last level holds about `n/2` nodes, so worst case `O(n)`.\n\nSo a skewed tree is cheap for BFS (`O(1)` queue) but costly for DFS (`O(n)` stack), and a bushy tree is the opposite.",
+    "source": "notes/trees.py"
+  },
+  {
+    "id": "trees-traversal-recursive-skeleton",
+    "theme": "trees",
+    "kind": "template",
+    "front": "Recursive binary-tree traversal skeleton: where do the preorder, inorder and postorder actions go, and what are the visit orders for tree 4 / (2 / (1, 3)) / 5?",
+    "back": "```python\ndef traverse(node):\n    if not node:\n        return\n    # preorder position:  visit(node)\n    traverse(node.left)\n    # inorder position:   visit(node)\n    traverse(node.right)\n    # postorder position: visit(node)\n```\nTree `4` with left child `2` (children `1`, `3`) and right child `5`:\n- Preorder (root, L, R): `[4, 2, 1, 3, 5]`\n- Inorder (L, root, R): `[1, 2, 3, 4, 5]` (sorted, because it is a BST)\n- Postorder (L, R, root): `[1, 3, 2, 5, 4]`\n- Level-order is BFS: `[4, 2, 5, 1, 3]`",
+    "source": "notes/trees.py"
+  },
+  {
+    "id": "trees-inorder-iterative-template",
+    "theme": "trees",
+    "kind": "template",
+    "front": "Template: iterative inorder traversal with a stack. What is the loop condition and when do you visit?",
+    "back": "Loop while `cur or stack`. Inner loop pushes all left descendants; pop = visit; then move to the right child.\n\n```python\ndef inorder(root):\n    res, stack, cur = [], [], root\n    while cur or stack:\n        while cur:                 # dive left, remembering the path\n            stack.append(cur)\n            cur = cur.left\n        cur = stack.pop()          # leftmost node not yet visited\n        res.append(cur.val)        # visit\n        cur = cur.right            # then walk its right subtree\n    return res\n```\n- `O(n)` time, `O(h)` stack.\n- Visiting on **pop** is what makes it inorder (the node and its whole left subtree are done).\n- Early exit works naturally (see LC 230 kth smallest).",
+    "source": "english/Tree_and_Graph_Part1_Tree.ipynb"
+  },
+  {
+    "id": "trees-postorder-iterative-trick",
+    "theme": "trees",
+    "kind": "template",
+    "front": "Iterative postorder with a single stack: what is the reverse trick?",
+    "back": "Postorder is `left, right, root`. Its reverse is `root, right, left`, which is preorder with the children pushed in swapped order. Run that, then reverse the result.\n\n```python\ndef postorder(root):\n    if not root:\n        return []\n    res, stack = [], [root]\n    while stack:\n        node = stack.pop()\n        res.append(node.val)          # order produced: root, right, left\n        if node.left:\n            stack.append(node.left)   # left pushed first -> popped after right\n        if node.right:\n            stack.append(node.right)\n    return res[::-1]                  # reversed: left, right, root\n```\nPreorder is the same loop without the reversal, pushing `right` before `left`. `O(n)` time, `O(h)` stack (plus the `O(n)` result list).",
+    "source": "english/Tree_and_Graph_Part1_Tree.ipynb"
+  },
+  {
+    "id": "trees-level-order-bfs-template",
+    "theme": "trees",
+    "kind": "template",
+    "front": "Template: level-order (BFS) traversal returning a list of levels. Which line separates one level from the next?",
+    "back": "Snapshot `level_size = len(queue)` before the inner loop; the inner loop pops exactly that many nodes while pushing the next level's children.\n\n```python\nfrom collections import deque\n\ndef level_order(root):\n    if not root:\n        return []\n    res, queue = [], deque([root])\n    while queue:\n        level_size = len(queue)          # snapshot: nodes on THIS level only\n        level = []\n        for _ in range(level_size):\n            node = queue.popleft()\n            level.append(node.val)\n            if node.left:\n                queue.append(node.left)\n            if node.right:\n                queue.append(node.right)\n        res.append(level)\n    return res\n```\n`O(n)` time, `O(w)` space (max width). Variants only change what you do with each level: last node (LC 199 right side view), max (LC 515), average (LC 637), reverse alternate levels (LC 103 zigzag).",
+    "source": "notes/trees.py"
+  },
+  {
+    "id": "trees-bfs-queue-size-gotcha",
+    "theme": "trees",
+    "kind": "gotcha",
+    "front": "Level-order BFS: what is `len(queue)` good for, and what must you NOT use it as?",
+    "back": "`len(queue)` at the top of the outer loop is the **number of nodes on the current level**. Freeze it in `level_size` before the inner `for`, because the queue keeps growing as you append children.\n\nIt is **not** the level index / depth. If the problem needs the depth (min depth, \"level k\"), keep a separate counter and increment it once per outer iteration:\n\n```python\ndepth = 0\nwhile queue:\n    depth += 1                      # separate counter\n    for _ in range(len(queue)):     # range() evaluates len(queue) once\n        ...\n```\nBug pattern: re-reading `len(queue)` in the loop condition (e.g. `while i < len(queue)`) while appending children mixes levels together.",
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "trees-two-recursion-mindsets",
+    "theme": "trees",
+    "kind": "concept",
+    "front": "Two mindsets for binary-tree recursion: \"traverse\" vs \"decompose the problem\"?",
+    "back": "- **Traverse**: a `traverse(node)` walks the whole tree once and updates external variables (backtracking style).\n- **Decompose**: define a function with a clear meaning and return value, and build the answer for a node from the answers for its subtrees (DP / divide-and-conquer style).\n\n```python\n# 1) \"traverse\" mindset: walk once, update outside variables\ndef max_depth_traverse(root):\n    best = 0\n    def traverse(node, depth):\n        nonlocal best\n        if not node:\n            return\n        depth += 1                       # preorder position\n        best = max(best, depth)\n        traverse(node.left, depth)\n        traverse(node.right, depth)\n    traverse(root, 0)\n    return best\n\n# 2) \"decompose\" mindset: answer = f(answers of subtrees)\ndef max_depth(root):\n    if not root:\n        return 0\n    return 1 + max(max_depth(root.left), max_depth(root.right))   # postorder\n```\nFor any node ask: what must it do, and at which position (pre / in / post)? If the problem is about subtrees, define a return value and code at the postorder position.",
+    "source": "english/Template_Summary.ipynb"
+  },
+  {
+    "id": "trees-pre-vs-post-position",
+    "theme": "trees",
+    "kind": "concept",
+    "front": "In tree recursion, what data can code at the preorder position see vs code at the postorder position?",
+    "back": "- **Preorder position** (before recursing): only data **passed down** through arguments (depth, path sum so far, `low`/`high` bounds, incoming direction).\n- **Postorder position** (after recursing): the arguments **plus the return values from the subtrees** (heights, counts, subtree serializations).\n- **Inorder position** (between the two calls): for a BST it visits values in sorted order.\n\nRules of thumb:\n- Problem about a node's *subtree* (height, diameter, LCA, duplicate subtrees) -> return values, logic at postorder.\n- Problem about the *path from the root* (root-to-node sums, BST bounds, zigzag state) -> pass state down as parameters.",
+    "source": "english/Template_Summary.ipynb"
+  },
+  {
+    "id": "trees-build-from-traversals-uniqueness",
+    "theme": "trees",
+    "kind": "concept",
+    "front": "Which pairs of traversals uniquely determine a binary tree (distinct values), and which do not?",
+    "back": "- **Preorder + inorder**: unique (LC 105).\n- **Postorder + inorder**: unique (LC 106).\n- **Preorder + postorder**: **not unique** in general (LC 889 accepts any valid tree). If a node has a single child you cannot tell whether it is the left or right child. It is unique only if every node has 0 or 2 children.\n- Any single traversal alone: not enough.\n\nWhy inorder works: the root (`pre[0]` or `post[-1]`) splits the inorder array into the left and right subtrees, and the left size tells you how to slice the pre/post array.",
+    "source": "english/Tree_and_Graph_Part1_Tree.ipynb"
+  },
+  {
+    "id": "trees-build-tree-preorder-inorder",
+    "theme": "trees",
+    "kind": "problem",
+    "front": "LC 105: build a tree from preorder and inorder. How do you get O(n), and what order must the recursive calls run in?",
+    "back": "Root = next unread preorder value. Its inorder index `mid` gives the left subtree (`inorder[lo:mid]`) and right subtree (`inorder[mid+1:hi]`). Use a hash map for the inorder index and an iterator over preorder instead of slicing.\n\n```python\ndef build_tree(preorder, inorder):\n    idx = {v: i for i, v in enumerate(inorder)}   # value -> inorder index (values unique)\n    pre = iter(preorder)                           # roots come out in root, left, right order\n\n    def build(lo, hi):                             # this subtree is inorder[lo:hi]\n        if lo == hi:\n            return None\n        root = TreeNode(next(pre))\n        mid = idx[root.val]\n        root.left = build(lo, mid)                 # left BEFORE right\n        root.right = build(mid + 1, hi)\n        return root\n\n    return build(0, len(inorder))\n```\n- `O(n)` time and space. Using `inorder.index(...)` or list slicing makes it `O(n^2)` on a skewed tree.\n- Build **left before right**: the shared preorder iterator hands out left-subtree roots first.",
+    "source": "english/Tree_and_Graph_Part1_Tree.ipynb",
+    "lc": 105
+  },
+  {
+    "id": "trees-build-tree-inorder-postorder",
+    "theme": "trees",
+    "kind": "problem",
+    "front": "LC 106: build a tree from inorder and postorder. What changes compared with LC 105?",
+    "back": "The root is the **last** postorder value, so walk postorder from the back (root, right, left) and therefore build the **right subtree first**.\n\n```python\ndef build_tree(inorder, postorder):\n    idx = {v: i for i, v in enumerate(inorder)}\n    post = reversed(postorder)                     # root, right, left order\n\n    def build(lo, hi):\n        if lo == hi:\n            return None\n        root = TreeNode(next(post))\n        mid = idx[root.val]\n        root.right = build(mid + 1, hi)            # right BEFORE left\n        root.left = build(lo, mid)\n        return root\n\n    return build(0, len(inorder))\n```\n`O(n)` time and space. Swapping the two recursive calls is the classic bug: the reversed iterator would hand a right-subtree root to the left branch.",
+    "source": "english/Tree_and_Graph_Part1_Tree.ipynb",
+    "lc": 106
+  },
+  {
+    "id": "trees-count-complete-tree-nodes",
+    "theme": "trees",
+    "kind": "problem",
+    "front": "LC 222: count nodes of a complete binary tree in better than O(n). Idea and complexity?",
+    "back": "Compare the leftmost-path height and rightmost-path height. If equal, the subtree is **perfect** and has `2^h - 1` nodes. Otherwise recurse into both children (one of them is always perfect, so it returns immediately).\n\n```python\ndef count_nodes(root):\n    if not root:\n        return 0\n    lh, rh, l, r = 0, 0, root, root\n    while l:                        # height along the leftmost path\n        lh += 1\n        l = l.left\n    while r:                        # height along the rightmost path\n        rh += 1\n        r = r.right\n    if lh == rh:                    # perfect subtree\n        return (1 << lh) - 1\n    return 1 + count_nodes(root.left) + count_nodes(root.right)\n```\n- Time **O(log^2 n)**: `O(log n)` levels of recursion (only one side really recurses), each spends `O(log n)` measuring heights.\n- Space `O(log n)` for the recursion.",
+    "source": "notes/trees.py",
+    "lc": 222
+  },
+  {
+    "id": "trees-lca-binary-tree",
+    "theme": "trees",
+    "kind": "problem",
+    "front": "LC 236: lowest common ancestor in a binary tree. Which traversal order, and what assumption does the short-circuit rely on?",
+    "back": "**Postorder**: each call returns \"the p/q (or LCA) found in my subtree, else None\".\n\n```python\ndef lowest_common_ancestor(root, p, q):\n    if not root or root is p or root is q:\n        return root                       # found a target (or fell off the tree)\n    left = lowest_common_ancestor(root.left, p, q)\n    right = lowest_common_ancestor(root.right, p, q)\n    if left and right:                    # p and q are in different subtrees\n        return root\n    return left or right                  # both on one side (or neither)\n```\n- `O(n)` time, `O(h)` space.\n- Returning as soon as you hit `p` or `q` is only correct because the problem **guarantees both exist**. If they might be missing, you must confirm both were found (count them) before trusting the result.\n- If a node is an ancestor of the other, the ancestor itself is the answer.",
+    "source": "notes/trees.py",
+    "lc": 236
+  },
+  {
+    "id": "trees-path-sum-iii",
+    "theme": "trees",
+    "kind": "problem",
+    "front": "LC 437 Path Sum III: count downward paths (start and end anywhere) with sum == target. Technique, seed value and the backtracking step?",
+    "back": "**Prefix sums + hash map on the root-to-node path.** If `cur` is the sum from the root to this node, a path ending here sums to `target` iff some earlier prefix on the path equals `cur - target`.\n\n```python\nfrom collections import defaultdict\n\ndef path_sum(root, target):\n    count = defaultdict(int)\n    count[0] = 1                      # empty prefix: paths starting at the root\n    def dfs(node, cur):\n        if not node:\n            return 0\n        cur += node.val\n        res = count[cur - target]     # paths ending here with sum == target\n        count[cur] += 1\n        res += dfs(node.left, cur) + dfs(node.right, cur)\n        count[cur] -= 1               # backtrack: leave this path\n        return res\n    return dfs(root, 0)\n```\n- Seed `{0: 1}` so paths that start at the root are counted.\n- Read `count[cur - target]` **before** adding `cur` (matters when `target == 0`).\n- Decrement on the way out so other branches do not see this path's prefixes.\n- `O(n)` time, `O(h)` space (double recursion from every node is `O(n^2)` worst case).",
+    "source": "notes/trees.py",
+    "lc": 437
+  },
+  {
+    "id": "trees-kth-smallest-bst",
+    "theme": "trees",
+    "kind": "problem",
+    "front": "LC 230: k-th smallest element in a BST. Why does inorder work and how do you stop early?",
+    "back": "Inorder traversal of a BST yields values in **sorted ascending order**, so the k-th node visited is the answer. Use iterative inorder and return at the k-th pop.\n\n```python\ndef kth_smallest(root, k):\n    stack, cur = [], root\n    while cur or stack:\n        while cur:\n            stack.append(cur)\n            cur = cur.left\n        cur = stack.pop()\n        k -= 1\n        if k == 0:                # k-th visited in sorted order\n            return cur.val\n        cur = cur.right\n```\n- `O(h + k)` time, `O(h)` space (the recursive version that builds the whole list is `O(n)`).\n- Follow-up with frequent inserts/deletes: store subtree sizes in each node to answer in `O(h)`.",
+    "source": "notes/trees.py",
+    "lc": 230
+  },
+  {
+    "id": "trees-validate-bst-bounds",
+    "theme": "trees",
+    "kind": "problem",
+    "front": "LC 98: validate a BST with (low, high) bounds. What is the invariant, and why is comparing a node only to its parent wrong?",
+    "back": "Every node must satisfy `low < val < high`, where the bounds come from **all** ancestors: going left tightens `high` to the parent's value, going right tightens `low`.\n\n```python\ndef is_valid_bst(root):\n    def validate(node, low, high):\n        if not node:\n            return True\n        if not (low < node.val < high):        # strict: BSTs here have no duplicates\n            return False\n        return (validate(node.left, low, node.val) and\n                validate(node.right, node.val, high))\n    return validate(root, float('-inf'), float('inf'))\n```\n- `O(n)` time, `O(h)` space.\n- Comparing only with the parent misses e.g. `[5,4,6,null,null,3,7]`: `3 < 6` is fine locally, but `3` sits in the right subtree of `5`.\n- Alternative: inorder traversal must be strictly increasing (track `prev`).",
+    "source": "notes/trees.py",
+    "lc": 98
+  },
+  {
+    "id": "trees-bst-operations-complexity",
+    "theme": "trees",
+    "kind": "complexity",
+    "front": "BST search / insert / delete: complexity, and why is a balanced BST needed? (LC 700 search code)",
+    "back": "Each operation walks one root-to-leaf path: **O(h)**.\n- **Average / balanced: O(log n)**.\n- **Worst case: O(n)** when the tree degenerates into a linked list (e.g. inserting sorted data). That is why AVL / red-black trees exist.\n- Space `O(h)` recursive, `O(1)` iterative.\n\n```python\ndef search_bst(root, val):\n    while root and root.val != val:\n        root = root.left if val < root.val else root.right\n    return root\n```\nInorder traversal of a BST is sorted, `O(n)`.",
+    "source": "notes/trees.py",
+    "lc": 700
+  },
+  {
+    "id": "trees-delete-node-bst",
+    "theme": "trees",
+    "kind": "problem",
+    "front": "LC 450: delete a node from a BST. Handle the three cases, especially two children.",
+    "back": "Find the node (go left/right by comparison), then:\n1. No left child -> return `root.right`. 2. No right child -> return `root.left`.\n3. **Two children**: copy the **inorder successor** (smallest node of the right subtree) into this node, then delete that successor from the right subtree. (The inorder predecessor works symmetrically.)\n\n```python\ndef delete_node(root, key):\n    if not root:\n        return None\n    if key < root.val:\n        root.left = delete_node(root.left, key)\n    elif key > root.val:\n        root.right = delete_node(root.right, key)\n    else:\n        if not root.left:                 # 0 or 1 child: splice it out\n            return root.right\n        if not root.right:\n            return root.left\n        succ = root.right                 # 2 children: inorder successor\n        while succ.left:                  # = min of the right subtree\n            succ = succ.left\n        root.val = succ.val\n        root.right = delete_node(root.right, succ.val)   # remove the successor\n    return root\n```\nAverage `O(log n)`, worst `O(n)` (`O(h)`); the successor has no left child, so its own deletion is a case 1 or 2.",
+    "source": "notes/trees.py",
+    "lc": 450
+  },
+  {
+    "id": "trees-diameter-of-binary-tree",
+    "theme": "trees",
+    "kind": "problem",
+    "front": "LC 543: diameter of a binary tree. What do you compute at each node and what do you return?",
+    "back": "The longest path has some node as its \"top\", and its length is `height(left) + height(right)`. That top need **not** be the root. So at each node (postorder): update a global best with `l + r`, but **return** `1 + max(l, r)` because a path going up to the parent can use only one child branch.\n\n```python\ndef diameter_of_binary_tree(root):\n    best = 0\n    def height(node):                      # height in nodes, 0 for None\n        nonlocal best\n        if not node:\n            return 0\n        l, r = height(node.left), height(node.right)\n        best = max(best, l + r)            # longest path (in edges) bending at node\n        return 1 + max(l, r)               # only one branch can extend upward\n    height(root)\n    return best\n```\n`O(n)` time, `O(h)` space. Diameter counts **edges** (heights measured in nodes, empty tree = 0).",
+    "source": "english/Tree_and_Graph_Part1_Tree.ipynb",
+    "lc": 543
+  },
+  {
+    "id": "trees-trim-bst",
+    "theme": "trees",
+    "kind": "problem",
+    "front": "LC 669: trim a BST to the range [low, high]. Recursive rule for a node that is out of range?",
+    "back": "Use the return value to replace the node with a trimmed subtree:\n- `val < low`: the node and its whole left subtree are out, so answer = trim of the **right** subtree.\n- `val > high`: answer = trim of the **left** subtree.\n- Otherwise keep the node and trim both children.\n\n```python\ndef trim_bst(root, low, high):\n    if not root:\n        return None\n    if root.val < low:                     # root and its left subtree are too small\n        return trim_bst(root.right, low, high)\n    if root.val > high:                    # root and its right subtree are too big\n        return trim_bst(root.left, low, high)\n    root.left = trim_bst(root.left, low, high)\n    root.right = trim_bst(root.right, low, high)\n    return root\n```\n`O(n)` time, `O(h)` space. Trimming a node is the parent's job (it reassigns the child pointer), which the return value handles.",
+    "source": "english/Tree_and_Graph_Part1_Tree.ipynb",
+    "lc": 669
+  },
+  {
+    "id": "trees-recover-bst",
+    "theme": "trees",
+    "kind": "problem",
+    "front": "LC 99: two nodes of a BST were swapped; recover it without changing structure. Which traversal and how do you find the two nodes?",
+    "back": "Inorder of a valid BST is sorted, so the swap creates one or two **descents** (`prev > cur`) in the inorder sequence.\n- First descent: `first = prev`. Last descent: `second = cur`.\n- Adjacent swap gives one descent, non-adjacent gives two, and the rule `first` = first `prev`, `second` = last `cur` covers both.\n- Swap the two values.\n\n```python\ndef recover_tree(root):\n    first = second = prev = None\n    stack, cur = [], root\n    while cur or stack:                    # iterative inorder\n        while cur:\n            stack.append(cur)\n            cur = cur.left\n        cur = stack.pop()\n        if prev and prev.val > cur.val:    # a descent in the sorted order\n            if not first:\n                first = prev               # larger value swapped too far right\n            second = cur                   # smaller value swapped too far left\n        prev = cur\n        cur = cur.right\n    first.val, second.val = second.val, first.val\n```\n`O(n)` time, `O(h)` space (Morris traversal gets `O(1)`).",
+    "source": "english/Tree_and_Graph_Part1_Tree.ipynb",
+    "lc": 99
+  },
+  {
+    "id": "trees-longest-zigzag-path",
+    "theme": "trees",
+    "kind": "problem",
+    "front": "LC 1372: longest zigzag path in a binary tree. What does each node return, and what is the base case?",
+    "back": "Postorder with two returned values per node: the longest zigzag **starting here by going left first**, and **going right first**.\n- Going left first = `1 +` (the left child's right-first length).\n- Going right first = `1 +` (the right child's left-first length).\n- Base case `None` returns `(-1, -1)` so a leaf gets `0`.\n- Update a global max at each node.\n\n```python\ndef longest_zigzag(root):\n    best = 0\n    def dfs(node):\n        # returns (longest zigzag starting at node going left first,\n        #          longest zigzag starting at node going right first), in edges\n        nonlocal best\n        if not node:\n            return -1, -1\n        _, left_then_right = dfs(node.left)\n        right_then_left, _ = dfs(node.right)\n        go_left = 1 + left_then_right      # step left, then must go right\n        go_right = 1 + right_then_left     # step right, then must go left\n        best = max(best, go_left, go_right)\n        return go_left, go_right\n    dfs(root)\n    return best\n```\n`O(n)` time, `O(h)` space. (Equivalent top-down version: pass `(direction, length)` down as arguments.)",
+    "source": "english/Tree_and_Graph_Part1_Tree.ipynb",
+    "lc": 1372
+  },
+  {
+    "id": "trees-find-duplicate-subtrees",
+    "theme": "trees",
+    "kind": "problem",
+    "front": "LC 652: find all duplicate subtrees. How do you make two subtrees comparable, and where do you record?",
+    "back": "**Serialize each subtree in postorder** (children first, so the code of a node is built from the codes of its children), with a marker for `None`, and count serializations in a hash map. Record a node when its count hits exactly 2 so each duplicate is reported once.\n\n```python\nfrom collections import defaultdict\n\ndef find_duplicate_subtrees(root):\n    seen, res = defaultdict(int), []\n    def serialize(node):\n        if not node:\n            return '#'                                   # marks None, keeps it unambiguous\n        s = f'{serialize(node.left)},{serialize(node.right)},{node.val}'   # postorder\n        seen[s] += 1\n        if seen[s] == 2:                                 # add once, at the 2nd sighting\n            res.append(node)\n        return s\n    serialize(root)\n    return res\n```\n- The `None` marker and separators are essential: without them different shapes can collide.\n- `O(n^2)` time/space because strings can be `O(n)` long. Mapping each distinct serialization to a small integer id makes it `O(n)`.",
+    "source": "english/Tree_and_Graph_Part1_Tree.ipynb",
+    "lc": 652
+  },
+  {
+    "id": "trees-trie-implementation",
+    "theme": "trees",
+    "kind": "template",
+    "front": "Template: Trie (prefix tree) with insert, search and starts_with (LC 208). What does a node store?",
+    "back": "Each node stores `children` (char -> node, or a 26-array) and an `is_end` flag. The root represents the empty string and holds no character.\n\n```python\nclass TrieNode:\n    def __init__(self):\n        self.children = {}          # char -> TrieNode\n        self.is_end = False         # a word ends at this node\n\nclass Trie:\n    def __init__(self):\n        self.root = TrieNode()\n\n    def insert(self, word):\n        node = self.root\n        for ch in word:\n            node = node.children.setdefault(ch, TrieNode())\n        node.is_end = True\n\n    def _walk(self, s):             # node reached by following s, or None\n        node = self.root\n        for ch in s:\n            node = node.children.get(ch)\n            if node is None:\n                return None\n        return node\n\n    def search(self, word):\n        node = self._walk(word)\n        return node is not None and node.is_end\n\n    def starts_with(self, prefix):\n        return self._walk(prefix) is not None\n```\nWords sharing a prefix share nodes. Each operation is `O(m)` for a word of length `m`, independent of how many words are stored.",
+    "source": "notes/trees.py",
+    "lc": 208
+  },
+  {
+    "id": "trees-trie-end-flag-and-complexity",
+    "theme": "trees",
+    "kind": "gotcha",
+    "front": "Trie: why does `search` need an end-of-word flag while `starts_with` does not? Complexity and space?",
+    "back": "`search(\"app\")` must return true only if `\"app\"` itself was inserted. After inserting only `\"apple\"` the path `a-p-p` exists, but its last node has `is_end == False`, so `search` returns `False` while `starts_with(\"app\")` returns `True`.\n\n- `search`: reach the node **and** check `is_end`.\n- `starts_with`: reaching the node is enough.\n- Insert / search / prefix / delete: **O(m)** time, `m` = length of the word or prefix.\n- Space: `O(total characters stored)` in the worst case (no shared prefixes); a dict per node is compact for sparse alphabets, a 26-slot array is faster but heavier.\n- Bug magnet: forgetting to set `is_end = True` after the insert loop.",
+    "source": "notes/trees.py"
+  },
+  {
+    "id": "trees-word-dictionary-wildcard",
+    "theme": "trees",
+    "kind": "problem",
+    "front": "LC 211 add/search words with \".\" wildcard. Why DFS on a trie, and what is the base case?",
+    "back": "Walk the trie with an index `i` into the pattern. A normal letter follows one child; `.` tries **every** child (branching DFS). Base case `i == len(word)` returns `node.is_end` (again, the end flag matters).\n\n```python\nclass WordDictionary:\n    def __init__(self):\n        self.root = TrieNode()               # TrieNode as in the trie card\n\n    def add_word(self, word):\n        node = self.root\n        for ch in word:\n            node = node.children.setdefault(ch, TrieNode())\n        node.is_end = True\n\n    def search(self, word):                  # '.' matches any one letter\n        def dfs(node, i):\n            if i == len(word):\n                return node.is_end\n            ch = word[i]\n            if ch == '.':\n                return any(dfs(child, i + 1) for child in node.children.values())\n            child = node.children.get(ch)\n            return child is not None and dfs(child, i + 1)\n        return dfs(self.root, 0)\n```\n- `add_word` is `O(m)`.\n- `search` is `O(m)` with no dots. Each `.` branches into every child, so with many dots the worst case approaches visiting the whole trie.",
+    "source": "english/Tree_and_Graph_Part2_Advanced_Tree.ipynb",
+    "lc": 211
+  },
+  {
+    "id": "trees-search-suggestions-trie",
+    "theme": "trees",
+    "kind": "problem",
+    "front": "LC 1268 search suggestions system: top 3 lexicographic products for each typed prefix. How does a trie solve it?",
+    "back": "**Sort the products first**, then insert them into a trie in that order. Every node the word passes through appends the word to its `suggestions` list while it has fewer than 3. Because insertion is sorted, each list is automatically the 3 smallest words with that prefix.\n\n```python\nclass TrieNode:\n    def __init__(self):\n        self.children = {}\n        self.suggestions = []              # up to 3 smallest words through this node\n\ndef suggested_products(products, search_word):\n    products.sort()                        # sorted insertion => lexicographic lists\n    root = TrieNode()\n    for word in products:\n        node = root\n        for ch in word:\n            node = node.children.setdefault(ch, TrieNode())\n            if len(node.suggestions) < 3:\n                node.suggestions.append(word)\n    res, node = [], root\n    for ch in search_word:\n        node = node.children.get(ch) if node else None\n        res.append(node.suggestions if node else [])   # once the path breaks, stay empty\n    return res\n```\n- Time `O(total chars + sort)`; each query step is `O(1)`.\n- Alternative: DFS from the prefix node visiting children in sorted order, stopping at 3 words.\n- General tip: if order matters, sort the input before inserting into the trie.",
+    "source": "notes/trees.py",
+    "lc": 1268
+  },
+  {
+    "id": "trees-avl-tree-concept",
+    "theme": "trees",
+    "kind": "concept",
+    "front": "AVL tree in brief: invariant, how balance is restored, and complexities?",
+    "back": "An AVL tree is a BST where for every node the left and right subtree heights differ by at most 1 (balance factor in `{-1, 0, 1}`), which keeps height `O(log n)`.\n\n- After an insert/delete, walk back up and fix the first unbalanced node with rotations: **LL** (right rotation), **RR** (left rotation), **LR** (left then right), **RL** (right then left).\n- Search, insert, delete: **O(log n)** worst case.\n- Insertion needs at most 1 rebalancing step (a single or double rotation); deletion can trigger `O(log n)` rotations.\n- Python has no built-in balanced BST; in interviews you rarely code an AVL, but you should know it is what turns the BST's `O(n)` worst case into `O(log n)`.",
+    "source": "english/Tree_and_Graph_Part2_Advanced_Tree.ipynb"
+  },
+  {
+    "id": "trees-fenwick-tree-template",
+    "theme": "trees",
+    "kind": "template",
+    "front": "Binary Indexed Tree (Fenwick): what does tree[i] store, and template for update / prefix sum (LC 307)?",
+    "back": "`lowbit(i) = i & -i`. **`tree[i]` holds the sum of the `lowbit(i)` elements ending at index `i`** (1-indexed). Update climbs with `i += lowbit(i)`, prefix query descends with `i -= lowbit(i)`.\n\n```python\nclass BIT:                                   # Fenwick tree, 1-indexed internally\n    def __init__(self, nums):\n        n = len(nums)\n        self.tree = [0] + nums               # index 0 unused\n        for i in range(1, n + 1):            # O(n) build, bottom-up\n            j = i + (i & -i)                 # parent = i + lowbit(i)\n            if j <= n:\n                self.tree[j] += self.tree[i]\n\n    def update(self, i, delta):              # nums[i] += delta (0-indexed)\n        i += 1\n        while i < len(self.tree):\n            self.tree[i] += delta\n            i += i & -i                      # climb to the next covering node\n\n    def prefix(self, i):                     # sum of nums[0..i]\n        i += 1\n        s = 0\n        while i > 0:\n            s += self.tree[i]\n            i -= i & -i                      # drop the lowest set bit\n        return s\n\n    def range_sum(self, l, r):               # sum of nums[l..r]\n        return self.prefix(r) - self.prefix(l - 1)\n```\nUpdate and query are `O(log n)`, build is `O(n)`, space `O(n)`. Off-by-one is the usual bug: the BIT is 1-indexed, so leave slot 0 unused and use `i + 1`.",
+    "source": "english/Tree_and_Graph_Part2_Advanced_Tree.ipynb",
+    "lc": 307
+  },
+  {
+    "id": "trees-bit-vs-segment-tree",
+    "theme": "trees",
+    "kind": "concept",
+    "front": "Fenwick tree vs segment tree: how are they built and when do you pick which?",
+    "back": "- **BIT**: array of size `n+1`, built **bottom-up** (each node pushes its value to `i + lowbit(i)`), the \"root\" is the last node. Tiny code, small constant. Best for prefix-style aggregates that have an inverse (sums, counts, XOR) with point updates.\n- **Segment tree**: binary tree over intervals `[l, r]`, built **top-down** by splitting at `mid` (leaves are single elements, array size ~`4n` for the recursive layout). Each node stores a merge (sum, min, max, gcd...) of its children; supports range updates with lazy propagation and non-invertible operations like min/max.\n- Both: point update and range query in `O(log n)`.\n- Segment tree code is long with a big constant; use it only when the BIT cannot do the job.",
+    "source": "english/Tree_and_Graph_Part2_Advanced_Tree.ipynb"
+  },
+  {
+    "id": "trees-range-query-structure-choice",
+    "theme": "trees",
+    "kind": "pattern",
+    "front": "Array range-sum problems: prefix sum vs difference array vs BIT vs segment tree - which for which situation?",
+    "back": "| Situation | Use |\n|---|---|\n| Array never changes, range-sum queries | **prefix sum** (`O(1)` query) |\n| Many point updates + range-sum queries | **BIT** (or segment tree) |\n| Many range updates, only the final array is needed | **difference array** |\n| Range updates + range queries (add or assign a range) | **segment tree with lazy propagation** (BIT possible for add/sum with two trees) |\n\nPriority: prefix sum first, then BIT, and a segment tree only when nothing simpler works. Prefix sum with updates is `O(n)` per update, so it TLEs on LC 307-style problems.",
+    "source": "english/Tree_and_Graph_Part2_Advanced_Tree.ipynb"
+  },
+  {
+    "id": "trees-coordinate-compression",
+    "theme": "trees",
+    "kind": "concept",
+    "front": "Coordinate compression: what is it, why use it with a BIT / segment tree, and what is the interval pitfall?",
+    "back": "When values are huge (1e9) but there are few of them (1e5) and only **relative order** matters, replace each value by its rank:\n\n```python\nranks = {v: i for i, v in enumerate(sorted(set(nums)))}   # 0-based ranks\n```\nThen index the BIT / segment tree by rank instead of by raw value (e.g. counting how many smaller values were seen so far).\n\nPitfall for **intervals**: compressing endpoints can merge gaps, e.g. `[1,10]`, `[1,4]`, `[6,10]` compress to `[1,4]`, `[1,2]`, `[3,4]`, making the first equal to the union of the others. Insert an extra point between any two consecutive values that differ by more than 1 (e.g. add 5 between 4 and 6).",
+    "source": "english/Tree_and_Graph_Part2_Advanced_Tree.ipynb"
+  },
+  {
+    "id": "trees-segment-tree-lazy-propagation",
+    "theme": "trees",
+    "kind": "concept",
+    "front": "Lazy propagation in a segment tree: what problem does it solve and how does it work?",
+    "back": "It makes **range updates** (add `v` to all of `[l, r]`, or assign) cost `O(log n)` instead of `O(n)`.\n\n- If a node's interval lies fully inside the update range, apply the update to that node's aggregate and store a **lazy tag** (\"pending update for my children\") instead of descending.\n- Before descending into a node's children (in a later update or query), **push the tag down**: apply it to both children and clear it.\n- After recursing, recompute the node from its children.\n\nRange update and range query are both `O(log n)`. Only needed when range updates are mixed with queries; point updates need no laziness.",
+    "source": "english/Tree_and_Graph_Part2_Advanced_Tree.ipynb"
+  }
+]

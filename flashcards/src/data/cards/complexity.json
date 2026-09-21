@@ -1,0 +1,122 @@
+[
+  {
+    "id": "complexity-input-size-to-complexity",
+    "theme": "complexity",
+    "kind": "complexity",
+    "front": "Given the input-size limit n in a problem, which time complexity is acceptable?",
+    "back": "| n | acceptable complexity |\n|---|---|\n| <= ~10-12 | O(2^n), O(n!) - brute force, permutations |\n| <= ~20-25 | O(2^n) with pruning, bitmask DP |\n| <= ~500 | O(n^3) |\n| <= ~5,000 | O(n^2) |\n| <= ~10^5 - 10^6 | O(n log n) or O(n) |\n| <= ~10^8 | O(n) tight constant, or O(log n) / O(1) |\n| huge / streaming | O(log n) or O(1) per operation |\n\n- Rule of thumb: Python handles roughly 10^7 simple operations per second, so ~10^8 total steps is the ceiling.\n- Ask for n in the interview: the constraint often names the intended solution.",
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "complexity-code-shape-loops",
+    "theme": "complexity",
+    "kind": "complexity",
+    "front": "Reading time complexity off code shape: single loop, nested loops, shrinking inner loop, halving loop, loop + binary search, two pointers?",
+    "back": "- **Single loop over n** -> O(n)\n- **Nested loops, both over n** -> O(n^2); if the inner shrinks (`for j in range(i, n)`) still O(n^2), just half the constant\n- **Loop that halves the range each time** (binary search) -> O(log n)\n- **Loop + inner binary search** -> O(n log n)\n- **Sorting** -> O(n log n) time (Python's Timsort uses O(n) extra worst case)\n- **Two pointers / sliding window** where each pointer only moves forward -> **O(n) total**, even though a `while` sits inside a `for`\n- **Nested loop over n and m** -> O(n * m)\n\nHidden costs: slicing, `in` on a list, `list.pop(0)`, and string `+=` inside a loop each add an O(n) factor.",
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "complexity-recursion-complexity",
+    "theme": "complexity",
+    "kind": "complexity",
+    "front": "How do you compute the time complexity of a recursive function, and what are the classic results (merge sort, subsets, permutations)?",
+    "back": "**Complexity = (number of calls) x (work per call). Count branching factor and depth, or solve the recurrence.**\n\n- `T(n) = 2T(n/2) + O(n)` -> **O(n log n)** (merge sort)\n- `T(n) = T(n/2) + O(1)` -> O(log n) (binary search)\n- Two branches, depth n (e.g. naive Fibonacci) -> O(2^n)\n- Backtracking over all subsets -> **O(2^n)** (times O(n) to copy each); all permutations -> **O(n!)**\n- Space = recursion depth (plus any memo/extra structures).\n- With memoization: time = (#distinct states) x (work per state).",
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "complexity-list-operation-costs",
+    "theme": "complexity",
+    "kind": "complexity",
+    "front": "Array/Python list operation costs: index, search, append/pop at end, insert/delete at front or middle?",
+    "back": "| Operation | Cost |\n|---|---|\n| Index `a[i]` | O(1) |\n| Search `x in a` | O(n) |\n| Append / `pop()` at the end | O(1) amortized |\n| Insert / delete at front or middle | O(n) (elements shift) |\n| Sorted array: binary search | O(log n) |\n| Sorted array: insert/delete | O(n) (shifting) |\n| Linked list: insert/delete at a KNOWN node | O(1) |\n| Linked list: search / k-th element | O(n) |\n\n- Queue via `list.pop(0)` is O(n) per pop: use `collections.deque` (O(1) at both ends).\n- Use a set for repeated membership checks.",
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "complexity-hash-operation-costs",
+    "theme": "complexity",
+    "kind": "complexity",
+    "front": "Hash map / set: cost of insert, delete, lookup - average vs worst case - and the space cost?",
+    "back": "**O(1) average for insert, delete and lookup; O(n) worst case (many collisions). Space O(n).**\n\n- Build from n items: O(n) time.\n- \"Have I seen this?\" / counting / grouping in one pass -> the default first idea (O(n) time, O(n) space).\n- Keys must be hashable (tuple, not list). Hashing a length-L string/tuple costs O(L), so \"O(1)\" is really O(key size).\n- Hash structures are **unordered lookup**: no cheap min/max or range queries (that is what a heap/BST is for).",
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "complexity-ordered-structure-costs",
+    "theme": "complexity",
+    "kind": "complexity",
+    "front": "Costs of heap, balanced BST, union-find and trie operations?",
+    "back": "| Structure | Costs |\n|---|---|\n| Heap | push / pop **O(log n)**; peek min/max **O(1)**; build-heap from an array **O(n)** (heapify) |\n| Balanced BST (TreeMap) | insert / delete / search **O(log n)**; in-order traversal gives sorted order |\n| Union-Find (path compression + union by rank) | ~O(1) per op, formally O(alpha(n)) |\n| Trie | insert/search **O(L)**, L = word length, independent of how many words are stored |\n| Sorted array | binary search O(log n), insert/delete O(n) |\n\n- Heap = when you repeatedly need the current min/max (top-k, scheduling, Dijkstra).\n- Trie space is O(total characters stored).",
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "complexity-space-complexity-gotchas",
+    "theme": "complexity",
+    "kind": "gotcha",
+    "front": "Space-complexity gotchas: recursion, output arrays, \"in-place\", and memoization - what counts?",
+    "back": "- **Recursion uses O(depth) stack space** even with no extra data structures - \"no extra space\" is false for deep recursion.\n- **Output/return arrays usually aren't counted** as extra space unless the problem says so - clarify.\n- **In-place = O(1) EXTRA space**, not counting the input/output.\n- **Memo tables add O(state space)**; time = states x transitions per state.\n- Nested containers count all elements: `[[7, 8], [5, 6]]` is O(N) for N total elements, and an m x n grid is O(m * n).\n- Slicing/copying (`a[i:]`, `s[::-1]`) allocates: a hidden O(n) per call inside a loop.",
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "complexity-dp-time-space",
+    "theme": "complexity",
+    "kind": "complexity",
+    "front": "How do you derive DP time and space complexity, and how can space be reduced?",
+    "back": "**Time = (number of states) x (transitions per state). Space = size of the memo table.**\n\n- Top-down memo and bottom-up table have the same time; top-down also pays O(depth) recursion stack.\n- **Rolling state**: if each state only needs the previous one(s), a 1D DP collapses to a few variables (O(1) space); a 2D grid collapses to one row (O(n)).\n- Example: grid paths, `m * n` states x O(1) transitions = O(m * n) time, O(n) space with a single row.",
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "complexity-interview-nine-steps",
+    "theme": "complexity",
+    "kind": "concept",
+    "front": "What are the steps to follow in a coding interview, from the first minute to handling follow-ups?",
+    "back": "1. **Restate** the problem\n2. **Clarify** inputs, outputs, constraints, edge cases\n3. Explain the **brute force** briefly\n4. Propose the **optimized approach** (say the idea before writing)\n5. State **time and space** complexity\n6. Write **clean code**\n7. **Dry run** with a normal case\n8. Test **edge cases**\n9. Handle **follow-up** changes (system extension, read vs write trade-offs, out-of-sync checks)\n\n- Talk through the approach and complexity out loud rather than writing pseudocode down; move faster.\n- Focus on examples and mention complexity while explaining.",
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "complexity-clarifying-questions",
+    "theme": "complexity",
+    "kind": "concept",
+    "front": "Which clarifying questions should you ask before coding?",
+    "back": "- **Empty / null / length 0 or 1** input possible?\n- **Duplicates** present? Does it matter?\n- Is it **sorted** - can I assume it or must I sort?\n- **Values**: only positive, or negative/zero too?\n- Can I **modify the input in place** or must I preserve it?\n- **Size of n?** (hints the needed complexity; can n exceed 10^9? is memory a constraint? is it a stream?)\n- **Ties** - how to break them?\n- **No valid answer** - return -1, empty list, or raise?\n- Also pin down the return type (index vs value, pairs, in-place, boolean) and whether any one valid answer is accepted.",
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "complexity-test-case-checklist",
+    "theme": "complexity",
+    "kind": "concept",
+    "front": "Which test cases should you work through before (and after) coding?",
+    "back": "- **Trivial**: empty input, single element\n- **Normal**: small example traced by hand - the one in the prompt, actually traced, not eyeballed\n- **Duplicates** and **all the same value**\n- **Sorted / reverse sorted** (if relevant)\n- **Negatives / zero** (if relevant)\n- **Boundaries**: first and last elements, out-of-bounds, odd vs even length, divide by zero\n- **Largest allowed input** - mentally check the complexity holds\n- If there are several functions/methods, edge-case each (e.g. querying a range out of range)",
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "complexity-pattern-clues-data-shape",
+    "theme": "complexity",
+    "kind": "pattern",
+    "front": "Problem-statement signals -> technique (part 1): sorted arrays, contiguous ranges, pairs, in-place, top-k, combinatorics?",
+    "back": "- **Sorted array** -> binary search, two pointers\n- **Contiguous subarray/substring** -> sliding window, prefix sum\n- **Pairs/triplets summing to target** -> two pointers (if sortable) or hash set\n- **In-place, O(1) space** -> two pointers / cyclic sort, not extra structures\n- **k-th largest/smallest, top k** -> heap or quickselect\n- **All combinations / permutations / subsets** -> backtracking\n- **Counts / anagram / frequency** -> hash map or array as counter\n- **Next greater/smaller element** -> monotonic stack; **sliding max/min** -> monotonic deque\n- **Range queries/updates** -> prefix sum, difference array, segment tree / BIT",
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "complexity-pattern-clues-structure",
+    "theme": "complexity",
+    "kind": "pattern",
+    "front": "Problem-statement signals -> technique (part 2): shortest path, components, intervals, linked lists, prefixes, optimisation/counting?",
+    "back": "- **Shortest path / fewest steps / levels** -> BFS\n- **Connected components / reachability / all paths** -> DFS or Union-Find\n- **Matrix, grid, islands** -> DFS/BFS flood fill, or union-find\n- **Overlapping intervals / merge / scheduling** -> sort by start (or end), then sweep\n- **Linked list cycle / middle** -> fast-slow pointers\n- **Words, prefixes** -> trie\n- **Min/max cost to reach a state, count ways, overlapping subproblems with choices** -> dynamic programming\n- **Min number to cover, max under a budget, non-overlapping schedule** -> greedy (sort by a key, one pass; prove by exchange argument or fall back to DP on a counterexample)",
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "complexity-solution-decision-order",
+    "theme": "complexity",
+    "kind": "concept",
+    "front": "Once a pattern is identified, in what rough order do you try data structures/algorithms?",
+    "back": "1. **One pass with a hash map/set?** O(n) time, O(n) space\n2. **Sorted or sortable -> two pointers / binary search?** O(n log n) or O(n)\n3. **Sliding window** over a contiguous range? O(n)\n4. Need **ordering/priority** at each step? heap, O(n log k)\n5. **Graph/tree traversal?** BFS for shortest/levels, DFS for exploring/backtracking\n6. **Overlapping subproblems / optimal substructure?** DP - define state, transition, base case\n7. Nothing fits and **n is small?** brute force / backtracking is fine\n\n- Always state the brute force first, then improve it.",
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "complexity-before-while-after-coding",
+    "theme": "complexity",
+    "kind": "concept",
+    "front": "Checklist: what do you do before coding, while coding, and after coding?",
+    "back": "**Before:** state the time/space target out loud; sketch the approach in a couple of lines; pick pointer/variable names up front (`left/right`, `slow/fast`, `i/j`).\n\n**While:** handle edge cases first if they'd crash the main logic (empty, single element); watch off-by-one on loop bounds and pointer moves; trace one example as you write; clarity first, optimise after it is correct.\n\n**After:** trace 1-2 of the earlier test cases against the actual code; restate final time/space; confirm the trivial case works without special-casing bugs.",
+    "source": "notes/general-guidance.md"
+  }
+]

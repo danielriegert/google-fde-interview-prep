@@ -1,0 +1,304 @@
+[
+  {
+    "id": "dp-two-properties",
+    "theme": "dp",
+    "kind": "concept",
+    "front": "What two properties must a problem have for DP to work, and what does 'independent subproblems' mean?",
+    "back": "**Overlapping subproblems** and **optimal substructure**.\n\n- Overlapping subproblems: naive recursion solves the same inputs again on different branches (identical nodes in the recursion tree) -> cache them in a memo / table. With no overlap DP is just plain recursion, no speed-up.\n- Optimal substructure: the optimal answer is built from optimal answers to smaller subproblems, so those subproblems must be **independent** (the answer must not need a combination *across* two subproblems).\n- Counter-example: knowing each class's max score difference does not give the school-wide max difference (the best pair can span two classes). Fix by reformulating: school max diff = highest score - lowest score.\n- If you cannot write a transition that covers every case, your state definition is probably wrong - change it quickly instead of forcing the transition.",
+    "source": "english/Dynamic_Programming.ipynb"
+  },
+  {
+    "id": "dp-recognition-clues",
+    "theme": "dp",
+    "kind": "pattern",
+    "front": "Which phrases in a problem statement signal DP?",
+    "back": "Four families of clues:\n\n- **Extremes**: minimum cost, maximum profit, longest/shortest ...\n- **Counting**: \"how many ways to ...\" (climbing stairs, coin change II)\n- **Existence**: \"is it possible to reach / can this be formed?\" (word break, partition equal subset)\n- **Sequence of decisions**: take/leave an item, cut here or there - each choice changes what remains\n\nAlso: subsequences + an optimal value are almost always O(n^2) DP; \"all solutions\" (list them) is backtracking instead. If greedy looks tempting, hand-trace a counter-example first.",
+    "source": "notes/dynamic_programming.py"
+  },
+  {
+    "id": "dp-arrival-mindset",
+    "theme": "dp",
+    "kind": "concept",
+    "front": "What is the DP mindset ('how could I have arrived here?') and what 3 questions check that DP fits?",
+    "back": "Instead of \"where can I go from here?\", ask **\"how could I have arrived at this state?\"** - the state's value is a case analysis of the *last step*.\n\nBrute force is usually a DFS over the decision tree; DP solves that tree without building it or recomputing duplicate branches.\n\nChecks:\n- Can I break it into smaller subproblems?\n- Do past choices restrict future choices?\n- Are choices independent of *how* I got to this state? (**no aftereffect**: a state only cares about its value, not its history)\n\nIf yes to the first and third, DP is viable.",
+    "source": "notes/dynamic_programming.py"
+  },
+  {
+    "id": "dp-four-steps",
+    "theme": "dp",
+    "kind": "concept",
+    "front": "What are the four steps for designing a DP solution, and how do you get its complexity?",
+    "back": "1. **State**: what does `dp[i]` (or `dp[i][j]`) mean? (best answer considering the first i items / ending at i / for amount i)\n2. **Transition**: case analysis of the last step (skip vs take, which earlier state did we come from?)\n3. **Base cases**: smallest inputs that cannot be split further; the recurrence often dictates how far back they must go\n4. **Answer** (often `dp[-1]`, but not always, e.g. LIS = `max(dp)`) and **space optimisation**\n\nComplexity = **number of states x work per transition**. 1D DP is usually O(n), 2D DP O(n*m). Debug by printing the dp table and comparing to a hand-worked example.",
+    "source": "english/Dynamic_Programming.ipynb"
+  },
+  {
+    "id": "dp-top-down-vs-bottom-up",
+    "theme": "dp",
+    "kind": "concept",
+    "front": "Top-down memoisation vs bottom-up tabulation: how do they relate and when do you pick which?",
+    "back": "Same state space, two traversals: top-down = recursion + memo, bottom-up = iteration + table. Path to an optimal solution: **brute force -> add memo -> convert to bottom-up -> compress space**.\n\n- DFS <-> DP dictionary: the dfs *parameters* are the state dimensions, the dfs *return value* is the state value.\n- **Bottom-up** when start and end states are clear and most states are needed: simpler loops, no recursion overhead, allows rolling arrays.\n- **Top-down** when only a subset of states is reachable, or you can exit early: it only visits reachable states (a recursive solution to a string-splitting problem beat the table version 68 ms vs 996 ms).\n- Recursion can hit Python's depth limit for deep chains; bottom-up cannot.",
+    "source": "english/Dynamic_Programming.ipynb"
+  },
+  {
+    "id": "dp-data-range-heuristic",
+    "theme": "dp",
+    "kind": "pattern",
+    "front": "How can the input size hint at the DP dimension?",
+    "back": "DP cost = number of states, so constraints reveal the state shape:\n\n- n around **10^5 - 10^6** -> try a **1D** DP (O(n) states)\n- n around **10^2 - 10^3** -> try a **2D** DP (O(n^2) states)\n- n <= ~20 -> bitmask DP / exponential is fine\n\nIf the values themselves (e.g. amount, capacity) are small, the index can *be* the value (coin change: `dp[amount]`).",
+    "source": "english/Dynamic_Programming.ipynb"
+  },
+  {
+    "id": "dp-traversal-direction",
+    "theme": "dp",
+    "kind": "gotcha",
+    "front": "How do you decide the loop order / direction when filling a DP table?",
+    "back": "Two rules only:\n\n1. When you compute a state, every state it depends on must **already be computed**.\n2. The cell holding the final answer must be computed by the end.\n\nExamples: grid paths that read `[r-1][c]` and `[r][c-1]` go forward; triangle reads row below so go bottom-up; interval DP reads shorter intervals so loop by length (or `i` descending); 1D 0/1 knapsack reads `dp[c-w]` from the previous item so loop capacity **descending**. Sometimes you even traverse diagonally.",
+    "source": "english/Dynamic_Programming.ipynb"
+  },
+  {
+    "id": "dp-space-compression",
+    "theme": "dp",
+    "kind": "concept",
+    "front": "When and how can you compress DP space with a rolling array?",
+    "back": "If `dp[i][j]` only needs *adjacent* states (row `i-1`, or a few previous values), keep only those: 2D -> 1D (O(n*m) -> O(m)), 1D `dp[i-1], dp[i-2]` -> O(1) variables.\n\n- Pick the axis to loop over so that updating in place does not destroy values you still need (that fixes the direction: 0/1 knapsack descending, unbounded ascending).\n- Diagonal dependency (`dp[i-1][j-1]`) is trickier: save the old value in a temp (`prev`) before overwriting.\n- Compression saves space only; time stays O(states). (Only the unbounded knapsack's 1D form also cuts time: O(N*C^2) -> O(N*C).)\n- You lose the ability to reconstruct the solution path.",
+    "source": "english/Dynamic_Programming.ipynb"
+  },
+  {
+    "id": "dp-transition-catalog",
+    "theme": "dp",
+    "kind": "pattern",
+    "front": "List the common DP transition families and their typical recurrences.",
+    "back": "| Family | Recurrence idea |\n|---|---|\n| Linear choice (LC 70, 198, 213, 337) | `dp[i] = dp[i-1] + dp[i-2]` or `max(dp[i-1], dp[i-2] + x)`; tree version returns `(take, skip)` |\n| Partition / jump (LC 139) | try every previous split point `j`: `dp[i] \\|= dp[j] and s[j:i] in words` |\n| Longest increasing subsequence (LC 300) | `dp[i] = 1 + max(dp[j])` for `j < i` with `a[j] < a[i]` |\n| Subarray (Kadane, LC 53) | extend or restart: `max(x, dp[i-1] + x)` |\n| String prefix (LC 91) | look back 1 or 2 chars |\n| State machine (LC 121/122/309/714) | mutually exclusive states (hold / not hold / cooldown) per day |\n| 2D grid / two strings / interval / knapsack | own cards |",
+    "source": "notes/dynamic_programming.py"
+  },
+  {
+    "id": "dp-1d-template",
+    "theme": "dp",
+    "kind": "template",
+    "front": "Template: 1D DP where each step is 'skip or take with a constraint' (House Robber, LC 198), first with an array then O(1) space?",
+    "back": "```python\ndef rob(nums):\n    # dp[i] = best loot from houses 0..i ; dp[i] = max(dp[i-1], dp[i-2] + nums[i])\n    prev2 = prev1 = 0                       # dp[i-2], dp[i-1]; empty prefix = 0\n    for x in nums:\n        prev2, prev1 = prev1, max(prev1,        # skip house i\n                                  prev2 + x)    # take it (must skip i-1)\n    return prev1                            # dp[n-1]\n```\n\n- Array version: `dp = [0]*n; dp[0] = nums[0]; dp[1] = max(nums[0], nums[1])`, loop from 2.\n- Base cases depend on how far back you look (here 2).\n- O(n) time, O(1) space. Same shape for Climbing Stairs (LC 70): `prev2, prev1 = prev1, prev1 + prev2`.",
+    "lc": 198,
+    "source": "notes/dynamic_programming.py"
+  },
+  {
+    "id": "dp-house-robber-ii-213",
+    "theme": "dp",
+    "kind": "problem",
+    "front": "LC 213 House Robber II (houses in a circle): how do you reduce it to LC 198?",
+    "back": "First and last houses are adjacent, so you cannot take both: answer = `max(rob(nums[:-1]), rob(nums[1:]))` - one run excluding the last house, one excluding the first.\n\n```python\ndef rob2(nums):\n    if len(nums) == 1:\n        return nums[0]                       # slicing would leave both runs empty\n    return max(rob(nums[:-1]), rob(nums[1:]))   # rob = linear House Robber\n```\n\n- O(n) time, O(1) extra space (slices cost O(n) copies; pass index bounds to avoid).\n- Gotcha: the single-house edge case.\n- LC 337 (tree version): DFS returns `(rob_this, skip_this)` per node.",
+    "lc": 213,
+    "source": "english/Dynamic_Programming.ipynb"
+  },
+  {
+    "id": "dp-word-break-139",
+    "theme": "dp",
+    "kind": "problem",
+    "front": "LC 139 Word Break: state, transition, base case and complexity?",
+    "back": "`dp[i]` = can the prefix `s[:i]` be segmented. Base `dp[0] = True` (empty string). Transition: `dp[i] = any(dp[j] and s[j:i] in words for j < i)`.\n\n```python\ndef wordBreak(s, wordDict):\n    words = set(wordDict)\n    longest = max(map(len, words))\n    dp = [False] * (len(s) + 1)\n    dp[0] = True\n    for i in range(1, len(s) + 1):\n        for j in range(max(0, i - longest), i):   # only plausible last-word starts\n            if dp[j] and s[j:i] in words:\n                dp[i] = True\n                break\n    return dp[-1]\n```\n\n- Time O(n * L * L) (n starts, L=max word length, slice+hash), space O(n).\n- \"Partition / jump\" family: build state `i` from every earlier valid split point.\n- Top-down: `dfs(i)` tries each word with `s.startswith(word, i)`, memoising `i`.",
+    "lc": 139,
+    "source": "notes/dynamic_programming.py"
+  },
+  {
+    "id": "dp-lis-quadratic-300",
+    "theme": "dp",
+    "kind": "problem",
+    "front": "LC 300 Longest Increasing Subsequence: the O(n^2) DP - state, transition, answer?",
+    "back": "`dp[i]` = length of the longest increasing subsequence **ending at index i** (all init to 1).\n\n```python\ndef lengthOfLIS(nums):\n    dp = [1] * len(nums)\n    for i in range(len(nums)):\n        for j in range(i):\n            if nums[j] < nums[i]:            # strict increase\n                dp[i] = max(dp[i], dp[j] + 1)\n    return max(dp)                           # answer is NOT dp[-1]\n```\n\n- O(n^2) time, O(n) space.\n- Gotcha: the answer is `max(dp)`, because the LIS need not end at the last element.\n- Sliding window does not work (subsequence, not contiguous). Faster: O(n log n) with binary search (next card).",
+    "lc": 300,
+    "source": "notes/dynamic_programming.py"
+  },
+  {
+    "id": "dp-lis-bisect-300",
+    "theme": "dp",
+    "kind": "problem",
+    "front": "LC 300 in O(n log n): what does the `tails` array mean and how do you update it?",
+    "back": "`tails[k]` = the **smallest possible tail** of an increasing subsequence of length `k+1`. It is always sorted, so binary search works.\n\n```python\nfrom bisect import bisect_left\n\ndef lengthOfLIS(nums):\n    tails = []\n    for x in nums:\n        k = bisect_left(tails, x)        # first tail >= x (strict LIS)\n        if k == len(tails):\n            tails.append(x)              # x extends the longest subsequence\n        else:\n            tails[k] = x                 # x is a smaller tail for length k+1\n    return len(tails)\n```\n\n- O(n log n) time, O(n) space.\n- `tails` is **not** the actual subsequence, only its length is meaningful.\n- Use `bisect_right` for non-decreasing LIS.",
+    "lc": 300,
+    "source": "english/Mini_Topics.ipynb"
+  },
+  {
+    "id": "dp-decode-ways-91",
+    "theme": "dp",
+    "kind": "problem",
+    "front": "LC 91 Decode Ways: how do you build `dp[i]` by looking back 1 or 2 characters?",
+    "back": "`dp[i]` = number of ways to decode `s[:i]`; base `dp[0] = 1` (empty string).\n\n```python\ndef numDecodings(s):\n    n = len(s)\n    dp = [0] * (n + 1)\n    dp[0] = 1\n    for i in range(1, n + 1):\n        if s[i-1] != '0':                        # last char alone: 1-9\n            dp[i] += dp[i-1]\n        if i >= 2 and 10 <= int(s[i-2:i]) <= 26:  # last two chars: 10-26\n            dp[i] += dp[i-2]\n    return dp[n]\n```\n\n- O(n) time; O(1) space with two variables.\n- Counting: the two cases are disjoint and cover everything, so just **add**.\n- Gotchas: `'0'` cannot stand alone; `\"06\"` is invalid (two-char check must be 10-26).",
+    "lc": 91,
+    "source": "notes/dynamic_programming.py"
+  },
+  {
+    "id": "dp-stock-state-machine",
+    "theme": "dp",
+    "kind": "concept",
+    "front": "How do you model the stock problems (LC 121, 122) as a DP state machine?",
+    "back": "Track the best profit in each mutually exclusive state at the end of day i: `hold` (own a share) and `cash` (own none).\n\n```python\ndef maxProfit(prices):                      # LC 122: unlimited transactions\n    hold, cash = float('-inf'), 0\n    for p in prices:\n        hold, cash = max(hold, cash - p), max(cash, hold + p)   # tuple: uses old values\n    return cash\n```\n\n- Transitions: `hold = max(hold, cash - p)` (keep or buy), `cash = max(cash, hold + p)` (stay or sell).\n- LC 121 (one transaction): just track `min_price` and `best = max(best, p - min_price)`.\n- LC 122 simplification: sum of all positive day-to-day gains.\n- O(n) time, O(1) space. Extra constraints (cooldown, fee) = extra state or extra term.",
+    "lc": 122,
+    "source": "english/Dynamic_Programming.ipynb"
+  },
+  {
+    "id": "dp-stock-cooldown-309",
+    "theme": "dp",
+    "kind": "problem",
+    "front": "LC 309 Best Time to Buy and Sell Stock with Cooldown (and 714 with fee): how do you extend the state machine?",
+    "back": "Add a third state so that selling forces a rest day before buying.\n\n```python\ndef maxProfit(prices):\n    hold, sold, rest = float('-inf'), 0, 0\n    for p in prices:\n        hold, sold, rest = (max(hold, rest - p),   # keep, or buy (only from rest)\n                            hold + p,              # sell today\n                            max(rest, sold))       # idle (came from rest or yesterday's sale)\n    return max(sold, rest)\n```\n\n- Buy only from `rest`, never straight after `sold`; that encodes the cooldown.\n- O(n) time, O(1) space.\n- LC 714 (transaction fee): same 2-state machine as LC 122 but subtract `fee` once on sell: `cash = max(cash, hold + p - fee)`.",
+    "lc": 309,
+    "source": "english/Dynamic_Programming.ipynb"
+  },
+  {
+    "id": "dp-grid-template",
+    "theme": "dp",
+    "kind": "template",
+    "front": "Template: bottom-up 2D grid DP (LC 62 Unique Paths) - base cases and transition?",
+    "back": "`dp[r][c]` = number of paths to reach cell (r, c). Look **back** at how you could have arrived: from above or from the left.\n\n```python\ndef uniquePaths(m, n):\n    dp = [[1] * n for _ in range(m)]        # first row/col: only one way (all 1s)\n    for r in range(1, m):\n        for c in range(1, n):\n            dp[r][c] = dp[r-1][c] + dp[r][c-1]\n    return dp[m-1][n-1]\n```\n\n- Base = first row and first column (or first cell).\n- Variants: LC 64 min path sum `grid[r][c] += min(up, left)` (in place, O(1) space); LC 63 obstacles: cell = 0; LC 120 triangle.\n- Rolling 1D: `dp[c] += dp[c-1]` (`dp[c]` still holds the row above, `dp[c-1]` is the new left).\n- O(m*n) time, O(n) space.",
+    "lc": 62,
+    "source": "notes/dynamic_programming.py"
+  },
+  {
+    "id": "dp-grid-direction-gotcha",
+    "theme": "dp",
+    "kind": "gotcha",
+    "front": "Grid DP (LC 63): why does bottom-up index `[r-1]/[c-1]` while top-down memo recursion uses `[r+1]/[c+1]`?",
+    "back": "They are the same recurrence viewed from opposite ends.\n\n- **Bottom-up** starts at the origin and asks \"how could I have arrived here?\" -> reads the **previous** cells (up, left): `dp[r][c] = dp[r-1][c] + dp[r][c-1]`.\n- **Top-down** `dfs(r, c)` asks \"where can I go from here to the goal?\" -> calls **next** cells: `dfs(r+1, c) + dfs(r, c+1)`, with base cases out-of-bounds/obstacle = 0 and goal = 1.\n\nMixing the two (reading `r+1` in a forward loop) reads uncomputed cells and silently gives wrong answers. Memoise `(r, c)`: O(m*n) time and memo space, O(m+n) recursion stack.\n\nLC 63 space-optimised: `if obstacle: dp[c] = 0 elif c: dp[c] += dp[c-1]`.",
+    "lc": 63,
+    "source": "notes/dynamic_programming.py"
+  },
+  {
+    "id": "dp-triangle-120",
+    "theme": "dp",
+    "kind": "problem",
+    "front": "LC 120 Triangle: state, direction and how to get O(1) extra space?",
+    "back": "Go **bottom-up** so each cell can look at the two cells below it: `f(r, c)` = min path sum from `(r, c)` to the bottom.\n\n```python\ndef minimumTotal(triangle):\n    dp = triangle[-1][:]                       # copy of the last row = base case\n    for r in range(len(triangle) - 2, -1, -1):\n        for c in range(len(triangle[r])):\n            dp[c] = triangle[r][c] + min(dp[c], dp[c + 1])   # below, below-right\n    return dp[0]\n```\n\n- O(n^2) time (n rows, ~n^2/2 cells), O(n) extra space with the 1D array; O(1) if you overwrite `triangle` in place.\n- Top-down alternative: `dfs(r, c)` with memo `{(r, c): ...}` is O(n^2) time and space.\n- Bottom-up here means the answer ends at the single top cell, so no min over a last row is needed.",
+    "lc": 120,
+    "source": "notes/dynamic_programming.py"
+  },
+  {
+    "id": "dp-2d-subsequence-template",
+    "theme": "dp",
+    "kind": "template",
+    "front": "Template: 2D DP over two strings (LCS, LC 1143) - why the +1 offset and what are the loop invariants?",
+    "back": "`dp[i][j]` = answer for the first `i` chars of `a` and first `j` chars of `b`. The extra row/column (size `(m+1) x (n+1)`) is the **empty-string base case**, so `dp[0][*] = dp[*][0] = 0` needs no special code, and characters are compared as `a[i-1]`, `b[j-1]`.\n\n```python\ndef lcs(a, b):\n    m, n = len(a), len(b)\n    dp = [[0] * (n + 1) for _ in range(m + 1)]\n    for i in range(1, m + 1):\n        for j in range(1, n + 1):\n            if a[i-1] == b[j-1]:\n                dp[i][j] = dp[i-1][j-1] + 1            # match: extend diagonal\n            else:\n                dp[i][j] = max(dp[i-1][j], dp[i][j-1])  # skip a char of a or b\n    return dp[m][n]\n```\n\n- O(m*n) time; O(min(m, n)) space with two rolling rows (put the shorter string on the columns).\n- Cost problems: swap `max` for `min` and initialise the borders (see edit distance).",
+    "lc": 1143,
+    "source": "notes/dynamic_programming.py"
+  },
+  {
+    "id": "dp-edit-distance-72",
+    "theme": "dp",
+    "kind": "problem",
+    "front": "LC 72 Edit Distance: what are the base cases, and what do the three neighbours mean?",
+    "back": "`dp[i][j]` = min operations to turn `word1[:i]` into `word2[:j]`.\n\n```python\ndef minDistance(word1, word2):\n    m, n = len(word1), len(word2)\n    dp = [[0] * (n + 1) for _ in range(m + 1)]\n    for i in range(m + 1): dp[i][0] = i     # delete all i chars\n    for j in range(n + 1): dp[0][j] = j     # insert all j chars\n    for i in range(1, m + 1):\n        for j in range(1, n + 1):\n            if word1[i-1] == word2[j-1]:\n                dp[i][j] = dp[i-1][j-1]      # free match\n            else:\n                dp[i][j] = 1 + min(dp[i-1][j],     # delete word1[i-1]\n                                   dp[i][j-1],     # insert word2[j-1]\n                                   dp[i-1][j-1])   # replace\n    return dp[m][n]\n```\n\n- O(m*n) time; O(n) space with two rows (`prev = list(range(n+1))`, `cur[0] = i`).\n- Gotcha: base cases are `i` and `j`, not 0 (unlike LCS).",
+    "lc": 72,
+    "source": "notes/dynamic_programming.py"
+  },
+  {
+    "id": "dp-counting-vs-maximising",
+    "theme": "dp",
+    "kind": "concept",
+    "front": "How does a DP change when you COUNT ways instead of maximise/minimise?",
+    "back": "Replace `max/min` with **addition**, and make sure the cases are **disjoint and exhaustive**.\n\n- Optimising: a transition only needs to miss no cases; overlapping cases are harmless (duplicates don't change a max).\n- Counting: no misses **and** no duplicates, otherwise you double-count.\n- Base case is usually `dp[0] = 1` (one way to build nothing), not 0 or infinity.\n- Grid paths: `dp[r][c] = dp[r-1][c] + dp[r][c-1]`. Counting subsequences of `s` equal to `t`: on a match add \"use it\" + \"skip it\" (`dp[i-1][j-1] + dp[i-1][j]`), else `dp[i-1][j]`.\n- Counting can't be greedy: greedy yields one solution, never a count.\n- Watch the modulus (e.g. `10**9+7`) when results grow.",
+    "source": "notes/dynamic_programming.py"
+  },
+  {
+    "id": "dp-interval-516",
+    "theme": "dp",
+    "kind": "template",
+    "front": "Template: interval DP (LC 516 Longest Palindromic Subsequence) - what do you iterate over?",
+    "back": "`dp[i][j]` = answer for the substring `s[i..j]`. Big intervals depend on smaller ones, so iterate by **interval length** (or `i` from n-1 down, `j` up).\n\n```python\ndef longestPalindromeSubseq(s):\n    n = len(s)\n    dp = [[0] * n for _ in range(n)]\n    for i in range(n):\n        dp[i][i] = 1                          # length-1 base case\n    for length in range(2, n + 1):\n        for i in range(n - length + 1):\n            j = i + length - 1\n            if s[i] == s[j]:\n                dp[i][j] = dp[i+1][j-1] + 2   # wrap both ends around the inside\n            else:\n                dp[i][j] = max(dp[i+1][j], dp[i][j-1])   # drop one end\n    return dp[0][n-1]\n```\n\n- O(n^2) time and space. For length 2 `dp[i+1][j-1]` is an empty interval (0), fine here.\n- Generic: init length 0/1; loop length; loop start; combine sub-intervals (or all split points -> O(n^3)).",
+    "lc": 516,
+    "source": "english/Dynamic_Programming.ipynb"
+  },
+  {
+    "id": "dp-knapsack-01-vs-unbounded",
+    "theme": "dp",
+    "kind": "concept",
+    "front": "0/1 vs unbounded knapsack: what differs in the recurrence and in the 1D loop direction?",
+    "back": "Item `i`, capacity `j`, weight `v`, value `w`:\n\n- **0/1** (each item once): `dp[i][j] = max(dp[i-1][j], dp[i-1][j-v] + w)` - reads the **previous item layer**.\n- **Unbounded** (item reuse allowed): `dp[i][j] = max(dp[i-1][j], dp[i][j-v] + w)` - reads the **current layer**.\n\nCompressed to 1D (outer loop over items):\n- 0/1: capacity loop **high -> low**, so `dp[j-v]` is still the old layer (else you reuse the item).\n- Unbounded: capacity loop **low -> high**, so `dp[j-v]` is already updated for this item.\n\nThe 1D form is only a rolling-array trick for 0/1 (no time gain); for unbounded it removes a factor (O(N*C^2) -> O(N*C)). Bounded knapsack: split items by binary splitting into 0/1 items.",
+    "source": "english/Dynamic_Programming.ipynb"
+  },
+  {
+    "id": "dp-partition-equal-subset-416",
+    "theme": "dp",
+    "kind": "problem",
+    "front": "LC 416 Partition Equal Subset Sum: how does it become 0/1 knapsack and what is the loop?",
+    "back": "Odd total -> `False`. Otherwise: can some subset sum to `target = total // 2`? Each number is used at most once -> **0/1 knapsack**, `dp[c]` = \"some subset sums to exactly c\".\n\n```python\ndef canPartition(nums):\n    total = sum(nums)\n    if total % 2:\n        return False\n    target = total // 2\n    dp = [False] * (target + 1)\n    dp[0] = True                              # empty subset\n    for x in nums:\n        for c in range(target, x - 1, -1):    # DESCENDING: each x used once\n            dp[c] = dp[c] or dp[c - x]\n    return dp[target]\n```\n\n- O(n * target) time, O(target) space.\n- Gotcha: ascending order would let `x` be reused (unbounded) and give wrong answers, e.g. `[1, 5]` would wrongly become True (1+1+1 = 3 = half of 6).\n- Speed-up: a Python int bitset `bits |= bits << x`.",
+    "lc": 416,
+    "source": "english/Dynamic_Programming.ipynb"
+  },
+  {
+    "id": "dp-coin-change-322",
+    "theme": "dp",
+    "kind": "template",
+    "front": "Template: unbounded knapsack min-count (LC 322 Coin Change) - initialisation and loops?",
+    "back": "`dp[a]` = fewest coins to make amount `a`; the **index is the amount**. Initialise to `amount + 1` (an \"unreachable\" value larger than any real answer, so `min` works), `dp[0] = 0`.\n\n```python\ndef coinChange(coins, amount):\n    INF = amount + 1\n    dp = [INF] * (amount + 1)\n    dp[0] = 0\n    for a in range(1, amount + 1):\n        for c in coins:\n            if c <= a:\n                dp[a] = min(dp[a], dp[a - c] + 1)\n    return dp[amount] if dp[amount] != INF else -1\n```\n\n- O(amount * len(coins)) time, O(amount) space.\n- Here amount-outer works because `min` doesn't care about order; coin-outer with `for a in range(c, amount+1)` is equivalent.\n- Greedy (largest coin first) is wrong: coins `[1, 3, 4]`, amount 6 -> 3+3 not 4+1+1.",
+    "lc": 322,
+    "source": "notes/dynamic_programming.py"
+  },
+  {
+    "id": "dp-coin-change-2-loop-order",
+    "theme": "dp",
+    "kind": "gotcha",
+    "front": "LC 518 Coin Change II: why must the coin loop be the OUTER loop (combinations vs permutations)?",
+    "back": "Counting **combinations** requires coin-outer, amount-inner:\n\n```python\ndef change(amount, coins):\n    dp = [0] * (amount + 1)\n    dp[0] = 1                                # one way to make 0\n    for c in coins:                          # outer: fix the coin set considered so far\n        for a in range(c, amount + 1):       # ascending: unbounded reuse\n            dp[a] += dp[a - c]\n    return dp[amount]\n```\n\n- Coin-outer: each order of coins is counted once ({1,2} = {2,1}). `change(5, [1,2,5]) == 4`.\n- Swap the loops (amount-outer, coin-inner) and you count **ordered sequences** = permutations (LC 377): `perms(4, [1,2,3]) == 7`.\n- For plain `min` (LC 322) the order does not matter, but for sums it does.\n- 1D recurrence from 2D: `f(i, a) = f(i-1, a) + f(i, a - coin_i)`.",
+    "lc": 518,
+    "source": "english/Dynamic_Programming.ipynb"
+  },
+  {
+    "id": "dp-perfect-squares-279",
+    "theme": "dp",
+    "kind": "problem",
+    "front": "LC 279 Perfect Squares: which DP pattern is it and what is the loop?",
+    "back": "Unbounded knapsack min-count where the 'coins' are the perfect squares <= n and the target is n.\n\n```python\ndef numSquares(n):\n    dp = [0] + [float('inf')] * n            # dp[0] = 0: using no square makes 0\n    for s in (k * k for k in range(1, int(n ** 0.5) + 1)):\n        for a in range(s, n + 1):            # ascending: squares are reusable\n            dp[a] = min(dp[a], dp[a - s] + 1)\n    return dp[n]\n```\n\n- `numSquares(12) == 3` (4+4+4), `numSquares(13) == 2` (4+9).\n- O(n * sqrt(n)) time, O(n) space.\n- Same skeleton as Coin Change (LC 322); the answer always exists because 1 is a square (n ones).",
+    "lc": 279,
+    "source": "english/Dynamic_Programming.ipynb"
+  },
+  {
+    "id": "dp-ones-and-zeroes-474",
+    "theme": "dp",
+    "kind": "problem",
+    "front": "LC 474 Ones and Zeroes: how many dimensions does the knapsack need and which direction?",
+    "back": "Each string is an item used at most once (0/1) with **two** capacity constraints (zeros <= m, ones <= n), so the state is 2D: `dp[i][j]` = max strings using at most `i` zeros and `j` ones.\n\n```python\ndef findMaxForm(strs, m, n):\n    dp = [[0] * (n + 1) for _ in range(m + 1)]\n    for s in strs:\n        z = s.count('0'); o = len(s) - z\n        for i in range(m, z - 1, -1):        # both dims DESCENDING (0/1)\n            for j in range(n, o - 1, -1):\n                dp[i][j] = max(dp[i][j], dp[i - z][j - o] + 1)\n    return dp[m][n]\n```\n\n- Value of each item is 1, so it maximises count.\n- O(len(strs) * m * n) time, O(m*n) space.\n- `findMaxForm([\"10\",\"0001\",\"111001\",\"1\",\"0\"], 5, 3) == 4`.",
+    "lc": 474,
+    "source": "english/Dynamic_Programming.ipynb"
+  },
+  {
+    "id": "dp-at-most-vs-exactly",
+    "theme": "dp",
+    "kind": "concept",
+    "front": "Knapsack 'at most' vs 'exactly' capacity: what changes?",
+    "back": "Only the **initialisation** (row 0 / `dp` before any item):\n\n- **At most x**: with no items the value is a valid `0` for every capacity -> `dp = [0] * (C + 1)`.\n- **Exactly x**: only capacity 0 is valid; every other capacity is *invalid* -> `dp[0] = 0` and the rest `-inf` (max problems) / `inf` (min problems) / `0` (counting, with `dp[0] = 1`).\n\nExamples: coin change (LC 322) needs *exactly* `amount` -> `[amount+1]*..` with `dp[0]=0`; coin change II counts exactly -> `dp[0] = 1`; max value within capacity is *at most* -> all zeros.\n\nRule: ask which states are valid before any item is considered.",
+    "source": "english/Dynamic_Programming.ipynb"
+  },
+  {
+    "id": "dp-kadane-53",
+    "theme": "dp",
+    "kind": "template",
+    "front": "Template: Kadane's algorithm (LC 53 Maximum Subarray) - recurrence, complexity, edge case?",
+    "back": "It is a 1D DP with space-optimised state: `cur` = best sum of a subarray **ending at i**; either extend it or start fresh.\n\n```python\ndef maxSubArray(nums):\n    cur = best = nums[0]                     # NOT 0: all-negative arrays need a real element\n    for x in nums[1:]:\n        cur = max(x, cur + x)                # restart if the running sum became a drag\n        best = max(best, cur)\n    return best\n```\n\n- `dp[i] = max(nums[i], dp[i-1] + nums[i])`; the answer is the max over all `i`.\n- O(n) time, O(1) space (brute force O(n^2)/O(n^3)).\n- Gotcha: initialising `best = 0` returns 0 for `[-3, -1]` instead of -1.",
+    "lc": 53,
+    "source": "notes/kadanes_algo.py"
+  },
+  {
+    "id": "dp-kadane-indices",
+    "theme": "dp",
+    "kind": "template",
+    "front": "Kadane with indices: how do you also return the start and end of the best subarray?",
+    "back": "Keep a `start` marker that resets whenever you restart, and copy it when the global best improves.\n\n```python\ndef max_subarray_with_indices(nums):\n    cur = best = nums[0]\n    start = lo = hi = 0\n    for i in range(1, len(nums)):\n        if nums[i] > cur + nums[i]:          # restart at i\n            cur = nums[i]\n            start = i\n        else:\n            cur += nums[i]\n        if cur > best:\n            best, lo, hi = cur, start, i\n    return best, lo, hi                      # subarray = nums[lo:hi+1]\n```\n\n- `[-2,1,-3,4,-1,2,1,-5,4]` -> `(6, 3, 6)`, subarray `[4,-1,2,1]`.\n- Still O(n) time, O(1) space.\n- Update `lo, hi` only on a strict improvement (`>`), which keeps the earliest best.",
+    "lc": 53,
+    "source": "notes/kadanes_algo.py"
+  },
+  {
+    "id": "dp-dfs-memo-dag",
+    "theme": "dp",
+    "kind": "concept",
+    "front": "When is DFS + memoisation the right tool, and how do you write it in Python?",
+    "back": "Use it when the states form a **DAG** (no cycles): each state's answer depends on states reachable from it. Cache the answer per state so each is computed once: time = #states x work per state.\n\n```python\nfrom functools import cache\n\ndef uniquePathsWithObstacles(grid):\n    m, n = len(grid), len(grid[0])\n    @cache                                   # key = (r, c)\n    def dfs(r, c):\n        if r >= m or c >= n or grid[r][c]:   # out of bounds / obstacle\n            return 0\n        if r == m - 1 and c == n - 1:\n            return 1\n        return dfs(r + 1, c) + dfs(r, c + 1)\n    return dfs(0, 0)\n```\n\n- Parameters that change = state dimensions; return value = state value.\n- Cycles need extra care (visiting flag) or it's not a DAG.\n- Interview caveat: an interviewer may reject plain DFS+memo and ask for a time/space-optimised (bottom-up / rolling) version.",
+    "source": "notes/dynamic_programming.py"
+  },
+  {
+    "id": "dp-delete-and-earn-740",
+    "theme": "dp",
+    "kind": "problem",
+    "front": "LC 740 Delete and Earn: how do you reduce it to House Robber?",
+    "back": "Taking value `v` earns `v * count(v)` and forbids `v-1` and `v+1`, so group by value: `earn[v] = v * count[v]`. Then values `v` and `v+1` are 'adjacent houses'; distinct values that differ by more than 1 are independent.\n\n```python\nfrom collections import Counter\n\ndef deleteAndEarn(nums):\n    cnt = Counter(nums)\n    prev2 = prev1 = 0                        # best up to v-2, v-1\n    for v in range(1, max(nums) + 1):\n        prev2, prev1 = prev1, max(prev1, prev2 + v * cnt[v])\n    return prev1\n```\n\n- `deleteAndEarn([3,4,2]) == 6`, `[2,2,3,3,3,4] -> 9`.\n- O(n + max(nums)) time, O(max) space (iterate over sorted distinct keys instead to make it O(n log n)).\n- The hard part is spotting the reduction: 'choosing x removes neighbours' = linear-choice DP.",
+    "lc": 740,
+    "source": "english/Dynamic_Programming.ipynb"
+  }
+]

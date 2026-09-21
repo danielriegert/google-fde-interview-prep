@@ -1,0 +1,153 @@
+[
+  {
+    "id": "arrays-traversal-templates",
+    "theme": "arrays",
+    "kind": "template",
+    "front": "Template: the four basic traversals (iterative/recursive x array/linked list) - and what is special about recursive ones?",
+    "back": " **Any recursive traversal has a preorder position (before the recursive call) and a postorder position (after it).**\n\n ```python\n# iterative array\ndef traverse(nums):\n    for num in nums: ...\n\n# recursive array\ndef traverse(nums, i):\n    if i == len(nums):\n        return\n    ...                      # preorder position\n    traverse(nums, i + 1)\n    ...                      # postorder position\n\n# iterative linked list\ndef traverse(head):\n    p = head\n    while p:\n        ...\n        p = p.next\n\n# recursive linked list\ndef traverse(head):\n    if head is None:\n        return\n    ...                      # preorder position\n    traverse(head.next)\n    ...                      # postorder position\n```\n\n - Arrays are traversed by index (`i + 1`), linked lists by pointer (`head.next`); both share the same skeleton.\n - Same idea generalises: linked list -> binary tree -> N-ary tree -> graph (add a `visited` set).",
+    "source": "english/Template_Summary.ipynb"
+  },
+  {
+    "id": "arrays-pre-vs-post-position",
+    "theme": "arrays",
+    "kind": "concept",
+    "front": "In a recursive array/linked-list traversal, what can you do at the preorder position vs the postorder position?",
+    "back": " **Preorder sees only what was passed down; postorder also sees what came back up (and runs in reverse order).**\n\n - Preorder: process elements in forward order; only has data passed via arguments (prefix info).\n - Postorder: process elements in **reverse** order for free (print a list backwards with no extra storage), and can use the return values of deeper calls (suffix info).\n\n ```python\ndef print_reversed(head):\n    if head is None:\n        return\n    print_reversed(head.next)   # go all the way down first\n    print(head.val)             # postorder: runs on the way back -> reverse order\n\ndef sum_suffix(nums, i=0):       # postorder can USE what the deeper call returned\n    if i == len(nums):\n        return 0\n    return nums[i] + sum_suffix(nums, i + 1)\n```\n\n - Cost of recursion here: O(n) call-stack space vs O(1) for the iterative loop.",
+    "source": "english/Template_Summary.ipynb"
+  },
+  {
+    "id": "arrays-transpose-zip",
+    "theme": "arrays",
+    "kind": "concept",
+    "front": "How do you transpose a grid (get its columns) in one line, and what does `zip(*grid)` do?",
+    "back": "**`columns = list(zip(*grid))`**\n\n- `*grid` unpacks the rows into separate arguments: `zip([1,2,3],[4,5,6],[7,8,9])`.\n- `zip` pairs the 1st elements, then 2nd, then 3rd -> `[(1,4,7), (2,5,8), (3,6,9)]`.\n- Columns come out as **tuples**; use `list(map(list, zip(*grid)))` for lists. Tuples are hashable, so they can go in a set/Counter.\n- `zip` is a one-shot iterator: wrap in `list(...)` if you need to reuse it. It truncates ragged rows to the shortest.\n- Manual alternative: `[grid[r][c] for r in range(m)]` per column `c`.",
+    "source": "notes/matrix.py"
+  },
+  {
+    "id": "arrays-lc2352-equal-row-column-pairs",
+    "theme": "arrays",
+    "kind": "problem",
+    "front": "Equal Row and Column Pairs (LC 2352): how do you count matching (row, column) pairs faster than O(n^3)?",
+    "back": " **Hash each row as a tuple in a Counter, then look up every column: O(n^2) time, O(n^2) space.**\n\n - Naive: n rows x n columns x O(n) list comparison = **O(n^3)**.\n - Counter of rows: building is O(n^2) (hashing a length-n tuple costs O(n)); transposing is O(n^2); n column lookups cost O(n) each -> O(n^2).\n - Duplicate rows multiply: the Counter value is exactly how many rows equal that column.\n\n ```python\nfrom collections import Counter\n\ndef equalPairs(grid):\n    row_counts = Counter(map(tuple, grid))       # lists are unhashable -> tuples\n    return sum(row_counts[col] for col in zip(*grid))   # missing key -> 0\n```",
+    "lc": 2352,
+    "source": "notes/matrix.py"
+  },
+  {
+    "id": "arrays-matrix-iteration",
+    "theme": "arrays",
+    "kind": "template",
+    "front": "Template: iterate a 2D grid by row, by cell, and by column (dimensions and indexing)?",
+    "back": "**`m = len(grid)` rows, `n = len(grid[0])` columns; `grid[r][c]`.**\n\n```python\nfor r, row in enumerate(grid):            # rows\n    ...\nfor r in range(len(grid)):                # every cell\n    for c in range(len(grid[0])):\n        grid[r][c]\ncol = [grid[r][c] for r in range(m)]      # one column\ncolumns = list(zip(*grid))                # all columns\n```\n\n- Row is `grid[r]` (O(1)); a column costs O(m) to build.\n- Watch `len(grid[0])` on an empty grid (guard `if not grid or not grid[0]`).",
+    "source": "notes/matrix.py"
+  },
+  {
+    "id": "arrays-prefix-sum-when",
+    "theme": "arrays",
+    "kind": "concept",
+    "front": "When do you use a prefix sum, and what are its costs?",
+    "back": "**When the array is NOT modified and you need many range-sum queries.**\n\n- Build once: **O(n)** time, O(n) space. Each query afterwards: **O(1)** (`prefix[j+1] - prefix[i]`) instead of O(n).\n- Two operations: initialization and query.\n- If the array *is* updated between queries, use a Fenwick/segment tree instead (O(log n) both).\n- Two implementations: with padding (extra leading 0) or without (special-case index 0).",
+    "source": "english/Template_Summary.ipynb"
+  },
+  {
+    "id": "arrays-prefix-sum-1d-padded",
+    "theme": "arrays",
+    "kind": "template",
+    "front": "Template: 1D prefix sum WITH padding - what does `prefix[i]` mean, and what is the query formula for inclusive [i, j]?",
+    "back": " **`prefix[i]` = sum of the first `i` elements (`prefix[0] = 0`); `query(i, j) = prefix[j+1] - prefix[i]`.**\n\n ```python\nclass PreSum:\n    def __init__(self, nums):\n        self.prefix = [0] * (len(nums) + 1)       # padding slot: prefix[0] = 0\n        for i, x in enumerate(nums):\n            self.prefix[i + 1] = self.prefix[i] + x   # prefix[i] = sum of the FIRST i elements\n\n    def query(self, i, j):                        # inclusive [i, j]\n        return self.prefix[j + 1] - self.prefix[i]\n```\n\n - Array has length n+1; every index into `prefix` is shifted by +1 relative to `nums`.\n - The padding removes the \"i == 0\" special case.",
+    "source": "english/Template_Summary.ipynb"
+  },
+  {
+    "id": "arrays-prefix-sum-padded-vs-unpadded",
+    "theme": "arrays",
+    "kind": "gotcha",
+    "front": "Prefix sum without padding: what changes vs the padded version, and which do you pick?",
+    "back": " **Unpadded saves one slot but forces an `i == 0` special case: `prefix[i]` = sum of `nums[0..i]`, `query = prefix[j] - prefix[i-1]`.**\n\n ```python\nclass PreSumNoPad:\n    def __init__(self, nums):\n        self.prefix = list(nums)                  # prefix[i] = sum(nums[0..i])\n        for i in range(1, len(nums)):\n            self.prefix[i] += self.prefix[i - 1]\n\n    def query(self, i, j):\n        return self.prefix[j] if i == 0 else self.prefix[j] - self.prefix[i - 1]\n```\n\n - Forgetting the `i == 0` guard silently reads `prefix[-1]` (the last element) in Python - a wrong answer, not an error.\n - Default to **padded** in interviews: less edge-case code, just remember the +1 shift.",
+    "source": "english/Template_Summary.ipynb"
+  },
+  {
+    "id": "arrays-lc304-range-sum-query-2d",
+    "theme": "arrays",
+    "kind": "template",
+    "front": "Range Sum Query 2D (LC 304): how do you build the padded 2D prefix sum, and what is the query formula?",
+    "back": " **`pre[r+1][c+1]` = sum of the rectangle from (0,0) to (r,c); build by inclusion-exclusion; query in O(1).**\n\n ```python\nclass NumMatrix:\n    def __init__(self, matrix):\n        m, n = len(matrix), len(matrix[0])\n        self.pre = [[0] * (n + 1) for _ in range(m + 1)]   # extra top row + left column of 0s\n        for r in range(m):\n            for c in range(n):\n                self.pre[r + 1][c + 1] = (self.pre[r][c + 1] + self.pre[r + 1][c]\n                                          - self.pre[r][c] + matrix[r][c])\n\n    def sumRegion(self, r1, c1, r2, c2):\n        p = self.pre\n        return p[r2 + 1][c2 + 1] - p[r1][c2 + 1] - p[r2 + 1][c1] + p[r1][c1]\n```\n\n - Build **O(m*n)**, query **O(1)**, space O(m*n).\n - Build: `above + left - overlap + cell`. Query: `whole - top strip - left strip + double-subtracted corner`.",
+    "lc": 304,
+    "source": "english/Template_Summary.ipynb"
+  },
+  {
+    "id": "arrays-lc304-inclusion-exclusion",
+    "theme": "arrays",
+    "kind": "concept",
+    "front": "2D prefix sum: why does the build subtract `pre[r][c]`, and why does the query add `pre[r1][c1]` back?",
+    "back": "**Inclusion-exclusion: overlapping regions get counted twice, so subtract once; regions subtracted twice get added back once.**\n\n- Build: `pre[r][c+1]` (above) and `pre[r+1][c]` (left) both include the top-left block `pre[r][c]` -> subtract it once, then add the new cell.\n- Query rectangle (r1,c1)-(r2,c2): start from the big prefix, subtract the strip above (`pre[r1][c2+1]`) and the strip on the left (`pre[r2+1][c1]`); the top-left corner `pre[r1][c1]` was removed by both -> add it back once.\n- Without padding the first row/column/corner each need special cases (3 extra `if`s in query) - another reason to pad.",
+    "lc": 304,
+    "source": "english/Template_Summary.ipynb"
+  },
+  {
+    "id": "arrays-difference-array-concept",
+    "theme": "arrays",
+    "kind": "concept",
+    "front": "When do you use a difference array, and how does a range update work?",
+    "back": "**When you have many range increments/decrements and read the final array once (offline).**\n\n- `diff[i] = nums[i] - nums[i-1]`. Adding `val` to `nums[i..j]` = `diff[i] += val` and `diff[j+1] -= val` -> **O(1) per update**.\n- The final array is the running (prefix) sum of `diff` -> **O(n)** once.\n- It is the inverse of the prefix sum: prefix sum makes range *queries* O(1); difference array makes range *updates* O(1).\n- Three operations: initialization, modification, query.",
+    "source": "english/Template_Summary.ipynb"
+  },
+  {
+    "id": "arrays-difference-array-template",
+    "theme": "arrays",
+    "kind": "template",
+    "front": "Template: difference array class (init, range increment, reconstruct)? Watch the `j + 1` boundary.",
+    "back": " **Init `diff[0] = nums[0]`, `diff[i] = nums[i] - nums[i-1]`; increment touches `diff[i]` and `diff[j+1]`; result = running sum.**\n\n ```python\nclass DiffNums:\n    def __init__(self, nums):\n        self.len = len(nums)\n        self.diff = list(nums)                    # copy, NOT [num for _ in nums]\n        for i in range(1, self.len):\n            self.diff[i] = nums[i] - nums[i - 1]\n\n    def increment(self, i, j, val):               # nums[i..j] += val\n        self.diff[i] += val\n        if j + 1 < self.len:                      # skip if range reaches the end\n            self.diff[j + 1] -= val\n\n    def result(self):\n        res = list(self.diff[:1])\n        for i in range(1, self.len):\n            res.append(res[-1] + self.diff[i])\n        return res\n```\n\n - The notebook initialises `diff` with `[num for _ in nums]` (a bug); the `list(nums)` copy above is correct.\n - Pad `diff` with one extra slot instead of the `if j + 1 < len` guard if you prefer.",
+    "source": "english/Template_Summary.ipynb"
+  },
+  {
+    "id": "arrays-lc1109-corporate-flight-bookings",
+    "theme": "arrays",
+    "kind": "problem",
+    "front": "Corporate Flight Bookings (LC 1109): how do you turn n flights x many bookings into a linear solution?",
+    "back": " **Difference array over flights: each booking is two O(1) writes, then one prefix-sum pass: O(n + bookings).**\n\n ```python\nfrom itertools import accumulate\n\ndef corpFlightBookings(bookings, n):\n    diff = [0] * (n + 1)              # extra slot absorbs the \"last + 1\" write\n    for first, last, seats in bookings:      # flights are 1-indexed\n        diff[first - 1] += seats\n        diff[last] -= seats                  # (last - 1) + 1\n    return list(accumulate(diff[:n]))\n```\n\n - Brute force (loop over each booking's range) is O(bookings * n).\n - Pitfall: flights are **1-indexed**, so `first -> diff[first-1]`, `last -> diff[last]`.",
+    "lc": 1109,
+    "source": "english/Template_Summary.ipynb"
+  },
+  {
+    "id": "arrays-difference-array-when-not",
+    "theme": "arrays",
+    "kind": "gotcha",
+    "front": "Flight bookings variant: each flight has a seat capacity and you must report whether EACH booking succeeds (stop on the first failure). Why not use a difference array?",
+    "back": "**Every booking requires checking the current seat count of every flight in its range, and that check is O(range) anyway - which is exactly the cost the difference array exists to avoid.**\n\n- A difference array only wins when you can **defer** reading values until all updates are done.\n- When you need the up-to-date state after each update (online), keep a plain per-flight count array (or a segment tree with range-max for O(log n)).\n- Rule: offline batch of range updates -> difference array; interleaved update + validity check -> direct tracking.",
+    "source": "english/Template_Summary.ipynb"
+  },
+  {
+    "id": "arrays-circular-array-doubling",
+    "theme": "arrays",
+    "kind": "pattern",
+    "front": "A problem treats an array as circular (wraps around). What is the standard trick, and how does Next Greater Element II (LC 503) use it?",
+    "back": " **Conceptually double the array (or loop `i` to `2n` and index with `i % n`) so wrap-around neighbours become ordinary neighbours.**\n\n ```python\ndef nextGreaterElements(nums):\n    n = len(nums)\n    res, stack = [-1] * n, []                 # stack of indices, values decreasing\n    for i in range(2 * n):                    # conceptually nums + nums\n        x = nums[i % n]\n        while stack and nums[stack[-1]] < x:\n            res[stack.pop()] = x\n        if i < n:                             # only push in the first pass\n            stack.append(i)\n    return res\n```\n\n - Still **O(n)**: each index is pushed and popped at most once (monotonic stack); no need to materialise `nums + nums`.\n - Elements never popped after two passes have no greater element -> stay `-1`.",
+    "lc": 503,
+    "source": "english/Array_String_LinkedList.ipynb"
+  },
+  {
+    "id": "arrays-string-immutable-join",
+    "theme": "arrays",
+    "kind": "gotcha",
+    "front": "Python strings are immutable. What does that mean for building or editing a string in a loop, and what is the fix?",
+    "back": "**`s[i] = x` raises `TypeError`, and `s += c` in a loop can copy the string each time (O(n^2)). Collect pieces in a list and `\"\".join` once (O(n)).**\n\n```python\nparts = []\nfor ch in text:\n    parts.append(ch.upper())\nresult = \"\".join(parts)          # one O(n) build\n\nchars = list(s)                  # to edit in place:\nchars[0] = \"X\"                   #   list is mutable\ns = \"\".join(chars)               #   convert back at the end\n```\n\n- `reversed(s)` returns an **iterator**, not a string: use `\"\".join(reversed(s))` or `s[::-1]`.\n- Slicing (`s[a:b]`) creates a copy: O(length of slice).",
+    "source": "english/Array_String_LinkedList.ipynb"
+  },
+  {
+    "id": "arrays-lc1768-merge-strings-alternately",
+    "theme": "arrays",
+    "kind": "problem",
+    "front": "Merge Strings Alternately (LC 1768): approach, loop condition, and how to build the result?",
+    "back": " **Two pointers, one per string; loop while EITHER has characters left; append to a list and `\"\".join` at the end. O(m + n) time and space.**\n\n ```python\ndef mergeAlternately(word1, word2):\n    i = j = 0\n    out = []\n    while i < len(word1) or j < len(word2):   # keep going until BOTH are exhausted\n        if i < len(word1):\n            out.append(word1[i]); i += 1\n        if j < len(word2):\n            out.append(word2[j]); j += 1\n    return \"\".join(out)\n```\n\n - Don't stop when the shorter string ends - the leftover tail of the longer one must still be appended.\n - Repeated `result += ch` on strings is an O(n^2) trap; the list + join avoids it.",
+    "lc": 1768,
+    "source": "english/Array_String_LinkedList.ipynb"
+  },
+  {
+    "id": "arrays-lc1071-gcd-of-strings",
+    "theme": "arrays",
+    "kind": "problem",
+    "front": "Greatest Common Divisor of Strings (LC 1071): what is the key insight and the two-line solution?",
+    "back": " **It is a number-theory problem in a string costume: `str1 + str2 == str2 + str1` decides existence, and the answer length is `gcd(len1, len2)`.**\n\n ```python\nimport math\n\ndef gcdOfStrings(str1, str2):\n    if str1 + str2 != str2 + str1:      # no common divisor string exists\n        return \"\"\n    return str1[:math.gcd(len(str1), len(str2))]\n```\n\n - If both strings are repeats of some `x`, concatenating in either order gives the same string; the check is necessary and sufficient.\n - The divisor length must divide both lengths, and the largest such length is the numeric gcd -> answer is `str1[:g]`.\n - Time O(m + n), no searching or verification loop needed.",
+    "lc": 1071,
+    "source": "english/Array_String_LinkedList.ipynb"
+  }
+]

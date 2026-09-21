@@ -1,0 +1,89 @@
+[
+  {
+    "id": "bits-basic-ops",
+    "theme": "bits",
+    "kind": "template",
+    "front": "Template: test / set / clear / toggle bit i of `n` (and what are shifts equal to)?",
+    "back": "```python\n(n >> i) & 1        # test: is bit i set?\nn |= 1 << i         # set bit i to 1\nn &= ~(1 << i)      # clear bit i to 0\nn ^= 1 << i         # toggle bit i\n```\n\n- Bit 0 is the least significant bit.\n- `n << k` = `n * 2**k`; `n >> k` = `n // 2**k` (floor, so `-5 >> 1 == -3`).\n- Build masks with `1 << i`; `(1 << k) - 1` is k low ones.\n- Python ints are unbounded: `~5 == -6`; for 32-bit behaviour mask with `& 0xFFFFFFFF`.\n- `bin(n)` prints the binary form when debugging; `n.bit_count()` (3.10+) counts ones.",
+    "source": "english/Bit_Manipulation_and_Misc.ipynb"
+  },
+  {
+    "id": "bits-clear-xor-gotcha",
+    "theme": "bits",
+    "kind": "gotcha",
+    "front": "Gotcha: is `n ^= 1 << i` a safe way to set bit i to 0?",
+    "back": "No - XOR **toggles**, so it only clears the bit if it was already 1. If the bit was 0 it sets it to 1.\n\n```python\nn = 0b1000\nn ^= 1 << 1        # bit 1 was 0 -> becomes 1: 0b1010 (wrong if you wanted to clear)\nn &= ~(1 << 1)     # always clears bit 1: 0b1000\n```\n\n- Clear unconditionally: `n &= ~(1 << i)`.\n- Set unconditionally: `n |= 1 << i`.\n- Toggle intentionally: `n ^= 1 << i`.\n\n(The study notebook clears a bit with XOR right after setting it, which happens to work only because the bit is known to be 1.)",
+    "source": "english/Bit_Manipulation_and_Misc.ipynb"
+  },
+  {
+    "id": "bits-xor-properties-136",
+    "theme": "bits",
+    "kind": "concept",
+    "front": "Which XOR properties power 'single number' problems, and how do you solve LC 136?",
+    "back": "`a ^ a = 0`, `a ^ 0 = a`, and XOR is commutative and associative. So XOR-ing all values cancels every pair, leaving the one that appears once.\n\n```python\ndef singleNumber(nums):\n    r = 0\n    for x in nums:\n        r ^= x\n    return r\n```\n\n- `[4,1,2,1,2] -> 4`.\n- O(n) time, **O(1) space** (vs a hash set/counter O(n) space, or sorting O(n log n)).\n- Works because order doesn't matter and pairs annihilate; it breaks if elements appear 3 times (LC 137 counts each bit position modulo 3 instead).",
+    "lc": 136,
+    "source": "english/Bit_Manipulation_and_Misc.ipynb"
+  },
+  {
+    "id": "bits-xor-missing-and-difference",
+    "theme": "bits",
+    "kind": "pattern",
+    "front": "How do you use XOR to find the missing number (LC 268) and the added letter (LC 389)?",
+    "back": "Build a multiset where everything appears twice except the answer, then XOR it all.\n\n```python\ndef missingNumber(nums):              # LC 268: values 0..n, one missing\n    r = len(nums)                     # start with n (index n has no partner)\n    for i, x in enumerate(nums):\n        r ^= i ^ x                    # pair index i with value x\n    return r\n\ndef findTheDifference(s, t):          # LC 389: t = shuffled s + one extra letter\n    r = 0\n    for ch in s + t:\n        r ^= ord(ch)\n    return chr(r)\n```\n\n- `[3,0,1] -> 2`; `(\"abcd\",\"abcde\") -> \"e\"`.\n- O(n) time, O(1) space, and no overflow worry (unlike the sum formula in other languages).",
+    "lc": 268,
+    "source": "english/Bit_Manipulation_and_Misc.ipynb"
+  },
+  {
+    "id": "bits-clear-lowest-set-bit",
+    "theme": "bits",
+    "kind": "concept",
+    "front": "What does `n & (n - 1)` do, and how does it give popcount (LC 191) and power-of-two (LC 231)?",
+    "back": "`n & (n - 1)` **clears the lowest set bit** (subtracting 1 flips the trailing zeros and that lowest 1).\n\n```python\ndef hammingWeight(n):            # LC 191: number of 1 bits\n    count = 0\n    while n:\n        n &= n - 1               # drop one set bit per iteration\n        count += 1\n    return count\n\ndef isPowerOfTwo(n):             # LC 231\n    return n > 0 and n & (n - 1) == 0\n```\n\n- Loop runs once per set bit: O(number of ones), at most O(log n).\n- Power of two = exactly one set bit -> clearing it leaves 0; check `n > 0` so 0 is excluded.\n- `12 (0b1100) & 11 (0b1011) = 8 (0b1000)`.",
+    "lc": 191,
+    "source": "english/Bit_Manipulation_and_Misc.ipynb"
+  },
+  {
+    "id": "bits-counting-bits-338",
+    "theme": "bits",
+    "kind": "problem",
+    "front": "LC 338 Counting Bits: how do you compute the popcount of 0..n in O(n)?",
+    "back": "Reuse an earlier answer with a bit-DP: the popcount of `i` is that of `i >> 1` plus the last bit.\n\n```python\ndef countBits(n):\n    dp = [0] * (n + 1)\n    for i in range(1, n + 1):\n        dp[i] = dp[i >> 1] + (i & 1)\n    return dp\n```\n\n- `countBits(5) == [0,1,1,2,1,2]`.\n- Equivalent: `dp[i] = dp[i & (i - 1)] + 1` (clear the lowest set bit, add one).\n- O(n) time and O(n) output; beats calling popcount per number (O(n log n)).",
+    "lc": 338,
+    "source": "english/Bit_Manipulation_and_Misc.ipynb"
+  },
+  {
+    "id": "bits-lowbit-fenwick",
+    "theme": "bits",
+    "kind": "concept",
+    "front": "What is `n & -n` (lowbit), why does it work, and where is it used?",
+    "back": "`n & -n` isolates the **lowest set bit** of `n` (e.g. `12 & -12 == 4`, `7 & -7 == 1`).\n\n- Two's complement: `-n = ~n + 1`. Inverting flips everything above the lowest set bit, and +1 carries back through the trailing zeros, so only that lowest 1 survives in both.\n- **Fenwick tree (BIT)** navigation:\n  - update: `i += i & -i` (climb to the next node covering i)\n  - query prefix: `i -= i & -i` (strip lowbit, jump to the previous block)\n- Also splits a set into two groups (see LC 260).\n- O(1); Fenwick operations are O(log n).",
+    "source": "english/Bit_Manipulation_and_Misc.ipynb"
+  },
+  {
+    "id": "bits-hamming-distance-461",
+    "theme": "bits",
+    "kind": "problem",
+    "front": "LC 461 Hamming Distance: what is the one-liner and why does it work?",
+    "back": "XOR marks exactly the bit positions where the numbers differ, so the distance is the popcount of `x ^ y`.\n\n```python\ndef hammingDistance(x, y):\n    return bin(x ^ y).count(\"1\")     # or (x ^ y).bit_count() on Python 3.10+\n```\n\n- `hammingDistance(1, 4) == 2` (`001` vs `100`).\n- Loop alternative with the lowbit trick: `d = x ^ y; while d: d &= d - 1; count += 1`.\n- O(log max(x, y)) time, O(1) space.",
+    "lc": 461,
+    "source": "english/Bit_Manipulation_and_Misc.ipynb"
+  },
+  {
+    "id": "bits-subsets-78",
+    "theme": "bits",
+    "kind": "problem",
+    "front": "LC 78 Subsets: how do you enumerate all subsets with a bitmask?",
+    "back": "Each subset of `n` items corresponds to an `n`-bit number: bit `i` set means `nums[i]` is included. Loop `mask` from `0` to `2**n - 1`.\n\n```python\ndef subsets(nums):\n    n = len(nums)\n    return [[nums[i] for i in range(n) if mask >> i & 1]\n            for mask in range(1 << n)]\n```\n\n- `subsets([1,2,3])` gives 8 subsets from `[]` to `[1,2,3]`.\n- O(n * 2^n) time and output size.\n- Practical for n up to ~20; the same encoding is a DP state for bitmask DP / BFS over collected keys. Backtracking is the alternative (recursion theme).",
+    "lc": 78,
+    "source": "english/Bit_Manipulation_and_Misc.ipynb"
+  },
+  {
+    "id": "bits-single-number-iii-260",
+    "theme": "bits",
+    "kind": "problem",
+    "front": "LC 260 Single Number III (two elements appear once, the rest twice): how do you find both in O(1) space?",
+    "back": "1. XOR everything -> `x = a ^ b` (pairs cancel), and `x != 0` since `a != b`.\n2. `low = x & -x` is a bit where `a` and `b` differ.\n3. Split the numbers by that bit; each group contains one of `a`, `b` plus complete pairs. XOR each group.\n\n```python\ndef singleNumber(nums):\n    x = 0\n    for v in nums:\n        x ^= v\n    low = x & -x                     # a bit where a and b differ\n    a = 0\n    for v in nums:\n        if v & low:\n            a ^= v                   # XOR of the group with that bit set\n    return [a, x ^ a]\n```\n\n- `[1,2,1,3,2,5] -> [3, 5]` (any order). Works for negatives in Python.\n- O(n) time, O(1) space.",
+    "lc": 260,
+    "source": "english/Bit_Manipulation_and_Misc.ipynb"
+  }
+]

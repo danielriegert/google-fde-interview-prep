@@ -1,0 +1,194 @@
+[
+  {
+    "id": "python-list-add-methods",
+    "theme": "python",
+    "kind": "concept",
+    "front": "Python list: how do you add one item, many items, or an item at a given index - and how do `+=` and `+` differ?",
+    "back": "```python\nnums = [1, 2, 3]\nnums.append(4)          # [1, 2, 3, 4]      one item at the end, O(1) amortized\nnums.extend([5, 6])     # [1, 2, 3, 4, 5, 6] many items at the end\nnums.insert(0, 0)       # [0, 1, ...]       at an index: O(n) shift\nnums += [7]             # in place (same list object)\nnums = nums + [8]       # NEW list; other references don't see it\n```\n\n- `append(x)` adds ONE item; `extend(iterable)` adds each element (`append([5, 6])` nests the list).\n- `lst += other` mutates in place (like `extend`); `lst = lst + other` builds a new list - an O(n) copy in a loop.",
+    "source": "notes/lists.py"
+  },
+  {
+    "id": "python-list-remove-methods",
+    "theme": "python",
+    "kind": "concept",
+    "front": "Python list: `remove`, `pop`, `pop(0)`, `del`, `clear` - what does each do and which are O(n)?",
+    "back": "```python\nnums.remove(0)     # first occurrence of VALUE 0 (ValueError if absent), O(n)\nlast = nums.pop()  # remove & return last item, O(1)\nfirst = nums.pop(0)  # remove & return index 0, O(n): everything shifts left\ndel nums[0]        # remove by index, no return value\ndel nums[0:2]      # remove a slice\nnums.clear()       # -> []\n```\n\n- Only end operations (`append`, `pop()`) are O(1). Front/middle removal or insertion is **O(n)** because the tail shifts.\n- Repeated `pop(0)`/`del lst[0]` in a loop turns an O(n) algorithm into O(n^2) - use `collections.deque` for queues, or keep an index pointer.\n- Never delete from a list while iterating over it (indices shift): overwrite with two pointers or build a new list.",
+    "source": "notes/lists.py"
+  },
+  {
+    "id": "python-list-iteration-patterns",
+    "theme": "python",
+    "kind": "template",
+    "front": "Python: what are the idiomatic ways to iterate a list (values, indices, both, backwards, sorted, two lists at once)?",
+    "back": "```python\nfor x in nums: ...                       # values only\nfor i in range(len(nums)): ...           # indices only\nfor i, x in enumerate(nums): ...         # index + value (enumerate(nums, start=1) to shift)\nfor x in reversed(nums): ...             # backwards, list untouched\nfor x in sorted(nums, reverse=True): ... # sorted COPY, original unchanged\nfor x, y in zip(a, b): ...               # two lists in parallel\n```",
+    "source": "notes/lists.py"
+  },
+  {
+    "id": "python-zip-truncates",
+    "theme": "python",
+    "kind": "gotcha",
+    "front": "Gotcha: what does `zip(a, b)` do when the two iterables have different lengths?",
+    "back": " **It silently stops at the shortest one and drops the rest.**\n\n ```python\nlist(zip([1, 2, 3], \"ab\"))          # [(1, 'a'), (2, 'b')]   stops at the SHORTEST\nfrom itertools import zip_longest\nlist(zip_longest([1, 2, 3], \"ab\"))  # [(1, 'a'), (2, 'b'), (3, None)]\n```\n\n - Python 3.10+: `zip(a, b, strict=True)` raises `ValueError` on a length mismatch.\n - `zip` returns a one-shot iterator; wrap in `list(...)` to reuse.\n - `zip(*rows)` transposes (see the arrays deck); `dict(zip(keys, values))` builds a dict.",
+    "source": "notes/lists.py"
+  },
+  {
+    "id": "python-comprehensions",
+    "theme": "python",
+    "kind": "template",
+    "front": "Python comprehensions: where does the `if` go for a filter vs an if/else expression, and what is the nested order?",
+    "back": " **Filter `if` goes at the end; a value `a if cond else b` goes before `for`; nested `for`s read like nested loops.**\n\n ```python\nsquares = [x * x for x in nums]                       # transform\nevens   = [x for x in nums if x % 2 == 0]             # filter: `if` goes AT THE END\nlabels  = [\"even\" if x % 2 == 0 else \"odd\" for x in nums]  # if/else goes BEFORE `for`\nflat    = [y for row in grid for y in row]            # nested: same order as nested loops\ninv     = {v: k for k, v in d.items()}                # dict comprehension\nuniq    = {x % 3 for x in nums}                       # set comprehension\n```\n\n - `(x for x in ...)` with parentheses is a lazy generator - `sum(...)`/`any(...)`/`max(...)` accept it without building a list.",
+    "source": "notes/lists.py"
+  },
+  {
+    "id": "python-dict-add-update",
+    "theme": "python",
+    "kind": "concept",
+    "front": "Python dict: how do you add/overwrite one key, many keys, or set a value only if the key is missing?",
+    "back": "```python\nd = {\"a\": 1, \"b\": 2}\nd[\"c\"] = 3                    # add OR overwrite\nd.update({\"d\": 4, \"a\": 10})   # add/overwrite many\nd.setdefault(\"e\", 5)          # set only if key is missing; returns the value\n```\n\n- `d[k] = v` silently overwrites; `setdefault(k, default)` never overwrites and returns the current value.\n- Group pattern: `d.setdefault(key, []).append(x)` (or `defaultdict(list)`).",
+    "source": "notes/dictionaries.py"
+  },
+  {
+    "id": "python-dict-remove-methods",
+    "theme": "python",
+    "kind": "concept",
+    "front": "Python dict removal: `del`, `pop`, `pop(k, default)`, `popitem` - which raise `KeyError` and what does `popitem` remove?",
+    "back": "```python\ndel d[\"e\"]                    # KeyError if missing\nv = d.pop(\"d\")                # remove & return value; KeyError if missing\nv = d.pop(\"zzz\", None)        # default -> no error\nk, v = d.popitem()            # remove & return the LAST inserted pair (LIFO), 3.7+\nd.clear()\n```\n\n- Dicts preserve **insertion order** (3.7+), so `popitem()` removes the most recently inserted pair.",
+    "source": "notes/dictionaries.py"
+  },
+  {
+    "id": "python-dict-safe-lookup",
+    "theme": "python",
+    "kind": "concept",
+    "front": "How do you look up a dict key without risking `KeyError`, and how do you count with a plain dict?",
+    "back": " **`d.get(key, default)`; membership with `key in d`; count with `d[k] = d.get(k, 0) + 1`.**\n\n ```python\nd.get(\"z\")                # None if missing\nd.get(\"z\", 0)             # custom default (no KeyError)\nd[\"z\"]                    # KeyError if missing\ncounts[ch] = counts.get(ch, 0) + 1      # manual frequency count\n\"z\" in d                  # O(1) key membership\n```\n\n - `in` on a dict checks **keys** in O(1); `value in d.values()` is O(n).\n - `d.get(k)` returns `None`, which can be ambiguous if `None` is a valid stored value.",
+    "source": "notes/dictionaries.py"
+  },
+  {
+    "id": "python-defaultdict",
+    "theme": "python",
+    "kind": "template",
+    "front": "Python `defaultdict`: what does the factory argument do, and when do you use `list`, `set`, `int`?",
+    "back": " **A dict that auto-creates a default value for a missing key by calling the factory.**\n\n ```python\nfrom collections import defaultdict\n\ngroups = defaultdict(list)          # factory called for a missing key\nfor word in [\"eat\", \"tea\", \"tan\"]:\n    groups[\"\".join(sorted(word))].append(word)   # no KeyError, no setdefault\n\ngraph = defaultdict(set)            # adjacency sets\ntally = defaultdict(int)            # int() -> 0\ntally[\"x\"] += 1\n```\n\n - `list` -> group/adjacency lists, `set` -> unique neighbours, `int` -> counters.\n - Gotcha: **reading** `dd[missing]` also inserts the key (mutates the dict, and can change `len`). Use `dd.get(k)` or `k in dd` for read-only checks.",
+    "source": "notes/dictionaries.py"
+  },
+  {
+    "id": "python-counter",
+    "theme": "python",
+    "kind": "template",
+    "front": "Python `Counter`: how do you build one, what does a missing key return, and how do you get the top-k?",
+    "back": "```python\nfrom collections import Counter\n\nc = Counter(\"abbcb\")            # Counter({'b': 3, 'a': 1, 'c': 1})\nc[\"b\"]                          # 3\nc[\"zzz\"]                        # 0  -> missing keys return 0 (and are NOT inserted)\nc[\"a\"] += 1                     # update like a dict\nc.most_common(2)                # [('b', 3), ('a', 2)]  top-k by count, ties in first-seen order\nCounter(\"abc\") == Counter(\"cab\")  # True -> anagram check, O(n)\n```\n\n- Build is O(n); `most_common(k)` is O(m log k) for m distinct keys (uses a heap internally).\n- `Counter` is a dict subclass: `.keys()`, `.items()`, `.values()` work.\n- Frequency equality is a stronger check than a set of characters: sets lose counts.",
+    "source": "notes/sets.py"
+  },
+  {
+    "id": "python-hashable-keys",
+    "theme": "python",
+    "kind": "gotcha",
+    "front": "Gotcha: which Python values can be dict keys / set members, and how do you use a list as a key?",
+    "back": " **Only hashable (immutable) values: `int`, `str`, `tuple` (of hashables), `frozenset`. Lists, dicts and sets are unhashable -> `TypeError`.**\n\n ```python\nseen = set()\nseen.add([1, 2])              # TypeError: unhashable type: 'list'\nseen.add(tuple([1, 2]))       # OK\nd = {(0, 1): \"cell\"}          # tuple keys are fine (grid coordinates)\nCounter(map(tuple, rows))     # count identical rows\n```\n\n - Convert with `tuple(lst)` (or `frozenset(s)`) before inserting; `Counter(rows)` on a list of lists fails the same way.\n - A tuple containing a list is still unhashable.\n - Don't mutate the object after using it as a key/member (its hash would change).",
+    "source": "notes/sets.py"
+  },
+  {
+    "id": "python-set-operators",
+    "theme": "python",
+    "kind": "concept",
+    "front": "Python set operators: what do `|`, `&`, `-`, `^`, `<=`, `>=` and `isdisjoint` compute?",
+    "back": "```python\na, b = {\"Alice\", \"Bob\", \"Charlie\"}, {\"Bob\", \"David\", \"Eve\"}\na | b     # union            {'Alice','Bob','Charlie','David','Eve'}\na & b     # intersection     {'Bob'}\na - b     # difference       {'Alice','Charlie'}  (NOT commutative)\na ^ b     # symmetric diff.  {'Alice','Charlie','David','Eve'}  (in exactly one)\na <= b    # subset           a >= b  superset\na.isdisjoint(b)   # True if they share nothing\n```\n\n- Method names: `union`, `intersection`, `difference`, `symmetric_difference`, `issubset`, `issuperset`.\n- Cost: `a & b` is O(min(len(a), len(b))); `a | b` and `a - b` are O(len(a) + len(b)) / O(len(a)).\n- Use `a & b` for \"does the user share any group with this ACL?\" -> `bool(a & b)` or `not a.isdisjoint(b)`.",
+    "source": "notes/sets.py"
+  },
+  {
+    "id": "python-set-operators-vs-methods",
+    "theme": "python",
+    "kind": "gotcha",
+    "front": "Set operators (`|`, `&`, `-`) vs methods (`.union`, `.intersection`, `.difference`): what is the difference?",
+    "back": " **Operators require both operands to be sets; methods accept any iterable.**\n\n ```python\n{1, 2} | [2, 3]              # TypeError: operator needs two sets\n{1, 2}.union([2, 3])         # {1, 2, 3}   method accepts any iterable\n{1, 2}.intersection(\"12\")    # works on strings/lists/tuples too\n```\n\n - Also: `s |= t` / `s.update(t)` mutate in place; `s.intersection_update(t)` narrows `s` to the overlap in place.\n - Pick methods when one side is a list/string/dict-keys; pick operators for readability when both are sets.",
+    "source": "notes/sets.py"
+  },
+  {
+    "id": "python-set-add-remove-discard",
+    "theme": "python",
+    "kind": "concept",
+    "front": "Python set mutation: `add`, `update`, `remove`, `discard`, `pop` - which one raises when the element is missing?",
+    "back": "```python\ns = {1, 2, 3}\ns.add(4)              # add one element\ns.update([5, 6])      # add many (any iterable)\ns.remove(2)           # KeyError if absent\ns.discard(99)         # silent no-op if absent\ns.pop()               # removes & returns an ARBITRARY element\n```\n\n- `remove` -> `KeyError` if absent; `discard` -> never raises. Use `discard` when the element may already be gone (e.g. evicting from a sliding window).\n- `add`, `remove`, `discard`, membership (`in`): **O(1) average**, O(n) worst case.",
+    "source": "notes/sets.py"
+  },
+  {
+    "id": "python-set-creation-gotchas",
+    "theme": "python",
+    "kind": "gotcha",
+    "front": "Python: how do you create an empty set, dedupe a list, and what happens to ordering?",
+    "back": " **`set()` for empty (`{}` is a dict). `set(iterable)` dedupes but discards order.**\n\n ```python\nset()            # the EMPTY set. `{}` is an empty DICT!\nset([1, 2, 2, 3])   # {1, 2, 3}  dedupe a list (order lost)\nset(\"absca\")        # {'a', 'b', 's', 'c'}  a set of characters\nlist(set(nums))     # back to a list; order is arbitrary\nsorted(set(nums))   # unique + sorted\n```\n\n - Need unique values in original order? `list(dict.fromkeys(nums))` (dicts keep insertion order).\n - Prefer a set over a list for repeated `in` checks: O(1) vs O(n).",
+    "source": "notes/sets.py"
+  },
+  {
+    "id": "python-sort-vs-sorted",
+    "theme": "python",
+    "kind": "gotcha",
+    "front": "Python `list.sort()` vs `sorted()`: which mutates, which returns what, and what is the classic bug?",
+    "back": " **`.sort()` sorts in place and returns `None`; `sorted()` returns a new list and works on any iterable.**\n\n ```python\nnums = [3, 1, 2]\nnums.sort()                 # IN PLACE, returns None\nnums = nums.sort()          # BUG: nums is now None\nnew = sorted(nums)          # NEW list; original untouched\nsorted(\"cba\")               # ['a','b','c'] works on ANY iterable (str, tuple, dict keys) -> returns a list\nnums.sort(reverse=True)     # descending\n```\n\n - Both are O(n log n) and stable (Timsort); `sorted()` additionally allocates a new O(n) list.\n - Only lists have `.sort()`; a string or tuple can only use `sorted(...)`, which returns a **list** (`\"\".join(sorted(s))` to get a string back).",
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "python-sort-with-key",
+    "theme": "python",
+    "kind": "template",
+    "front": "Python: how do you sort by a custom key (intervals by start, dict by value, descending, multiple keys)?",
+    "back": "```python\nintervals.sort(key=lambda x: x[0])                 # by start\nsorted(data.items(), key=lambda kv: kv[1])         # dict by value -> list of (k, v)\nsorted(data.items(), key=lambda kv: kv[1], reverse=True)\nwords.sort(key=lambda w: (-len(w), w))             # multi-key: longest first, then A-Z\nsorted(words, key=len)                             # any 1-arg callable works as key\n```\n\n- `key` computes a sort key once per element; `reverse=True` reverses while keeping stability.\n- Negate a numeric field (`-len(w)`) to mix ascending and descending inside a tuple key.\n- Stable: elements with equal keys keep their original relative order.",
+    "source": "notes/dictionaries.py"
+  },
+  {
+    "id": "python-reversed-iterator",
+    "theme": "python",
+    "kind": "gotcha",
+    "front": "Gotcha: what does `reversed(x)` return, and how do you get an actual reversed list or string?",
+    "back": " **An iterator (lazy, one-shot), not a list or string.** Materialise it.\n\n ```python\nrev = reversed([1, 2, 3])       # <list_reverseiterator>, NOT a list\nlist(rev)                       # [3, 2, 1]  (one-shot: now exhausted)\n\"\".join(reversed(\"abc\"))        # 'cba'\n\"abc\"[::-1]                     # 'cba' (slice copy)\nnums[::-1]                      # reversed COPY; nums.reverse() reverses IN PLACE, returns None\n```",
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "python-while-else",
+    "theme": "python",
+    "kind": "concept",
+    "front": "What does the `else` clause of a `while` (or `for`) loop do, and when does it NOT run?",
+    "back": " **`else` runs only if the loop ended naturally (condition became false), not via `break`.**\n\n ```python\nwhile stack and ast < 0 < stack[-1]:      # collision loop\n    if stack[-1] < -ast:\n        stack.pop()\n        continue                          # keep checking the next stack element\n    elif stack[-1] == -ast:\n        stack.pop()\n    break                                 # ast is destroyed (or both are)\nelse:\n    stack.append(ast)                     # only runs if the loop was NOT broken\n```\n\n - Great for \"search, and do X if not found\" without a flag variable. It also runs if the loop body never executes.\n - `return` and exceptions also skip the `else`; `continue` does not.\n - This is the Asteroid Collision pattern: the asteroid survives (is pushed) only if no collision `break`s out.",
+    "source": "notes/misc.py"
+  },
+  {
+    "id": "python-ceil-floor-division",
+    "theme": "python",
+    "kind": "concept",
+    "front": "Python: how do you do floor division and ceiling division on ints, and what is surprising about negatives?",
+    "back": " **Floor: `p // k`. Ceiling: `math.ceil(p / k)` or, exactly with ints, `(p + k - 1) // k`.**\n\n ```python\nimport math\nmath.ceil(p / k)          # ceiling division via float; fine for small ints\n(p + k - 1) // k          # ceiling division with ints only (exact, no float error)\n-(-p // k)                # another int-only ceiling trick\np // k                    # FLOOR division: 7 // 3 == 2\n-7 // 2                   # -4 !  floors toward -infinity, not toward 0\nint(-7 / 2)               # -3    truncates toward 0\n```\n\n - `/` always returns a float: for huge values (> 2^53) `math.ceil(p / k)` can be off by one -> prefer the integer form.\n - Example use: min potion strength `math.ceil(success / spell)`; piles needing `ceil(p / k)` hours.\n - `//` floors toward negative infinity; `%` result takes the sign of the divisor.",
+    "source": "notes/misc.py"
+  },
+  {
+    "id": "python-integer-math-toolkit",
+    "theme": "python",
+    "kind": "concept",
+    "front": "Python integer-math helpers worth remembering: squaring, quotient+remainder, gcd, integer square root, circular index?",
+    "back": "```python\nn ** 2                    # square (exponent operator); pow(n, 2) same\nq, r = divmod(17, 5)      # (3, 2): quotient and remainder in one call\nmath.gcd(12, 18)          # 6   (3.5+, accepts many args in 3.9+: math.gcd(a, b, c))\nmath.isqrt(17)            # 4   exact integer square root (no float error)\nabs(a - b)                # distance; a % n keeps an index inside [0, n) even for negatives\nmid = lo + (hi - lo) // 2 # midpoint (overflow-safe habit from other languages)\n```\n\n- `x % n` is always in `[0, n)` for positive `n` (Python, unlike C/Java), which makes circular indexing (`(i - 1) % n`) safe.\n- Python ints are arbitrary precision - no overflow, but very large numbers get slower.",
+    "source": "notes/misc.py"
+  },
+  {
+    "id": "python-slicing-half-open",
+    "theme": "python",
+    "kind": "gotcha",
+    "front": "Python `range(a, b)` and slices `[a:b]`: which end is included, and how do you test \"is this the last index\"?",
+    "back": " **Start included, end EXCLUDED: `range(0, 2)` -> 0, 1; `nums[1:8]` -> indices 1..7.**\n\n ```python\nnums = [10, 20, 30, 40, 50]\nnums[1:4]        # [20, 30, 40]  start INCLUDED, end EXCLUDED\nrange(0, 2)      # 0, 1\nnums[:2]         # first two;  nums[-2:] last two;  nums[::2] every 2nd\nnums[i:] + nums[:i]   # rotate left by i\ni == len(nums) - 1    # \"am I at the last element?\"  (index starts at 0)\n```\n\n - Slicing never raises `IndexError` (it clamps), but it **copies**: `nums[a:b]` costs O(b - a).\n - Off-by-one classics: compare with `len(s) - 1` for the last index, and add 1 when converting an index difference to a count.",
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "python-list-multiplication-alias",
+    "theme": "python",
+    "kind": "gotcha",
+    "front": "Gotcha: why is `grid = [[0] * n] * m` wrong for a 2D grid, and what is the correct form?",
+    "back": " **`[row] * m` repeats a reference to the SAME inner list m times, so editing one row edits all of them.**\n\n ```python\ngrid = [[0] * n] * m            # BUG: m references to the SAME row\ngrid[0][0] = 1                  # every row changes!\n\ngrid = [[0] * n for _ in range(m)]   # correct: a fresh row each iteration\nrow = [0] * n                        # fine for immutables (ints, str, None)\n```\n\n - `[0] * n` is fine because ints are immutable; the problem only appears when the repeated element is a list/dict/set.\n - Same trap with `dict.fromkeys(keys, [])`: all keys share one list.\n - Copy a 2D list with `[row[:] for row in grid]` (`grid[:]` is shallow).",
+    "source": "notes/matrix.py"
+  },
+  {
+    "id": "python-dict-mutate-while-iterating",
+    "theme": "python",
+    "kind": "gotcha",
+    "front": "Gotcha: what happens if you add/delete dict keys while looping over the dict, and how do you avoid it?",
+    "back": " **`RuntimeError: dictionary changed size during iteration`. Iterate over a snapshot (`list(d)`) or rebuild the dict.**\n\n ```python\nfor k in d:\n    if d[k] == 0:\n        del d[k]              # RuntimeError: dictionary changed size during iteration\n\nfor k in list(d):             # iterate over a snapshot instead\n    if d[k] == 0:\n        del d[k]\nd = {k: v for k, v in d.items() if v != 0}   # or rebuild\n```\n\n - Updating the VALUE of an existing key during iteration is fine; adding/removing keys is not.\n - Same principle for lists: deleting during iteration skips elements silently (no error) - build a new list instead.",
+    "source": "notes/dictionaries.py"
+  }
+]

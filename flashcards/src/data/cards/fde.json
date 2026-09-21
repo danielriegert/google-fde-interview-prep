@@ -1,0 +1,90 @@
+[
+  {
+    "id": "fde-top-k-error-signatures",
+    "theme": "fde",
+    "kind": "problem",
+    "front": "Log analysis: return the top-K most frequent error signatures from a stream of N log lines. Technique and complexity?",
+    "back": " **Normalise each line to a signature (regex + lowercase), count with a hash map, keep the top K with a size-K min-heap: O(N + U log K) time (at most O(N log K)), O(U) space (U = unique signatures).**\n\n ```python\nimport heapq\nfrom collections import Counter\n\ndef top_k(signatures, k):\n    counts = Counter(signatures)                      # O(N) count\n    heap = []                                         # min-heap of (freq, sig), size <= k\n    for sig, freq in counts.items():\n        heapq.heappush(heap, (freq, sig))\n        if len(heap) > k:\n            heapq.heappop(heap)                       # evict the smallest -> keeps the k largest\n    return [(sig, f) for f, sig in sorted(heap, reverse=True)]\n```\n\n - Counting is O(N); the heap pass is O(U log K). Sorting all counts would be O(U log U).\n - Design takeaway: **normalisation decides quality** - strip timestamps/IDs/numbers so equal errors collapse into one signature.\n - `Counter.most_common(k)` does the same job in one call.",
+    "source": "notes/fde-real-world-questions.py"
+  },
+  {
+    "id": "fde-acl-filter-set-intersection",
+    "theme": "fde",
+    "kind": "problem",
+    "front": "Filter RAG/search candidate documents by the user's groups and clearance level. Which data structure makes the group check fast, and what is the complexity?",
+    "back": " **Store the user's groups in a set and intersect with each document's ACL set: O(1) average per lookup, O(D) total for D documents.**\n\n ```python\ndef filter_authorized(documents, user):\n    groups = set(user.get(\"groups\", []))\n    clearance = user.get(\"clearance_level\", 0)\n    out = []\n    for doc in documents:\n        if clearance < doc.get(\"min_clearance\", 0):\n            continue                                   # cheap numeric check first\n        acl = set(doc.get(\"acl_groups\", []))\n        if acl and not (acl & groups):                 # empty ACL = open to all; else need >= 1 shared group\n            continue\n        out.append(doc)\n    return out\n```\n\n - Order checks cheapest-first (numeric clearance before set work) and `continue` early.\n - Decide the **empty-ACL semantics** explicitly (open vs deny-by-default) - a security design question to raise in the interview.\n - Filter **before** ranking/retrieval-augmentation so unauthorised text never reaches the LLM prompt.\n - Cost per doc is O(min(|acl|, |groups|)); space O(1) beyond the output.",
+    "source": "notes/fde-real-world-questions.py"
+  },
+  {
+    "id": "fde-merge-maintenance-windows",
+    "theme": "fde",
+    "kind": "problem",
+    "front": "Merge overlapping maintenance windows and compute total aggregate downtime: technique, complexity, and the aliasing bug to avoid?",
+    "back": " **Sort by start, sweep once, extend the last merged block when `start <= last_end`; then sum block lengths. O(N log N) time, O(N) space.**\n\n ```python\ndef merge_windows(intervals):\n    if not intervals:\n        return [], 0\n    intervals = sorted(intervals, key=lambda x: x[0])       # by start\n    merged = [list(intervals[0])]                            # COPY: don't mutate the caller's lists\n    for start, end in intervals[1:]:\n        if start <= merged[-1][1]:                           # overlaps (or touches) the last block\n            merged[-1][1] = max(merged[-1][1], end)\n        else:\n            merged.append([start, end])\n    return merged, sum(e - s for s, e in merged)\n```\n\n - Use `max(last_end, end)` - a later interval can be fully contained in the previous one.\n - Summing the raw intervals would double-count overlaps; sum the **merged** ones.\n - The notes append `sorted_intervals[0]` itself and then mutate it, which edits the caller's data; copy it.\n - Decide whether touching intervals (`start == last_end`) merge - here they do.",
+    "source": "notes/fde-real-world-questions.py"
+  },
+  {
+    "id": "fde-context-window-packing",
+    "theme": "fde",
+    "kind": "problem",
+    "front": "Pack scored text chunks into an LLM context window with a token budget. What is the greedy approach, is it optimal, and what is the exact alternative?",
+    "back": " **Greedy by value density (`score / tokens`), fill until the budget is hit: O(N log N). It is a heuristic for 0/1 knapsack, NOT optimal in general.**\n\n ```python\ndef pack_chunks(chunks, budget):\n    ranked = sorted((c for c in chunks if c[\"tokens\"] > 0),\n                    key=lambda c: c[\"score\"] / c[\"tokens\"], reverse=True)   # value density\n    packed, used = [], 0\n    for c in ranked:\n        if used + c[\"tokens\"] <= budget:\n            packed.append(c)\n            used += c[\"tokens\"]              # if it doesn't fit, skip it and try smaller ones\n    return packed\n```\n\n - Counterexample (budget 10): A = 6 tokens / 6.6 score beats B, C = 5 tokens / 5.0 each in density, but B + C (10.0) > A (6.6).\n - Exact answer: **0/1 knapsack DP** in O(N * budget) time, O(budget) space.\n - Skip (`continue`) chunks that don't fit rather than `break`; filter zero-token chunks to avoid divide-by-zero.\n - Real systems often also want diversity/ordering, so mention MMR/relevance-ordering as follow-ups.",
+    "source": "notes/fde-real-world-questions.py"
+  },
+  {
+    "id": "fde-streaming-dedup-window",
+    "theme": "fde",
+    "kind": "problem",
+    "front": "Deduplicate a real-time event stream within a sliding time window T using bounded memory. Data structures and complexity?",
+    "back": " **A `set` for O(1) \"seen?\" plus a `deque` of (timestamp, signature) to evict expired entries from the front: O(1) amortized per event, O(M) space (M = distinct events inside the window).**\n\n ```python\nfrom collections import deque\n\nclass StreamingDeduplicator:\n    def __init__(self, window):\n        self.window = window\n        self.seen = set()\n        self.queue = deque()                        # (timestamp, signature), oldest first\n\n    def process(self, ts, sig):\n        while self.queue and ts - self.queue[0][0] > self.window:\n            _, old = self.queue.popleft()           # evict expired events\n            self.seen.discard(old)\n        if sig in self.seen:\n            return False                            # duplicate inside the window\n        self.seen.add(sig)\n        self.queue.append((ts, sig))\n        return True\n```\n\n - Each event is pushed and popped at most once -> amortized O(1).\n - Assumes timestamps arrive in **non-decreasing** order; out-of-order events need a heap or a watermark.\n - A duplicate does not refresh its timestamp here, so the window is measured from the *first* occurrence; say which semantic you want.\n - Multi-machine follow-up: shard by signature hash, or use a TTL cache (e.g. Redis `SET NX EX`).",
+    "source": "notes/fde-real-world-questions.py"
+  },
+  {
+    "id": "fde-json-flattener",
+    "theme": "fde",
+    "kind": "problem",
+    "front": "Flatten a nested JSON payload into dot-notation keys (`user.address.city`, `roles[0]`). What is the model, technique and complexity?",
+    "back": " **Treat the JSON as a tree (dicts/lists = internal nodes, scalars = leaves) and run a pre-order DFS carrying the path prefix; emit one entry per leaf. O(N) nodes, O(D) recursion stack.**\n\n ```python\ndef flatten(obj, prefix=\"\", out=None):\n    out = {} if out is None else out\n    if isinstance(obj, dict):\n        for k, v in obj.items():\n            flatten(v, f\"{prefix}.{k}\" if prefix else k, out)\n    elif isinstance(obj, list):\n        for i, v in enumerate(obj):\n            flatten(v, f\"{prefix}[{i}]\", out)\n    else:\n        out[prefix] = obj                      # scalar leaf -> one output entry\n    return out\n```\n\n - Pass a shared `out` dict down instead of `items.update(recursive_result)` at each level - the notes' version re-copies results at every level.\n - Handling lists uniformly (recurse on each element) also covers lists of lists, which the notes' version stores unflattened.\n - Edge cases: empty dict/list (vanish - decide whether to emit `{}`/`[]`), keys containing `.`, very deep nesting (recursion limit -> iterative stack).",
+    "source": "notes/fde-real-world-questions.py"
+  },
+  {
+    "id": "fde-paginated-fetch-backoff",
+    "theme": "fde",
+    "kind": "problem",
+    "front": "Fetch all pages of a cursor-paginated API that returns 429 (rate limited). How do you structure retries, and what is the complexity?",
+    "back": " **Outer loop follows `next_page_token` until it is empty; an inner bounded retry loop sleeps with exponential backoff plus jitter on 429 and raises after `max_retries`. O(P * R) calls, O(records) space.**\n\n ```python\nimport random, time\n\ndef fetch_all(fetch_page, max_retries=3, base=0.1, sleep=time.sleep):\n    results, token = [], None\n    while True:\n        for attempt in range(max_retries + 1):\n            resp = fetch_page(token)\n            if resp[\"status_code\"] != 429:\n                break\n            if attempt == max_retries:\n                raise RuntimeError(\"rate limited: retries exhausted\")\n            sleep(base * 2 ** attempt + random.uniform(0, base))   # exponential backoff + jitter\n        results.extend(resp.get(\"data\", []))\n        token = resp.get(\"next_page_token\")\n        if not token:                                             # no cursor -> last page\n            return results\n```\n\n - **Jitter** (randomness) stops many clients retrying in lockstep; the notes mention it but never add it.\n - Prefer honouring a `Retry-After` header when present; only retry **retryable** errors (429, 5xx, timeouts), never 4xx.\n - Retries must be **idempotent**; cap total attempts/time and surface a clear error.\n - Cursor (token) pagination is safer than offset pagination when data changes mid-fetch.\n - Inject `sleep` as a parameter so the function is testable without real delays.",
+    "source": "notes/fde-real-world-questions.py"
+  },
+  {
+    "id": "fde-agent-tool-call-loop-detector",
+    "theme": "fde",
+    "kind": "problem",
+    "front": "Detect when an LLM agent is stuck repeating the same tool calls. What do you store per call, and what are the limits of the simple version?",
+    "back": " **Hash each call as `tool:json.dumps(args, sort_keys=True)` and keep the last K in a `deque(maxlen=K)`; flag a repeat. O(K) time per check, O(K) space.**\n\n ```python\nimport json\nfrom collections import deque\n\nclass AgentLoopDetector:\n    def __init__(self, history_limit=5):\n        self.history = deque(maxlen=history_limit)     # old entries fall off automatically\n\n    def check(self, tool, args):\n        sig = f\"{tool}:{json.dumps(args, sort_keys=True)}\"   # deterministic signature\n        if sig in self.history:\n            return True                                # identical call seen recently -> likely loop\n        self.history.append(sig)\n        return False\n```\n\n - `sort_keys=True` makes the signature independent of dict key order.\n - `maxlen` gives bounded memory with automatic eviction.\n - Limitation: any repeat inside the window is flagged, even legitimate polling. Better: require N repeats, or detect a repeating **sequence** (A,B,A,B), and let a call be retried if the result changed.\n - On detection: stop, or inject a \"you already tried this\" message, escalate, or cap total steps/budget.\n - Use a `deque` of signatures plus a `Counter`/set if K is large (O(1) membership).",
+    "source": "notes/fde-real-world-questions.py"
+  },
+  {
+    "id": "fde-inverted-index-search",
+    "theme": "fde",
+    "kind": "problem",
+    "front": "Build an in-memory keyword search engine over documents. What structure powers it, and how do you do AND / OR queries efficiently?",
+    "back": " **An inverted index: token -> set of doc ids (posting list). Index each doc once per unique token; AND = intersect posting lists (smallest first), OR = union.**\n\n ```python\nimport re\nfrom collections import defaultdict\n\nclass InvertedIndex:\n    def __init__(self):\n        self.index = defaultdict(set)              # token -> doc ids (posting list)\n\n    @staticmethod\n    def tokens(text):\n        return re.findall(r\"\\w+\", text.lower())\n\n    def add(self, doc_id, text):\n        for tok in set(self.tokens(text)):\n            self.index[tok].add(doc_id)\n\n    def search(self, query, match_all=True):\n        toks = self.tokens(query)\n        postings = [self.index.get(t, set()) for t in toks]   # .get: don't insert missing tokens\n        if not postings:\n            return []\n        if not match_all:\n            return sorted(set().union(*postings))\n        postings.sort(key=len)                     # intersect smallest lists first\n        result = set(postings[0])\n        for p in postings[1:]:\n            result &= p\n            if not result:\n                break\n        return sorted(result)\n```\n\n - Key insight: **use what you search on as the key** (word -> docs, not doc -> words).\n - Index cost O(total tokens); AND query O(q * |smallest list|) because the result never exceeds the smallest posting list.\n - Read with `.get(t, set())` - on a `defaultdict`, `index[t]` silently inserts empty entries for unknown tokens.\n - Re-indexing an existing doc id must first remove its old postings.",
+    "source": "notes/fde-real-world-questions.py"
+  },
+  {
+    "id": "fde-inverted-index-phrase-search",
+    "theme": "fde",
+    "kind": "problem",
+    "front": "Follow-up on the inverted index: support exact phrase search (\"connection timeout\"). What is the two-step approach and how can it be faster?",
+    "back": " **Filter with the posting lists (docs containing every word), then VERIFY a contiguous in-order match by scanning each candidate's stored token sequence.**\n\n ```python\ndef search_phrase(self, phrase):\n    ptoks = self.tokens(phrase)\n    if not ptoks:\n        return []\n    cand = self.search(phrase, match_all=True)         # docs containing ALL words (cheap filter)\n    n, hits = len(ptoks), []\n    for doc_id in cand:\n        toks = self.doc_tokens[doc_id]                 # stored ordered token list\n        if any(toks[i:i + n] == ptoks for i in range(len(toks) - n + 1)):\n            hits.append(doc_id)                        # verify contiguous, in-order match\n    return hits\n```\n\n - Verification is O(candidates * doc length * phrase length) worst case; the posting-list filter keeps the candidate set small.\n - Faster/scalable: a **positional index** (token -> {doc: [positions]}) and check that positions are consecutive (`p, p+1, p+2...`) without rescanning text.\n - Normalise the query with the same tokenizer as indexing, or nothing matches.",
+    "source": "notes/fde-real-world-questions.py"
+  },
+  {
+    "id": "fde-exercise-complexity-cheatsheet",
+    "theme": "fde",
+    "kind": "complexity",
+    "front": "Cheat sheet: time complexity and core structure of each FDE exercise (top-K, ACL, intervals, packing, dedup, flatten, retry, loop detector, search)?",
+    "back": "| Exercise | Technique | Time | Space |\n|---|---|---|---|\n| Top-K errors | Counter + size-K min-heap | O(N + U log K) <= O(N log K) | O(U) |\n| ACL filter | set intersection per doc | O(D) | O(1) extra |\n| Merge windows | sort by start, sweep | O(N log N) | O(N) |\n| Context packing | sort by score/token, greedy | O(N log N) | O(N) |\n| Stream dedup | set + deque eviction | O(1) amortized/event | O(M) window |\n| JSON flatten | DFS pre-order with path | O(N) | O(D) stack |\n| Paginated fetch | cursor loop + backoff | O(P * R) | O(records) |\n| Loop detector | `deque(maxlen=K)` of signatures | O(K)/call | O(K) |\n| Inverted index | token -> set of doc ids | AND: O(q * smallest list) | O(total tokens) |\n\n- Recurring design ideas: **hash map/set for O(1) lookup, bounded memory (heap of K, deque window), normalise first, and state the semantics of edge cases.**",
+    "source": "notes/fde-real-world-questions.py"
+  }
+]

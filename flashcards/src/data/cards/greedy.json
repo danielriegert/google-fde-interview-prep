@@ -1,0 +1,69 @@
+[
+  {
+    "id": "greedy-properties-vs-dp",
+    "theme": "greedy",
+    "kind": "concept",
+    "front": "What two properties must hold for greedy to be correct, and how does greedy differ from DP?",
+    "back": "Make the locally best choice at each step and **never reconsider it**. It is only globally optimal if:\n\n1. **Greedy-choice property**: some globally optimal solution can be reached by a sequence of locally optimal choices.\n2. **Optimal substructure**: an optimal solution contains optimal solutions to its subproblems (DP needs this too).\n\n**Greedy vs DP**: DP explores *multiple* choices per subproblem and keeps the best (table/memo); greedy commits to *one* choice and moves on.\n- Valid greedy is cheap: usually O(n log n) for the sort + one pass.\n- Invalid greedy is silently wrong - there is no fallback or backtracking.\n- Greedy yields one answer; it cannot count ways.",
+    "source": "english/Greedy_Algorithms.ipynb"
+  },
+  {
+    "id": "greedy-proof-exchange-staying-ahead",
+    "theme": "greedy",
+    "kind": "concept",
+    "front": "How do you justify that a greedy algorithm is correct (exchange argument vs staying ahead)?",
+    "back": "Sketch the argument out loud before coding; it is the actual interview signal.\n\n- **Exchange argument**: take an optimal solution that differs from greedy at the first choice; show swapping in the greedy choice does not make it worse. Repeat inductively -> greedy is at least as good as any optimal solution.\n- **Staying ahead**: show that after every step the greedy partial solution is at least as good as any other valid partial solution by some measurable metric (e.g. greedy's k-th chosen interval ends no later than any other valid k-th interval).\n\nIf you cannot sketch either in about a minute, treat it as a warning that greedy may be wrong and fall back to DP. Hand-tracing 3-4 elements to hunt for a counter-example is the fastest test.",
+    "source": "english/Greedy_Algorithms.ipynb"
+  },
+  {
+    "id": "greedy-signals",
+    "theme": "greedy",
+    "kind": "pattern",
+    "front": "Which problem statements suggest greedy, and which suggest you should NOT use it?",
+    "back": "**Use greedy** when you see:\n- \"minimum number of X to cover/reach Y\" (jump game, interval covering, coin change with a *canonical* coin system)\n- \"maximum number of items under a budget/capacity\" -> sort by cost/size, take smallest first\n- non-overlapping / merge / schedule intervals, minimum meeting rooms -> sort by start or end, sweep once\n- \"best order\" -> sort by a derived key (ratio, difference, end time, deadline)\n\n**Do not** (use DP) when:\n- earlier choices' value depends on later ones (interacting decisions)\n- you must **count** ways\n- a hand-traced counter-example breaks your rule\n\nInterviewers sometimes pose greedy problems that *look* like DP; check for a sort key first.",
+    "source": "english/Greedy_Algorithms.ipynb"
+  },
+  {
+    "id": "greedy-coin-change-counterexample",
+    "theme": "greedy",
+    "kind": "gotcha",
+    "front": "Why is 'take the largest coin first' wrong for Coin Change, with a concrete counter-example?",
+    "back": "Coins `[1, 3, 4]`, target `6`:\n- Greedy (largest first): 4 + 1 + 1 = **3 coins**\n- Optimal: 3 + 3 = **2 coins**\n\nGreedy is only valid for **canonical** coin systems (e.g. US coins). For arbitrary denominations use DP: `dp[a] = min(dp[a - c] + 1)` over coins (LC 322).\n\nAlso `[10, 9, 1]`, amount 18: greedy = 10 + 8 ones (9 coins) vs 9 + 9 (2 coins).\n\nLesson: when the locally best pick can block a better global combination, greedy fails - always test a small counter-example.",
+    "source": "english/Greedy_Algorithms.ipynb"
+  },
+  {
+    "id": "greedy-template-sort-one-pass",
+    "theme": "greedy",
+    "kind": "template",
+    "front": "Template: the typical greedy skeleton (sort by a key, then a single pass)?",
+    "back": "```python\ndef greedy_solve(items):\n    items.sort(key=some_key)        # the crux: WHAT to sort by, and why that key is safe\n    state = init_state()\n    chosen = []\n    for item in items:\n        if fits(state, item):       # feasible + locally best, decided once\n            take(state, item)\n            chosen.append(item)\n    return chosen\n```\n\n- Time O(n log n) (sort) + O(n) scan; no backtracking.\n- Sort keys seen: cost ascending (LC 1833), end time (interval scheduling), pair smallest with largest to minimise the max pair sum (LC 1817), sort then cap each element at `prev + 1` (LC 1846).\n- Quick check: can you sort by some key and finish in one linear pass? -> try greedy first.",
+    "source": "english/Greedy_Algorithms.ipynb"
+  },
+  {
+    "id": "greedy-max-ice-cream-1833",
+    "theme": "greedy",
+    "kind": "problem",
+    "front": "LC 1833 Maximum Ice Cream Bars: what is the greedy and why is it correct?",
+    "back": "To maximise the **count** bought with `coins`, always buy the cheapest remaining bar: sort ascending and buy while affordable.\n\n```python\ndef maxIceCream(costs, coins):\n    count = 0\n    for cost in sorted(costs):\n        if cost > coins:\n            break                    # everything after is at least as expensive\n        coins -= cost\n        count += 1\n    return count\n```\n\n- Exchange argument: if an optimal set skips a cheaper bar in favour of a pricier one, swapping in the cheaper bar keeps it affordable (and may leave coins for more).\n- O(n log n) time, O(1) extra space (excluding the sort). Brute force over subsets is O(2^n * n).\n- `maxIceCream([1,3,2,4,1], 7) == 4`; `[10,6,8,7,7,8], 5 -> 0`.",
+    "lc": 1833,
+    "source": "english/Greedy_Algorithms.ipynb"
+  },
+  {
+    "id": "greedy-interval-scheduling",
+    "theme": "greedy",
+    "kind": "template",
+    "front": "Interval scheduling / LC 435 Non-overlapping Intervals: what do you sort by and how do you count removals?",
+    "back": "Sort by **end time**, then keep every interval that starts at or after the last kept end. Removals = total - kept.\n\n```python\ndef eraseOverlapIntervals(intervals):\n    intervals.sort(key=lambda x: x[1])       # earliest END first\n    end, kept = float('-inf'), 0\n    for s, e in intervals:\n        if s >= end:                         # touching endpoints are fine\n            kept += 1\n            end = e\n    return len(intervals) - kept\n```\n\n- Why end time: the earliest-finishing interval leaves the most room for the rest (staying-ahead: greedy's k-th end is never later than any other schedule's k-th end).\n- Sorting by *start* fails: one huge early interval blocks many small ones.\n- O(n log n) time. Same idea: max number of meetings, min arrows to burst balloons.",
+    "lc": 435,
+    "source": "english/Greedy_Algorithms.ipynb"
+  },
+  {
+    "id": "greedy-max-element-1846",
+    "theme": "greedy",
+    "kind": "problem",
+    "front": "LC 1846 Maximum Element After Decreasing and Rearranging: what is the greedy?",
+    "back": "Constraints: first element must be 1, adjacent elements differ by at most 1, you may decrease values and rearrange freely. Sort ascending, then cap each element at `previous + 1`.\n\n```python\ndef maximumElementAfterDecrementingAndRearranging(arr):\n    arr.sort()\n    prev = 0                                 # forces arr[0] to become 1\n    for i in range(len(arr)):\n        arr[i] = min(arr[i], prev + 1)       # can't grow more than +1 per step\n        prev = arr[i]\n    return arr[-1]\n```\n\n- After sorting, each element can take at most `min(itself, prev + 1)`; taking that maximum at every step is never worse for later elements.\n- `[100, 1, 1000] -> 3`, `[2, 2, 1, 2, 1] -> 2`.\n- O(n log n) time (sort), O(1) extra. A counting-array version is O(n).",
+    "lc": 1846,
+    "source": "english/Greedy_Algorithms.ipynb"
+  }
+]

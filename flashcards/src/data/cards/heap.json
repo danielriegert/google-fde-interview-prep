@@ -1,0 +1,151 @@
+[
+  {
+    "id": "heap-structure-array-index-math",
+    "theme": "heap",
+    "kind": "concept",
+    "front": "What is a binary heap, how is it stored in an array, and what are the parent/child index formulas?",
+    "back": "A heap is a **complete binary tree** (all levels full except possibly the last, filled left to right) where every node is `<=` its children (min-heap) or `>=` (max-heap).\n\nBecause it is complete, it lives in a flat array with no pointers:\n\n| Indexing | Children of `i` | Parent of `i` |\n|---|---|---|\n| 0-based (Python) | `2i + 1`, `2i + 2` | `(i - 1) // 2` |\n| 1-based | `2i`, `2i + 1` | `i // 2` |\n\n- Only the root is guaranteed to be the extreme; the array is **not sorted** (siblings are unordered).\n- Height is `floor(log2 n)`, which is why push/pop are O(log n).\n- A linked-list heap is possible but gains nothing in complexity.",
+    "source": "english/Heap.ipynb"
+  },
+  {
+    "id": "heap-heapq-api-cost-table",
+    "theme": "heap",
+    "kind": "complexity",
+    "front": "heapq API and costs: heapify, heappush, heappop, peek, nlargest/nsmallest, merge?",
+    "back": "`heapq` works **in place on a plain list** and only provides a **min-heap**.\n\n| Call | Cost |\n|---|---|\n| `heapq.heapify(lst)` | O(n) |\n| `heapq.heappush(h, x)` | O(log n) |\n| `heapq.heappop(h)` | O(log n) |\n| `h[0]` (peek min) | O(1) |\n| `heappushpop(h, x)` / `heapreplace(h, x)` | O(log n) |\n| `nlargest/nsmallest(k, it, key=)` | O(n log k) |\n| `heapq.merge(*sorted_iters)` | O(N log k), lazy |\n\n- Space O(n) (the list itself). Popping everything = heap sort, O(n log n).\n- There is no `peek`, no `remove(x)` (O(n) + re-heapify) and no decrease-key.\n- Iterating the list does **not** give sorted order.",
+    "source": "notes/heaps_and_priority_queues.py"
+  },
+  {
+    "id": "heap-heapify-linear-time",
+    "theme": "heap",
+    "kind": "complexity",
+    "front": "Why is building a heap with `heapify` O(n), not O(n log n)?",
+    "back": "Sift **down** starting from the last non-leaf (`n//2 - 1`) back to the root, instead of sifting up n inserted items.\n\n ```python\ndef heapify(a):                           # O(n)\n    n = len(a)\n    for i in range(n // 2 - 1, -1, -1):   # leaves (i >= n//2) are already heaps\n        sift_down(a, i, n)                # sift_down from the template above\n```\n\n - Half the nodes are leaves and cost 0; a quarter can move 1 level, an eighth 2 levels, ...\n - Total work `sum(n / 2^(h+1) * h)` is bounded by `O(n)`.\n - n separate `heappush` calls cost O(n log n). (The notebook's O(n log n) figure is for the push-based build only.)\n - Use `heapify(list)` when the data is already in memory.",
+    "source": "english/Heap.ipynb"
+  },
+  {
+    "id": "heap-push-pop-sift-template",
+    "theme": "heap",
+    "kind": "template",
+    "front": "Template: implement heap push and pop on a list (min-heap). What do sift-up and sift-down do?",
+    "back": "```python\ndef sift_up(a, i):\n    while i > 0:\n        p = (i - 1) // 2                  # parent\n        if a[p] <= a[i]:\n            break\n        a[p], a[i] = a[i], a[p]\n        i = p\n\ndef sift_down(a, i, n):\n    while True:\n        l, r, s = 2 * i + 1, 2 * i + 2, i\n        if l < n and a[l] < a[s]: s = l   # pick the SMALLER child\n        if r < n and a[r] < a[s]: s = r\n        if s == i:\n            return\n        a[i], a[s] = a[s], a[i]\n        i = s\n\ndef push(a, x):                           # O(log n)\n    a.append(x)\n    sift_up(a, len(a) - 1)\n\ndef pop(a):                               # O(log n)\n    top, last = a[0], a.pop()             # last leaf replaces the root ...\n    if a:\n        a[0] = last\n        sift_down(a, 0, len(a))           # ... and sinks to its place\n    return top\n```\n\n - **Push**: append at the end, sift **up** while smaller than the parent.\n - **Pop**: move the last leaf to the root (keeps the tree complete), sift **down** by swapping with the **smaller** child.\n - Each is O(log n) (tree height). For a max-heap flip the comparisons.\n - Sifting down needs the bounds check `l < n` because the last level may be partial.",
+    "source": "english/Heap.ipynb"
+  },
+  {
+    "id": "heap-pushpop-vs-replace",
+    "theme": "heap",
+    "kind": "gotcha",
+    "front": "`heappushpop` vs `heapreplace`: what is the difference in order and in when to use each?",
+    "back": "```python\nimport heapq\nh = [3, 5, 8]                             # min-heap (already heap-ordered)\nheapq.heappushpop(h, 1)                   # -> 1: push then pop; 1 <= root, heap unchanged\nheapq.heappushpop(h, 4)                   # -> 3: 4 is pushed, smallest (3) popped\nh = [3, 5, 8]\nheapq.heapreplace(h, 10)                  # -> 3: pop root FIRST, then push 10 (may return < x, or > x)\n```\n\n - **`heappushpop(h, x)`**: push `x`, **then** pop the smallest. If `x <= h[0]` it returns `x` immediately and the heap is untouched. Works on an empty heap. Use it to keep a size-k \"k largest\" heap once full.\n - **`heapreplace(h, x)`**: pop the smallest **first**, then push `x`. Always returns the old root (even if `x` is smaller). **Heap must be non-empty.** Use it when you already decided `x` should enter (e.g. after checking `x > h[0]`).\n - Both are one sift, cheaper than separate push + pop.",
+    "source": "notes/heaps_and_priority_queues.py"
+  },
+  {
+    "id": "heap-max-heap-negation",
+    "theme": "heap",
+    "kind": "gotcha",
+    "front": "How do you get a max-heap out of `heapq`, and what bites people?",
+    "back": "Store **negated** values: negate on push, negate again on pop/peek.\n\n ```python\nimport heapq\nh = []\nfor x in [5, 9, 2]:\n    heapq.heappush(h, -x)                 # negate on the way in\nlargest = -heapq.heappop(h)               # 9 -- negate on the way out\ntop = -h[0]                               # peek the max\n```\n\n - Peek is `-h[0]`; forgetting the second negation is the classic bug.\n - For tuples, negate only the field you want descending: `(-freq, word)`.\n - Strings/objects cannot be negated: wrap with a key (e.g. a class with reversed `__lt__`) or invert via `-ord(c)` for characters.\n - Do not use the private `heapq._heappop_max` family in interviews.",
+    "source": "notes/heaps_and_priority_queues.py"
+  },
+  {
+    "id": "heap-priority-tuple-tiebreak",
+    "theme": "heap",
+    "kind": "gotcha",
+    "front": "Priority-queue entries as tuples: what goes wrong on ties, and how does `itertools.count()` fix it?",
+    "back": "Tuples compare element by element. If priorities tie, Python compares the next field; if that is unorderable (dict, custom object) you get `TypeError`.\n\n ```python\nimport heapq, itertools\ntie = itertools.count()                   # unique, increasing tiebreaker\npq = []\nheapq.heappush(pq, (2, next(tie), {\"job\": \"laundry\"}))\nheapq.heappush(pq, (1, next(tie), {\"job\": \"bug\"}))\nheapq.heappush(pq, (1, next(tie), {\"job\": \"email\"}))   # same priority as \"bug\"\norder = [heapq.heappop(pq)[2][\"job\"] for _ in range(3)]  # ['bug', 'email', 'laundry']\n# without `tie`, equal priorities would compare the dicts -> TypeError\n```\n\n - Insert a unique, increasing counter as the second field: ties resolve FIFO and the payload is never compared.\n - Lower number = higher priority (min-heap). For descending priority negate it.\n - Alternatively, give the class `__lt__` (or use `dataclass(order=True)` with `field(compare=False)` for the payload).",
+    "source": "notes/heaps_and_priority_queues.py"
+  },
+  {
+    "id": "heap-lazy-deletion",
+    "theme": "heap",
+    "kind": "concept",
+    "front": "heapq has no decrease-key or remove(item): what is lazy deletion and where does it show up?",
+    "back": "Do not touch the entry in the heap. **Push the new version** and, when popping, **skip entries that are stale**.\n\n ```python\nimport heapq\npq, live = [], {}                         # heap entries + current priority per task\n\ndef set_priority(task, pri):              # insert OR update: just push again\n    live[task] = pri\n    heapq.heappush(pq, (pri, task))\n\ndef pop_min():\n    while pq:\n        pri, task = heapq.heappop(pq)\n        if live.get(task) == pri:         # entry is current -> real answer\n            del live[task]\n            return task, pri\n        # else: stale (task was updated/removed) -> skip it\n    return None\n```\n\n - Stale check: compare against a side dict (`live[task] == pri`) or a \"removed\" set.\n - Dijkstra is the classic use: push `(new_dist, node)` on improvement and `if d > dist[node]: continue` at pop time.\n - The heap can grow beyond n (each update adds an entry): Dijkstra with lazy deletion is O(E log V).\n - Sliding-window medians use the same idea with a \"to be removed\" counter per value.",
+    "source": "notes/heaps_and_priority_queues.py"
+  },
+  {
+    "id": "heap-topk-min-heap-rule",
+    "theme": "heap",
+    "kind": "template",
+    "front": "Top-K largest with a heap: which heap type and size, and why? (What about K smallest?)",
+    "back": "Keep a **min-heap of size k** for the k **largest**: the root is the smallest of the survivors, i.e. the one to evict.\n\n ```python\nimport heapq\n\ndef k_largest(nums, k):\n    h = []                                # size-k MIN-heap; h[0] = k-th largest so far\n    for x in nums:\n        if len(h) < k:\n            heapq.heappush(h, x)\n        else:\n            heapq.heappushpop(h, x)       # push x, evict the smallest of the k+1\n    return sorted(h, reverse=True)\n```\n\n - After the loop `h[0]` is the k-th largest.\n - K **smallest** -> max-heap (negate values) of size k. Rule: the heap type is the *opposite* of what you keep.\n - O(n log k) time, O(k) space (vs O(n log n) full sort) and works on streams too large for memory.\n - `heapq.nlargest(k, it)` does the same. If `k` is close to `n`, `sorted` is simpler and as fast.",
+    "source": "english/Heap.ipynb"
+  },
+  {
+    "id": "heap-kth-largest-stream",
+    "theme": "heap",
+    "kind": "problem",
+    "front": "LC 703 Kth Largest Element in a Stream: what heap do you maintain and what does `add` return?",
+    "back": "A min-heap of at most k elements holding the k largest values seen; its root is the k-th largest.\n\n ```python\nimport heapq\n\nclass KthLargest:                         # LC 703\n    def __init__(self, k, nums):\n        self.k, self.h = k, []\n        for x in nums:\n            self.add(x)\n\n    def add(self, val):\n        if len(self.h) < self.k:\n            heapq.heappush(self.h, val)\n        elif val > self.h[0]:             # beats the current k-th largest\n            heapq.heapreplace(self.h, val)\n        return self.h[0]                  # root of the min-heap = k-th largest\n```\n\n - `add` is O(log k); memory O(k).\n - The `< k` branch also handles the initial fill, so `__init__` can just call `add`.",
+    "lc": 703,
+    "source": "english/Heap.ipynb"
+  },
+  {
+    "id": "heap-kth-largest-array",
+    "theme": "heap",
+    "kind": "problem",
+    "front": "LC 215 Kth Largest Element in an Array: heap approach, and how does it compare with quickselect?",
+    "back": "```python\nimport heapq\n\ndef find_kth_largest(nums, k):            # LC 215\n    h = nums[:k]\n    heapq.heapify(h)                      # O(k)\n    for x in nums[k:]:\n        if x > h[0]:\n            heapq.heapreplace(h, x)       # O(log k)\n    return h[0]\n```\n\n - Heap: O(n log k) time, O(k) space; simple and works for streams.\n - Quickselect (partition around a pivot, recurse into one side): **O(n) average**, O(n^2) worst case, O(1) extra space, mutates the array.\n - Sort: O(n log n). Choose by constraints; `heapq.nlargest(k, nums)[-1]` is the one-liner.",
+    "lc": 215,
+    "source": "english/Heap.ipynb"
+  },
+  {
+    "id": "heap-top-k-frequent",
+    "theme": "heap",
+    "kind": "problem",
+    "front": "LC 347 Top K Frequent Elements: how do you combine Counter with a heap, and what is the O(n) alternative?",
+    "back": "```python\nimport heapq\nfrom collections import Counter\n\ndef top_k_frequent(nums, k):              # LC 347\n    cnt = Counter(nums)\n    h = []                                # min-heap of (frequency, value), size k\n    for val, freq in cnt.items():\n        heapq.heappush(h, (freq, val))    # frequency FIRST: heap orders by it\n        if len(h) > k:\n            heapq.heappop(h)\n    return [val for _, val in h]\n    # one-liner: [v for v, _ in cnt.most_common(k)]\n```\n\n - Put the **frequency first** in the tuple so the heap orders by it; the value rides along.\n - O(n log k) time, O(n) space for the counter.\n - **Bucket sort**: `buckets[freq]` (frequency is at most n) then read from the highest bucket down -> O(n).",
+    "lc": 347,
+    "source": "english/Heap.ipynb"
+  },
+  {
+    "id": "heap-k-smallest-pairs",
+    "theme": "heap",
+    "kind": "problem",
+    "front": "LC 373 Find K Pairs with Smallest Sums: why not push all n*m pairs, and what is the frontier heap?",
+    "back": "Both arrays are sorted, so the next-smallest pair is always adjacent to one already taken. Seed one candidate per `nums1[i]` (paired with `nums2[0]`); after popping `(i, j)`, push `(i, j + 1)`.\n\n ```python\nimport heapq\n\ndef k_smallest_pairs(nums1, nums2, k):    # LC 373 (both arrays sorted)\n    if not nums1 or not nums2:\n        return []\n    # frontier: pair each nums1[i] with nums2[0]; the sum grows with j\n    h = [(nums1[i] + nums2[0], i, 0) for i in range(min(k, len(nums1)))]\n    heapq.heapify(h)\n    res = []\n    while h and len(res) < k:\n        _, i, j = heapq.heappop(h)\n        res.append([nums1[i], nums2[j]])\n        if j + 1 < len(nums2):            # next candidate in the same row\n            heapq.heappush(h, (nums1[i] + nums2[j + 1], i, j + 1))\n    return res\n```\n\n - Seeding at most `k` rows is enough (a later row cannot beat k earlier ones).\n - O(k log k) time, O(k) space, versus O(nm log k) for enumerating all pairs.\n - Same \"one frontier entry per sorted source\" idea as a k-way merge.",
+    "lc": 373,
+    "source": "english/Heap.ipynb"
+  },
+  {
+    "id": "heap-max-eaten-apples",
+    "theme": "heap",
+    "kind": "problem",
+    "front": "LC 1705 Maximum Number of Eaten Apples: what is the greedy choice and what does the heap hold?",
+    "back": "Each day eat from the batch that **expires soonest** (earliest-deadline-first). The heap is ordered by expiry day and holds `[expiry, remaining_count]`.\n\n ```python\nimport heapq\n\ndef eaten_apples(apples, days):           # LC 1705\n    h = []                                # [expiry_day, count], soonest expiry on top\n    day = eaten = 0\n    while day < len(apples) or h:         # keep going after new apples stop\n        if day < len(apples) and apples[day] > 0:\n            heapq.heappush(h, [day + days[day], apples[day]])\n        while h and h[0][0] <= day:       # discard rotten batches\n            heapq.heappop(h)\n        if h:\n            h[0][1] -= 1                  # eat one from the batch expiring soonest\n            eaten += 1\n            if h[0][1] == 0:\n                heapq.heappop(h)\n        day += 1\n    return eaten\n```\n\n - Discard batches with `expiry <= day` before eating.\n - The loop must continue after the input ends while batches remain.\n - O(n log n) time (each batch pushed and popped once), O(n) space.",
+    "lc": 1705,
+    "source": "english/Heap.ipynb"
+  },
+  {
+    "id": "heap-two-heaps-median",
+    "theme": "heap",
+    "kind": "template",
+    "front": "Two-heaps pattern: how do you keep a running median in O(log n) per insert and O(1) per query?",
+    "back": "Keep the lower half in a **max-heap** (`lo`) and the upper half in a **min-heap** (`hi`); every `lo` element <= every `hi` element and `len(lo) - len(hi)` is 0 or 1.\n\n ```python\nimport heapq\n\nclass RunningMedian:\n    def __init__(self):\n        self.lo = []                      # max-heap (negated): smaller half\n        self.hi = []                      # min-heap: larger half\n    def add(self, x):\n        heapq.heappush(self.lo, -x)\n        heapq.heappush(self.hi, -heapq.heappop(self.lo))   # every lo <= every hi\n        if len(self.hi) > len(self.lo):                    # keep len(lo) >= len(hi)\n            heapq.heappush(self.lo, -heapq.heappop(self.hi))\n    def median(self):\n        if len(self.lo) > len(self.hi):\n            return -self.lo[0]\n        return (-self.lo[0] + self.hi[0]) / 2\n```\n\n - Median = `-lo[0]` (odd count) or the mean of the two roots (even count).\n - Routing through `lo` -> `hi` -> back keeps the ordering invariant without extra comparisons.\n - Same pattern: percentile tracking, \"balance two halves\" problems. Deleting arbitrary values needs lazy deletion (see that card).",
+    "source": "english/Heap.ipynb"
+  },
+  {
+    "id": "heap-k-way-merge",
+    "theme": "heap",
+    "kind": "template",
+    "front": "K-way merge of sorted lists with a heap: what goes in the heap and why include the list index?",
+    "back": "Keep **one frontier item per list**: `(value, list_index, position)`. Pop the smallest, then push its successor.\n\n ```python\nimport heapq\n\ndef merge_k_sorted(lists):\n    h = [(lst[0], i, 0) for i, lst in enumerate(lists) if lst]\n    heapq.heapify(h)                      # heap holds ONE frontier item per list\n    out = []\n    while h:\n        val, i, j = heapq.heappop(h)      # i, j say where val came from\n        out.append(val)\n        if j + 1 < len(lists[i]):\n            heapq.heappush(h, (lists[i][j + 1], i, j + 1))\n    return out                            # O(N log k); same as list(heapq.merge(*lists))\n```\n\n - The indices tell you where to fetch the successor and break ties without comparing unorderable objects (e.g. linked-list nodes).\n - O(N log k) time for N total items, O(k) extra space (vs O(N log N) for \"concatenate and sort\").\n - `heapq.merge(*iterables)` does this lazily with O(k) memory.",
+    "source": "english/Heap.ipynb"
+  },
+  {
+    "id": "heap-vs-sorted-list-vs-deque",
+    "theme": "heap",
+    "kind": "concept",
+    "front": "Heap vs sorted list vs deque: which structure for which access pattern?",
+    "back": "| Need | Best |\n|---|---|\n| Repeatedly get/remove the **min or max** while inserting | Heap: insert O(log n), pop O(log n), peek O(1) |\n| Arbitrary rank / k-th smallest, range queries, ordered iteration | Sorted structure (sorted list + `bisect`: search O(log n) but insert O(n)), balanced tree |\n| Process in **arrival order** (FIFO/LIFO) | `deque` (O(1) at both ends), no notion of priority |\n\n- Heap advantage: fast access to the extreme. Disadvantage: the rest is **only partially ordered** and there is no search/remove-by-value.\n- `sorted()` once beats a heap if you only need everything sorted a single time.",
+    "source": "notes/heaps_and_priority_queues.py"
+  },
+  {
+    "id": "heap-when-to-use-pattern",
+    "theme": "heap",
+    "kind": "pattern",
+    "front": "Problem signal -> heap: which cues say \"use a priority queue\"?",
+    "back": "- \"**Top / k-th** largest, smallest, most frequent\" -> size-k heap (opposite type of what you keep).\n- \"Repeatedly take the **smallest/largest** available\" (scheduling, earliest deadline, merge k sorted, Huffman, Dijkstra).\n- \"**Median** of a stream\" -> two heaps.\n- Data arrives as a **stream** or too large for memory, but you only need k results.\n- Choice depends on a value that changes over time (needs lazy deletion, no decrease-key).\n\nNot a heap: need full sorted order once (`sort`), rank queries or range queries (balanced tree / sorted list), or plain FIFO (deque).",
+    "source": "english/Heap.ipynb"
+  }
+]

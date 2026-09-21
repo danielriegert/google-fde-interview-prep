@@ -1,0 +1,127 @@
+[
+  {
+    "id": "sorting-properties-table",
+    "theme": "sorting",
+    "kind": "complexity",
+    "front": "Sorting algorithm properties: time (best/avg/worst), extra space and stability for bubble, selection, insertion, merge, quick, heap, counting/radix/bucket?",
+    "back": "| Algorithm | Best | Average | Worst | Space | Stable |\n|---|---|---|---|---|---|\n| Bubble (early exit) | O(n) | O(n^2) | O(n^2) | O(1) | yes |\n| Selection | O(n^2) | O(n^2) | O(n^2) | O(1) | no |\n| Insertion | O(n) | O(n^2) | O(n^2) | O(1) | yes |\n| Merge | O(n log n) | O(n log n) | O(n log n) | O(n) | yes |\n| Quick | O(n log n) | O(n log n) | O(n^2) | O(log n) stack | no |\n| Heap | O(n log n) | O(n log n) | O(n log n) | O(1) | no |\n| Counting | O(n + k) | O(n + k) | O(n + k) | O(k) | yes |\n| Radix (LSD, d digits) | O(d(n + b)) | same | same | O(n + b) | yes |\n| Bucket | O(n + k) | O(n + k) | O(n^2) | O(n + k) | if inner sort is |\n\nComparison sorts cannot beat **O(n log n)** in the worst case; counting/radix/bucket do by exploiting the key range. Python's `sort` is Timsort: stable, O(n log n) worst, O(n) on nearly-sorted data.",
+    "source": "english/Sorting_Algorithms.ipynb"
+  },
+  {
+    "id": "sorting-stability-concept",
+    "theme": "sorting",
+    "kind": "concept",
+    "front": "What does it mean for a sort to be stable, why does it matter, and which common sorts are stable?",
+    "back": "A **stable** sort keeps elements with equal keys in their original relative order.\n\n- Matters for **multi-key sorting**: sort by the secondary key first, then by the primary key with a stable sort (or use a tuple key).\n- Stable: bubble, insertion, merge, counting, radix (LSD), Timsort (Python `sort`/`sorted`).\n- Not stable: selection (long-distance swaps), quicksort (partition swaps), heapsort.\n- In merge sort stability comes from `<=` (take from the left run on ties).\n- `sorted(..., reverse=True)` still preserves the original order of equal elements.",
+    "source": "english/Sorting_Algorithms.ipynb"
+  },
+  {
+    "id": "sorting-when-non-comparison-wins",
+    "theme": "sorting",
+    "kind": "pattern",
+    "front": "When are insertion sort, counting sort or radix sort better than the generic O(n log n) answer?",
+    "back": "- **Insertion sort**: tiny or **nearly sorted** input (O(n + inversions)); it is the base case inside Timsort and many hybrid sorts.\n- **Counting sort**: integer keys in a small known range `k` (ages, scores, chars, values 0/1/2) -> O(n + k).\n- **Radix sort**: fixed-width integers/strings (d digits, base b) -> O(d(n + b)), needs a stable per-digit sort.\n- **Bucket sort**: values roughly uniform over a range -> O(n) average.\n- **Heap / quickselect**: you only need the top-k or k-th element, not a full sort.\n\nInterview move: ask about input range, size and existing order before defaulting to `sort()`.",
+    "source": "english/Sorting_Algorithms.ipynb"
+  },
+  {
+    "id": "sorting-quicksort-partition-template",
+    "theme": "sorting",
+    "kind": "template",
+    "front": "Template: quicksort with a Lomuto partition. What is the partition invariant and why \"increment index first, then swap\"?",
+    "back": "```python\nimport random\n\ndef quicksort(a, lo=0, hi=None):\n    if hi is None:\n        hi = len(a) - 1\n    if lo >= hi:\n        return\n    p = random.randint(lo, hi)            # random pivot dodges sorted-input worst case\n    a[lo], a[p] = a[p], a[lo]\n    pivot, i = a[lo], lo                  # invariant: a[lo+1..i] < pivot <= a[i+1..j]\n    for j in range(lo + 1, hi + 1):\n        if a[j] < pivot:\n            i += 1                        # increment FIRST, then swap\n            a[i], a[j] = a[j], a[i]\n    a[lo], a[i] = a[i], a[lo]             # pivot lands in its final position i\n    quicksort(a, lo, i - 1)\n    quicksort(a, i + 1, hi)\n```\n\n - `i` marks the last element known to be `< pivot`; increment it **before** swapping, or `i` ends one too high.\n - After the loop, swapping the pivot into `i` puts it at its **final sorted position**.\n - Average O(n log n), worst O(n^2), O(log n) recursion stack, in place, **not stable**.\n - Random pivot makes the worst case unlikely.",
+    "source": "english/Sorting_Algorithms.ipynb"
+  },
+  {
+    "id": "sorting-quicksort-worst-case-gotcha",
+    "theme": "sorting",
+    "kind": "gotcha",
+    "front": "When does quicksort degrade to O(n^2), and what fixes it?",
+    "back": "It degrades when partitions are badly unbalanced (one side gets `n - 1` elements):\n\n- **Sorted / reverse-sorted input** with first- or last-element pivot.\n- **Many equal keys** with a 2-way partition (all equals land on the same side).\n\nFixes:\n- Random pivot or median-of-three.\n- **3-way partition** (`< pivot`, `== pivot`, `> pivot`), the Dutch national flag: equals are done in one pass. Turns all-equal input into O(n).\n- Recurse into the **smaller** side first (or loop on the larger) to bound the stack at O(log n).\n- Introsort: fall back to heapsort when recursion gets too deep.",
+    "source": "english/Sorting_Algorithms.ipynb"
+  },
+  {
+    "id": "sorting-quickselect-kth-largest",
+    "theme": "sorting",
+    "kind": "template",
+    "front": "Template: quickselect for the k-th largest element (LC 215). Which side do you keep and what is the cost?",
+    "back": "Partition once; the pivot lands at its final index `i`. Compare `i` with the **target index** `n - k` (ascending order) and keep only the side that contains it.\n\n ```python\nimport random\n\ndef find_kth_largest(nums, k):            # LC 215, average O(n)\n    target = len(nums) - k                # index of the answer in ascending order\n    lo, hi = 0, len(nums) - 1\n    while lo < hi:\n        p = random.randint(lo, hi)\n        nums[lo], nums[p] = nums[p], nums[lo]\n        pivot, i = nums[lo], lo\n        for j in range(lo + 1, hi + 1):\n            if nums[j] < pivot:\n                i += 1\n                nums[i], nums[j] = nums[j], nums[i]\n        nums[lo], nums[i] = nums[i], nums[lo]      # pivot is final at index i\n        if i == target:\n            return nums[i]\n        if i < target:\n            lo = i + 1                    # discard the left side\n        else:\n            hi = i - 1                    # discard the right side\n    return nums[lo]\n```\n\n - Average O(n) (n + n/2 + n/4 ...), worst O(n^2); O(1) extra space; mutates the input.\n - Compare heap: O(n log k), no mutation. Full sort: O(n log n).\n - Many duplicates -> use a 3-way partition to stay linear.",
+    "lc": 215,
+    "source": "english/Sorting_Algorithms.ipynb"
+  },
+  {
+    "id": "sorting-merge-sort-template",
+    "theme": "sorting",
+    "kind": "template",
+    "front": "Template: merge sort on an array. Where does the actual work happen in the recursion, and why must you not `pop(0)`?",
+    "back": "```python\ndef merge_sort(a):\n    if len(a) <= 1:\n        return a\n    mid = len(a) // 2\n    left, right = merge_sort(a[:mid]), merge_sort(a[mid:])   # solve children first\n    out, i, j = [], 0, 0\n    while i < len(left) and j < len(right):                  # then combine (postorder)\n        if left[i] <= right[j]:           # <= keeps equal keys in original order (stable)\n            out.append(left[i])\n            i += 1\n        else:\n            out.append(right[j])\n            j += 1\n    out.extend(left[i:])\n    out.extend(right[j:])\n    return out\n```\n\n - Recursion is a **postorder traversal**: sort both halves first, then merge on the way back up.\n - Merge is O(n) with two indices; using `list.pop(0)` (as some notes do) makes each pop O(n) and the whole sort O(n^2).\n - O(n log n) always, O(n) extra space, stable.\n - Bottom-up version: merge runs of size 1, 2, 4, ... with no recursion.",
+    "source": "english/Sorting_Algorithms.ipynb"
+  },
+  {
+    "id": "sorting-merge-sort-linked-list",
+    "theme": "sorting",
+    "kind": "concept",
+    "front": "Why is merge sort the natural choice for linked lists (and for external/huge data)?",
+    "back": "- Needs only **sequential access**: split with fast/slow pointers, merge by re-linking nodes.\n- Merging lists needs **no auxiliary array**, so it is O(1) extra space (bottom-up) or O(log n) recursion stack (top-down), versus O(n) for arrays.\n- Quicksort and heapsort need random access, which lists lack; insertion sort works but is O(n^2).\n- Guaranteed O(n log n) and stable.\n- Same property makes merge sort the basis of **external sorting**: sort chunks that fit in memory, then k-way merge from disk.",
+    "source": "english/Sorting_Algorithms.ipynb"
+  },
+  {
+    "id": "sorting-dutch-flag-sort-colors",
+    "theme": "sorting",
+    "kind": "problem",
+    "front": "LC 75 Sort Colors: how do you sort 0s, 1s and 2s in one pass and O(1) space?",
+    "back": "Dutch national flag = a 3-way partition with three pointers.\n\n ```python\ndef sort_colors(nums):                    # LC 75: values 0/1/2, one pass, in place\n    lo, mid, hi = 0, 0, len(nums) - 1     # [0,lo) = 0s, [lo,mid) = 1s, (hi,end] = 2s\n    while mid <= hi:\n        if nums[mid] == 0:\n            nums[lo], nums[mid] = nums[mid], nums[lo]\n            lo += 1\n            mid += 1\n        elif nums[mid] == 1:\n            mid += 1\n        else:\n            nums[mid], nums[hi] = nums[hi], nums[mid]\n            hi -= 1                       # do NOT advance mid: swapped-in value is unchecked\n```\n\n - Invariant: `[0, lo)` are 0s, `[lo, mid)` are 1s, `(hi, end]` are 2s, `[mid, hi]` unknown.\n - Only advance `mid` after swapping with `lo` (that value is known to be 1); after swapping with `hi` the new `nums[mid]` is unchecked.\n - Alternative: counting sort (count 0/1/2, then overwrite) - two passes.\n - O(n) time, O(1) space.",
+    "lc": 75,
+    "source": "english/Sorting_Algorithms.ipynb"
+  },
+  {
+    "id": "sorting-bucket-sort-gap-idea",
+    "theme": "sorting",
+    "kind": "concept",
+    "front": "Bucket-sort idea for \"largest gap between neighbours in sorted order\" in O(n): how does pigeonhole make it work?",
+    "back": "With n numbers there are n-1 gaps, so the max gap is at least `ceil((max - min) / (n - 1))`. Use buckets of exactly that width: two values in the **same** bucket differ by less than the width, so the largest gap must lie **between** buckets. Each bucket only needs its min and max.\n\n ```python\ndef max_gap_sorted(nums):                 # largest gap between neighbours in sorted order, O(n)\n    n = len(nums)\n    if n < 2:\n        return 0\n    lo, hi = min(nums), max(nums)\n    if lo == hi:\n        return 0\n    width = max(1, -(-(hi - lo) // (n - 1)))    # ceil: the smallest possible max gap\n    size = (hi - lo) // width + 1\n    mins, maxs = [None] * size, [None] * size   # keep only min/max per bucket\n    for x in nums:\n        b = (x - lo) // width\n        mins[b] = x if mins[b] is None else min(mins[b], x)\n        maxs[b] = x if maxs[b] is None else max(maxs[b], x)\n    best, prev_max = 0, lo\n    for b in range(size):\n        if mins[b] is None:\n            continue                      # empty bucket\n        best = max(best, mins[b] - prev_max)      # gap CROSSES bucket boundaries\n        prev_max = maxs[b]\n    return best\n```\n\n - O(n) time and space, versus O(n log n) for sorting.\n - General idea: pick a bucket width so that the property you need can only be violated across bucket boundaries, then compare neighbouring buckets only.",
+    "source": "english/Sorting_Algorithms.ipynb"
+  },
+  {
+    "id": "sorting-custom-comparator-cmp-to-key",
+    "theme": "sorting",
+    "kind": "template",
+    "front": "How do you sort with a custom pairwise comparator in Python 3 (e.g. LC 179 Largest Number)?",
+    "back": "`sort()` takes no `cmp` argument; wrap a comparator with `functools.cmp_to_key`. Return negative if `a` goes first, positive if `b` does, 0 if equal.\n\n ```python\nfrom functools import cmp_to_key\n\ndef largest_number(nums):                 # LC 179\n    def cmp(a, b):                        # a before b if a+b forms the bigger string\n        if a + b > b + a:\n            return -1\n        if a + b < b + a:\n            return 1\n        return 0\n    strs = sorted(map(str, nums), key=cmp_to_key(cmp))\n    return '0' if strs[0] == '0' else ''.join(strs)   # all zeros -> \"0\", not \"000\"\n```\n\n - Order rule: `a` before `b` iff `a + b > b + a` (compare concatenations, not numbers).\n - Guard the all-zeros case.\n - Prefer a plain `key=` function (or tuple key) when the order can be expressed per element; use `cmp_to_key` only for genuinely pairwise rules.\n - O(n log n) comparisons, each O(length).",
+    "lc": 179,
+    "source": "english/Sorting_Algorithms.ipynb"
+  },
+  {
+    "id": "sorting-sort-vs-sorted-gotcha",
+    "theme": "sorting",
+    "kind": "gotcha",
+    "front": "`list.sort()` vs `sorted()`: what do they return, what do they accept, and what is the classic bug?",
+    "back": "```python\nwords = [\"pear\", \"Fig\", \"apple\"]\nnew = sorted(words, key=str.lower)        # new list, original untouched\nr = words.sort(key=len, reverse=True)     # in place -> r is None (classic bug: x = lst.sort())\nchars = sorted(\"cab\")                     # ['a', 'b', 'c'] -- list of chars\ns = \"\".join(sorted(\"cab\"))                # 'abc'\nby = sorted([(\"b\", 1), (\"a\", 1), (\"c\", 0)], key=lambda t: (t[1], t[0]))   # multi-key\n```\n\n - `lst.sort()` sorts **in place and returns `None`** (`x = lst.sort()` -> `x is None`).\n - `sorted(iterable)` returns a **new list** and accepts any iterable (str, tuple, dict, set, generator).\n - Both: stable, `key=`, `reverse=`; Timsort O(n log n), O(n) extra space.\n - Multi-key: tuple key, negate numbers for descending mixed order: `key=lambda x: (-x.score, x.name)`.\n - `reversed(x)` returns an iterator, not a list.",
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "sorting-cyclic-swap-find-duplicate",
+    "theme": "sorting",
+    "kind": "pattern",
+    "front": "Values are in [0, n-1] and the array has length n: how do you find a duplicate in O(n) time and O(1) space by swapping?",
+    "back": "Treat the array as its own hash table: value `v` belongs at index `v`. Keep swapping `nums[i]` to its home slot; if the home slot already holds that value, it is a duplicate.\n\n ```python\ndef find_duplicate(nums):                 # n values, each in [0, n-1]; mutates nums\n    for i in range(len(nums)):\n        while nums[i] != i:               # send nums[i] to its home index\n            j = nums[i]\n            if nums[j] == j:              # home already occupied by the same value\n                return j                  # -> duplicate\n            nums[i], nums[j] = nums[j], nums[i]\n    return -1                             # it was a permutation\n```\n\n - Each swap puts one value in its final place, so total swaps <= n -> O(n) despite the inner `while`.\n - **Mutates** the input; if that is not allowed use Floyd cycle detection instead.\n - Same \"place value v at index v-1\" trick finds missing numbers.",
+    "source": "english/Sorting_Algorithms.ipynb"
+  },
+  {
+    "id": "sorting-reorganize-string",
+    "theme": "sorting",
+    "kind": "problem",
+    "front": "LC 767 Reorganize String: what is the feasibility test and the fill pattern?",
+    "back": "Feasible iff the most frequent letter appears at most `(n + 1) // 2` times. Place letters most-frequent-first into indices `0, 2, 4, ...` and then `1, 3, 5, ...`.\n\n ```python\nfrom collections import Counter\n\ndef reorganize_string(s):                 # LC 767\n    cnt = Counter(s)\n    n = len(s)\n    if max(cnt.values()) > (n + 1) // 2:  # too many of one letter -> impossible\n        return \"\"\n    res = [\"\"] * n\n    idx = 0\n    for ch, k in cnt.most_common():       # most frequent letter first\n        for _ in range(k):\n            res[idx] = ch\n            idx += 2                      # fill even slots, then odd slots\n            if idx >= n:\n                idx = 1\n    return \"\".join(res)\n```\n\n - The top letter fits entirely in the even slots, so it never touches itself; every other letter is spread by the stride of 2.\n - Alternative: max-heap, repeatedly place the two most frequent different letters (O(n log k)).\n - O(n + k log k) time, O(n) space. Same idea: rearrange barcodes (LC 1054).",
+    "lc": 767,
+    "source": "english/Sorting_Algorithms.ipynb"
+  },
+  {
+    "id": "sorting-wiggle-sort-ii",
+    "theme": "sorting",
+    "kind": "problem",
+    "front": "LC 324 Wiggle Sort II (`nums[0] < nums[1] > nums[2] < ...`): why place each half in descending order?",
+    "back": "Sort, split into a smaller and a larger half, put the smaller half in the even slots and the larger half in the odd slots - each **reversed**.\n\n ```python\ndef wiggle_sort(nums):                    # LC 324: nums[0] < nums[1] > nums[2] < ...\n    s = sorted(nums)\n    half = (len(nums) + 1) // 2\n    nums[::2] = s[:half][::-1]            # smaller half -> even slots, DESCENDING\n    nums[1::2] = s[half:][::-1]           # larger half  -> odd slots, DESCENDING\n```\n\n - Reversing spreads equal values apart: `[1,2,2,3]` interleaved forward gives `[1,2,2,3]` (invalid), reversed gives `[2,3,1,2]`.\n - The middle value (possibly duplicated) is split across the halves' ends, which reversing keeps non-adjacent.\n - O(n log n) time. O(n) with quickselect for the median plus a 3-way partition and index mapping; a bucket count also works when values are bounded.",
+    "lc": 324,
+    "source": "english/Sorting_Algorithms.ipynb"
+  }
+]

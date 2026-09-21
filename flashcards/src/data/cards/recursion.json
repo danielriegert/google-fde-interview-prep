@@ -1,0 +1,83 @@
+[
+  {
+    "id": "recursion-base-and-recursive-case",
+    "theme": "recursion",
+    "kind": "concept",
+    "front": "Every recursive function needs two parts. What are they, and what must the recursive step guarantee?",
+    "back": "**A base case and a recursive case.**\n\n- **Base case**: an input small enough to answer directly (empty list, `None` node, index == len). It stops the recursion.\n- **Recursive case**: reduce to a smaller/simpler input, call yourself, and combine the result.\n- The recursive step **must move the state closer to the base case** - otherwise you recurse forever (`RecursionError` in Python).\n- Write the base case(s) first; check that *every* path of shrinking inputs eventually lands on one.\n- Design tip: look at ONE element/node only - what do I pass down (count/sum/path so far) and what do I return up? Trust the recursion for the rest.",
+    "source": "notes/recursion.md"
+  },
+  {
+    "id": "recursion-call-stack-unwind",
+    "theme": "recursion",
+    "kind": "concept",
+    "front": "How does the call stack behave during recursion (going down vs coming back up)?",
+    "back": "**Down: calls are deferred and stacked. Up: they unwind bottom-up (LIFO).**\n\n- Each call pauses at the recursive line and is pushed on the stack with its own local variables.\n- When the **base case** returns, frames pop one by one, and each resumes with the returned value.\n- Code *before* the recursive call runs top-down (**preorder position**); code *after* it runs bottom-up (**postorder position**).\n- Stack depth = recursion depth, so it costs **O(depth) space** even if you allocate nothing else.",
+    "source": "notes/recursion.md"
+  },
+  {
+    "id": "recursion-recursion-template",
+    "theme": "recursion",
+    "kind": "template",
+    "front": "Template: the general recursion skeleton (base case, preprocessing, recursive step)?",
+    "back": "```python\ndef recursive_function(parameters):\n    # 1. Base case(s): small enough to solve directly\n    if base_condition_met:\n        return base_value\n\n    # 2. Optional: process/preprocess data before recursing\n\n    # 3. Recursive step: smaller parameters - MUST move toward the base case\n    return combine_result(sub_problem_result, recursive_function(modified_parameters))\n```\n\n- Base case first, recursive step must shrink the input.\n- Concrete instance: `def total(nums, i=0): return 0 if i == len(nums) else nums[i] + total(nums, i + 1)`",
+    "source": "notes/recursion.md"
+  },
+  {
+    "id": "recursion-immutable-state-nonlocal",
+    "theme": "recursion",
+    "kind": "gotcha",
+    "front": "Gotcha: you need a running count/sum across recursive calls, but ints and strings are immutable. What are your options?",
+    "back": " **Rebinding a passed-in int/str only changes the callee's local copy**, so the caller never sees the update. Options:\n\n - **`nonlocal`** in a nested function (below), or an instance/class attribute\n - **Return the value** up the stack and combine it (`return 1 + dfs(i + 1)`) - the cleanest, \"decompose\" style\n - Pass a **mutable** container (`count = [0]`, list, dict) and mutate it\n\n ```python\ndef count_evens(nums):\n    count = 0                       # lives in the enclosing scope\n\n    def dfs(i):\n        nonlocal count              # without this, `count += 1` -> UnboundLocalError\n        if i == len(nums):\n            return\n        if nums[i] % 2 == 0:\n            count += 1\n        dfs(i + 1)\n\n    dfs(0)\n    return count\n```",
+    "source": "notes/recursion.md"
+  },
+  {
+    "id": "recursion-backtracking-is-nary-tree",
+    "theme": "recursion",
+    "kind": "concept",
+    "front": "What is backtracking, structurally, and how does it differ from dynamic programming?",
+    "back": "**Backtracking = pre/postorder traversal of an N-ary decision tree; it is pure brute-force exhaustive search.**\n\n- Each level is a decision; each branch is one available choice; each root-to-leaf path is one candidate answer.\n- Maintain the **path** so far and the **choices** still available; when the **termination condition** hits, record the path.\n- **DP** exploits overlapping subproblems (memoize); backtracking doesn't, so it is usually exponential: subsets **O(2^n)**, permutations **O(n!)**.\n- Use it for \"all combinations / permutations / subsets / placements\".",
+    "source": "english/Template_Summary.ipynb"
+  },
+  {
+    "id": "recursion-backtracking-skeleton",
+    "theme": "recursion",
+    "kind": "template",
+    "front": "Template: backtracking skeleton - what are the path, the choices, the termination condition, and make/revert?",
+    "back": "```python\nresult = []\n\ndef backtrack(path, choices):\n    if is_end(path):                  # termination condition\n        result.append(path[:])        # record a COPY of the path\n        return\n    for choice in choices:\n        make(choice)                  # path.append(choice); update choices\n        backtrack(path, next_choices)\n        revert(choice)                # path.pop(); restore choices\n```\n\n- **Make -> recurse -> revert** must be symmetric, so the shared `path` is back to its prior state for the next sibling.\n- The notebook's `result.add(path)` is wrong for Python lists: use `result.append(path[:])`.",
+    "source": "english/Template_Summary.ipynb"
+  },
+  {
+    "id": "recursion-subsets-backtracking",
+    "theme": "recursion",
+    "kind": "template",
+    "front": "Subsets via backtracking: what are the choices at each step, and where do you record the answer?",
+    "back": " **Record `path[:]` at every node; the choices are the elements from `start` onward.**\n\n ```python\ndef subsets(nums):\n    res, path = [], []\n\n    def backtrack(start):\n        res.append(path[:])               # every node of the tree is a valid subset\n        for i in range(start, len(nums)): # choices: only elements AFTER start (no reuse, no reordered dupes)\n            path.append(nums[i])          # make\n            backtrack(i + 1)\n            path.pop()                    # revert\n\n    backtrack(0)\n    return res\n```\n\n - Time **O(n * 2^n)** (2^n subsets, each up to n to copy); recursion depth n.\n - Permutations differ: choices are *all unused* elements (a `used` array), record only when `len(path) == n`, giving O(n * n!).",
+    "lc": 78,
+    "source": "english/Template_Summary.ipynb"
+  },
+  {
+    "id": "recursion-backtracking-copy-path",
+    "theme": "recursion",
+    "kind": "gotcha",
+    "front": "Backtracking bug: your result list ends up full of identical (or empty) lists. Why?",
+    "back": "**You appended the shared `path` object itself, not a snapshot.**\n\n- `path` is mutated in place all the way through the search; after backtracking it is `[]` again, so every stored reference shows that final state.\n- Fix: `res.append(path[:])` (or `list(path)`); with an immutable tuple/string path you don't need a copy.\n- Same idea for the revert step: if you forget `path.pop()` / `used[i] = False`, sibling branches inherit stale choices.",
+    "source": "english/Template_Summary.ipynb"
+  },
+  {
+    "id": "recursion-backtracking-early-exit",
+    "theme": "recursion",
+    "kind": "template",
+    "front": "Backtracking when you need only ONE valid answer (or a yes/no): how do you cut the search short?",
+    "back": " **Make `backtrack` return a boolean and return `True` up the stack as soon as a solution is found.**\n\n ```python\ndef backtrack(path, choices):\n    if is_solution(path):\n        return True                       # found one: signal upward\n    for c in choices:\n        make(c)\n        if backtrack(path, next_choices): # propagate success, skip the rest\n            return True\n        revert(c)\n    return False\n```\n\n - On success you skip `revert`, so `path` holds the answer; that is intended.\n - Also **prune**: return early when the partial path can never lead to a solution (this is what makes N-Queens / Sudoku feasible).",
+    "source": "english/Template_Summary.ipynb"
+  },
+  {
+    "id": "recursion-exhaustive-search-difficulties",
+    "theme": "recursion",
+    "kind": "concept",
+    "front": "What is the \"essence of algorithms\" and what are the two difficulties of exhaustive search?",
+    "back": "**The essence of algorithms is exhaustive search.** Two difficulties:\n\n1. **No omissions** - enumerate every candidate (this is where recursion/backtracking/loop design matters).\n2. **No redundancy** - search smartly with as few resources as possible: memoization/DP for overlapping subproblems, pruning for hopeless branches, greedy for provably-best choices.\n\nData structures only store data two ways (array = sequential, linked = chained); traversal is only **iteration** or **recursion**.",
+    "source": "english/Template_Summary.ipynb"
+  }
+]

@@ -1,0 +1,190 @@
+[
+  {
+    "id": "binary-search-closed-vs-half-open",
+    "theme": "binary-search",
+    "kind": "concept",
+    "front": "Binary search interval conventions: closed [l, r] vs half-open [l, r). How do init, loop condition and updates differ?",
+    "back": "Pick one convention per problem and keep all four parts consistent.\n\n| | Closed `[l, r]` | Half-open `[l, r)` |\n|---|---|---|\n| Init | `r = n - 1` | `r = n` |\n| Loop | `while l <= r` | `while l < r` |\n| Discard mid (too small / too big) | `l = mid + 1` / `r = mid - 1` | `l = mid + 1` / `r = mid` |\n| Empty window | `l > r` | `l == r` |\n\n- Closed: natural for **exact match** (`return mid` inside the loop, `-1` after).\n- Half-open: natural for **boundary searches** (lower/upper bound): the answer is `l`, and `n` is a valid answer (\"none found\").\n- Mixing them (e.g. `r = n` with `r = mid - 1`) is the most common source of off-by-one bugs and infinite loops.",
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "binary-search-exact-match-template",
+    "theme": "binary-search",
+    "kind": "template",
+    "front": "Template: exact-match binary search on a sorted array (closed interval). What are the loop condition and updates?",
+    "back": "```python\ndef binary_search(nums, target):          # closed interval [l, r]\n    l, r = 0, len(nums) - 1\n    while l <= r:                         # l == r is still a live candidate\n        mid = l + (r - l) // 2\n        if nums[mid] == target:\n            return mid\n        elif nums[mid] < target:\n            l = mid + 1                   # mid already checked -> exclude it\n        else:\n            r = mid - 1\n    return -1                             # window empty (l > r)\n```\n\n - `while l <= r`: when `l == r` one candidate is left and it still must be compared.\n - After comparing `mid`, exclude it: `mid + 1` / `mid - 1`.\n - O(log n) time, O(1) space (recursion would cost O(log n) stack).\n - Only correct for **sorted** input; with duplicates it returns *some* matching index, not necessarily the first.",
+    "source": "notes/binary_search.py"
+  },
+  {
+    "id": "binary-search-lower-bound-template",
+    "theme": "binary-search",
+    "kind": "template",
+    "front": "Template: lower bound (first index with nums[i] >= target) using a half-open interval. What does it return if every element is smaller?",
+    "back": "```python\ndef lower_bound(nums, target):            # first i with nums[i] >= target, else len(nums)\n    l, r = 0, len(nums)                   # half-open [l, r): r is NOT a candidate index\n    while l < r:\n        mid = l + (r - l) // 2\n        if nums[mid] < target:\n            l = mid + 1                   # mid too small: discard it\n        else:\n            r = mid                       # nums[mid] >= target: mid may be the answer, keep it\n    return l                              # l == r\n```\n\n - Invariant: everything left of `l` is `< target`; everything from `r` on is `>= target`.\n - Returns `len(nums)` when all elements are smaller (insertion point at the end).\n - Same as `bisect.bisect_left`. Equals the first occurrence when `target` exists, and the insertion point that keeps order when it does not (LC 35).\n - O(log n).",
+    "source": "notes/binary_search.py"
+  },
+  {
+    "id": "binary-search-upper-bound-template",
+    "theme": "binary-search",
+    "kind": "template",
+    "front": "Template: upper bound (first index with nums[i] > target). What is the one-token difference from lower bound?",
+    "back": "```python\ndef upper_bound(nums, target):            # first i with nums[i] > target, else len(nums)\n    l, r = 0, len(nums)\n    while l < r:\n        mid = l + (r - l) // 2\n        if nums[mid] <= target:           # only difference vs lower_bound: <= instead of <\n            l = mid + 1\n        else:\n            r = mid\n    return l\n```\n\n - Lower bound tests `nums[mid] < target`; upper bound tests `nums[mid] <= target`.\n - Same as `bisect.bisect_right`. `upper_bound - lower_bound` = number of occurrences of `target`.\n - Returns `len(nums)` when no element exceeds `target`.",
+    "source": "notes/binary_search.py"
+  },
+  {
+    "id": "binary-search-last-le-via-bisect-right",
+    "theme": "binary-search",
+    "kind": "concept",
+    "front": "How do you get \"last index <= x\", \"last index < x\", and \"first index > x\" from bisect?",
+    "back": "```python\nimport bisect\na = [1, 2, 2, 2, 5]\nbisect.bisect_left(a, 2)                  # 1  == lower_bound (first >= 2)\nbisect.bisect_right(a, 2)                 # 4  == upper_bound (first > 2)\nbisect.bisect_right(a, 2) - 1             # 3  last index with a[i] <= 2\nbisect.bisect_left(a, 2) - 1              # 0  last index with a[i] <  2\nbisect.bisect_left(a, 9)                  # 5  == len(a): all elements are smaller\n```\n\n | Want | Formula |\n |---|---|\n | first `>= x` | `bisect_left(a, x)` |\n | first `> x` | `bisect_right(a, x)` |\n | last `<= x` | `bisect_right(a, x) - 1` |\n | last `< x` | `bisect_left(a, x) - 1` |\n\n - A result of `-1` from the \"last\" forms means no element qualifies; a result of `len(a)` from the \"first\" forms means none qualifies.\n - Range of values in `[lo, hi]`: indices `bisect_left(a, lo)` .. `bisect_right(a, hi) - 1` (empty if the first exceeds the second).",
+    "source": "notes/binary_search.py"
+  },
+  {
+    "id": "binary-search-existence-check-gotcha",
+    "theme": "binary-search",
+    "kind": "gotcha",
+    "front": "After `lower_bound`, how do you check that the target actually exists, and what crashes if you forget the bounds check?",
+    "back": "`lower_bound` returns an **insertion point**, not proof of presence.\n\n ```python\ni = lower_bound(nums, target)\nfound = i < len(nums) and nums[i] == target   # bounds check FIRST (i can equal len)\n```\n\n - `i` can equal `len(nums)` (target larger than everything) -> `nums[i]` raises `IndexError`.\n - Check `i < len(nums)` **before** `nums[i] == target` (short-circuit order matters).\n - Equivalent with upper bound: `i > 0 and nums[i - 1] == target`.\n - Empty array: `lower_bound` returns 0 and the bounds check handles it.",
+    "source": "notes/binary_search.py"
+  },
+  {
+    "id": "binary-search-first-last-position",
+    "theme": "binary-search",
+    "kind": "problem",
+    "front": "LC 34 Find First and Last Position of Element in Sorted Array: how do lower and upper bound solve it?",
+    "back": "First position = `lower_bound(target)`; last position = `upper_bound(target) - 1`. Check existence before using them.\n\n ```python\ndef search_range(nums, target):           # LC 34\n    lo = lower_bound(nums, target)        # first index of target (if present)\n    if lo == len(nums) or nums[lo] != target:\n        return [-1, -1]\n    hi = upper_bound(nums, target) - 1    # last index of target\n    return [lo, hi]\n```\n\n - Two O(log n) searches; do not binary-search once and then scan linearly (worst case O(n) with many duplicates).\n - Uses `lower_bound` / `upper_bound` from the previous cards.",
+    "lc": 34,
+    "source": "notes/binary_search.py"
+  },
+  {
+    "id": "binary-search-search-insert-position",
+    "theme": "binary-search",
+    "kind": "problem",
+    "front": "LC 35 Search Insert Position: which bound is it and what are the edge cases?",
+    "back": "It is exactly `lower_bound`: the first index with `nums[i] >= target`.\n\n```python\ndef search_insert(nums, target):\n    l, r = 0, len(nums)               # r = n: appending at the end is a valid answer\n    while l < r:\n        mid = l + (r - l) // 2\n        if nums[mid] < target:\n            l = mid + 1\n        else:\n            r = mid\n    return l                          # same as bisect.bisect_left(nums, target)\n```\n\n- Target present -> its (first) index. Absent -> where it would be inserted.\n- Target larger than all -> `len(nums)`; smaller than all -> `0`.\n- O(log n).",
+    "lc": 35,
+    "source": "english/Binary_Search.ipynb"
+  },
+  {
+    "id": "binary-search-find-peak-element",
+    "theme": "binary-search",
+    "kind": "problem",
+    "front": "LC 162 Find Peak Element: why compare `nums[mid]` with `nums[mid + 1]`, and why does it work on an unsorted array?",
+    "back": "Compare with the right neighbour to read the local **slope**, then move toward the rising side: a peak must exist there (values either climb to the end, which counts as a peak because `nums[n] = -inf`, or come back down).\n\n ```python\ndef find_peak_element(nums):              # LC 162, neighbours differ, nums[-1] = nums[n] = -inf\n    l, r = 0, len(nums) - 1\n    while l < r:                          # stops with exactly one candidate\n        mid = l + (r - l) // 2            # lower mid, so mid + 1 <= r is valid\n        if nums[mid] < nums[mid + 1]:\n            l = mid + 1                   # rising: a peak exists to the right of mid\n        else:\n            r = mid                       # falling: mid itself or something left is a peak\n    return l\n```\n\n - Rising (`nums[mid] < nums[mid+1]`): `mid` is not a peak -> `l = mid + 1`.\n - Otherwise `mid` might be a peak -> keep it: `r = mid`.\n - `l < r` with lower mid guarantees `mid + 1 <= r` is in range.\n - O(log n). Same shape solves mountain-array peak (LC 852).",
+    "lc": 162,
+    "source": "notes/binary_search.py"
+  },
+  {
+    "id": "binary-search-2d-matrix",
+    "theme": "binary-search",
+    "kind": "problem",
+    "front": "LC 74 Search a 2D Matrix: how do you binary-search the matrix as one array, and what are the index formulas?",
+    "back": "Rows are sorted and each row starts after the previous row ends, so the matrix is a sorted array of `m * n` elements read row by row.\n\n ```python\ndef search_matrix(matrix, target):        # LC 74: rows sorted, each row starts above the last row's end\n    m, n = len(matrix), len(matrix[0])\n    l, r = 0, m * n - 1                   # treat the matrix as one sorted array\n    while l <= r:\n        mid = l + (r - l) // 2\n        val = matrix[mid // n][mid % n]   # row = mid // n, col = mid % n (n = columns)\n        if val == target:\n            return True\n        elif val < target:\n            l = mid + 1\n        else:\n            r = mid - 1\n    return False\n```\n\n - `row = mid // n`, `col = mid % n`, with `n` = number of **columns**.\n - Search space `[0, m*n - 1]`; O(log(m*n)) time, O(1) space.\n - If only rows and columns are individually sorted (LC 240), use the staircase walk from a corner instead.",
+    "lc": 74,
+    "source": "notes/binary_search.py"
+  },
+  {
+    "id": "binary-search-rotated-array-search",
+    "theme": "binary-search",
+    "kind": "problem",
+    "front": "LC 33 Search in Rotated Sorted Array: what is the key insight and how do you decide which half to keep?",
+    "back": "After splitting at `mid`, **at least one half is sorted**. Identify it, check whether the target lies inside its range, and keep or discard that half.\n\n ```python\ndef search_rotated(nums, target):         # LC 33 (distinct values)\n    l, r = 0, len(nums) - 1\n    while l <= r:\n        mid = l + (r - l) // 2\n        if nums[mid] == target:\n            return mid\n        if nums[l] <= nums[mid]:          # left half [l, mid] is sorted\n            if nums[l] <= target < nums[mid]:\n                r = mid - 1               # target inside the sorted half\n            else:\n                l = mid + 1\n        else:                             # right half [mid, r] is sorted\n            if nums[mid] < target <= nums[r]:\n                l = mid + 1\n            else:\n                r = mid - 1\n    return -1                             # AFTER the loop (not inside it)\n```\n\n - `nums[l] <= nums[mid]` -> left half sorted (the `<=` covers `l == mid`).\n - Range checks use strict/non-strict correctly because `mid` was already compared.\n - The `return -1` must be **after** the loop (the source notes accidentally indent it inside).\n - O(log n). With duplicates (LC 81) the sorted-half test can fail when `nums[l] == nums[mid] == nums[r]`, degrading to O(n).",
+    "lc": 33,
+    "source": "notes/binary_search.py"
+  },
+  {
+    "id": "binary-search-find-min-rotated",
+    "theme": "binary-search",
+    "kind": "problem",
+    "front": "LC 153 Find Minimum in Rotated Sorted Array: what do you compare `nums[mid]` with, and why `while l < r`?",
+    "back": "Compare with the **right end**, not the left: `nums[mid] > nums[r]` means the rotation point (minimum) is strictly to the right of `mid`.\n\n ```python\ndef find_min(nums):                       # LC 153 (distinct values, rotated ascending)\n    l, r = 0, len(nums) - 1\n    while l < r:                          # l == r is the answer, no equality check needed\n        mid = l + (r - l) // 2\n        if nums[mid] > nums[r]:\n            l = mid + 1                   # min is strictly right of mid\n        else:\n            r = mid                       # mid could be the min: keep it\n    return nums[l]\n```\n\n - Otherwise `nums[mid] <= nums[r]`: `mid` is in the sorted tail, so the min is `mid` or to its left -> `r = mid` (keep mid).\n - Loop exits at `l == r`, the minimum; no separate equality case.\n - Comparing with `nums[l]` is ambiguous when the array is not rotated at all; `nums[r]` handles it.\n - O(log n).",
+    "lc": 153,
+    "source": "notes/binary_search.py"
+  },
+  {
+    "id": "binary-search-answer-space-template",
+    "theme": "binary-search",
+    "kind": "template",
+    "front": "Template: binary search on the answer (\"minimize the maximum\" / smallest x that works). What must be true of `feasible`?",
+    "back": "```python\ndef min_feasible(lo, hi, feasible):       # smallest x in [lo, hi] with feasible(x) True\n    while lo < hi:                        # feasible is monotone: F F F T T T\n        mid = lo + (hi - lo) // 2\n        if feasible(mid):\n            hi = mid                      # mid works: try to go smaller (keep mid)\n        else:\n            lo = mid + 1                  # mid fails: everything <= mid fails too\n    return lo                             # hi must be a guaranteed-feasible upper bound\n```\n\n 1. Define `x` (candidate answer), write `feasible(x)` (a decision problem, usually a greedy O(n) check).\n 2. Choose bounds `[lo, hi]`; `hi` must be feasible.\n 3. `feasible` must be **monotone**: once true, true for all larger `x` (for min problems).\n - For \"largest x that works\", flip: `if feasible(mid): lo = mid + 1 ... return lo - 1` (or use the upper-mid form).\n - Total O(log(range) * cost of feasible).\n - Signals: \"minimum capacity / speed / time / largest-sum such that ...\".",
+    "source": "english/Template_Summary.ipynb"
+  },
+  {
+    "id": "binary-search-koko-bananas",
+    "theme": "binary-search",
+    "kind": "problem",
+    "front": "LC 875 Koko Eating Bananas: what are the search space and the feasibility check?",
+    "back": "Search over speed `k`. Faster never hurts, so `feasible(k) = total hours <= h` is monotone.\n\n ```python\ndef min_eating_speed(piles, h):           # LC 875\n    def feasible(k):                      # can Koko finish within h hours at speed k?\n        return sum(-(-p // k) for p in piles) <= h      # -(-p // k) == ceil(p / k)\n    return min_feasible(1, max(piles), feasible)        # speed in [1, max pile]\n```\n\n - Bounds: `1` (slowest) to `max(piles)` (one pile per hour is always enough, given `h >= len(piles)`).\n - Hours for a pile: `ceil(p / k)`, written `-(-p // k)` to avoid floats.\n - O(n log(max pile)) time, O(1) space.",
+    "lc": 875,
+    "source": "notes/binary_search.py"
+  },
+  {
+    "id": "binary-search-ship-packages",
+    "theme": "binary-search",
+    "kind": "problem",
+    "front": "LC 1011 Capacity to Ship Packages Within D Days: what are the bounds and the greedy check?",
+    "back": "Search over ship capacity. Feasibility: load packages **in order**, start a new day when the next one would overflow; feasible iff days needed <= D.\n\n ```python\ndef ship_within_days(weights, days):      # LC 1011\n    def feasible(cap):                    # greedy: load in order, new day when full\n        need, cur = 1, 0\n        for w in weights:\n            if cur + w > cap:\n                need += 1\n                cur = 0\n            cur += w\n        return need <= days\n    return min_feasible(max(weights), sum(weights), feasible)   # cap >= heaviest item\n```\n\n - Lower bound `max(weights)` (must fit the heaviest package), upper bound `sum(weights)` (everything in one day).\n - Same skeleton as Koko; only `feasible` changes.\n - O(n log(sum)) time, O(1) space.",
+    "lc": 1011,
+    "source": "english/Binary_Search.ipynb"
+  },
+  {
+    "id": "binary-search-smallest-divisor",
+    "theme": "binary-search",
+    "kind": "problem",
+    "front": "LC 1283 Find the Smallest Divisor Given a Threshold: bounds and the classic off-by-one?",
+    "back": "Search over the divisor. A larger divisor makes the sum of `ceil(x / dv)` smaller or equal, so feasibility is monotone.\n\n ```python\ndef smallest_divisor(nums, threshold):    # LC 1283\n    def feasible(dv):                     # sum of ceil(x / dv) must stay <= threshold\n        return sum(-(-x // dv) for x in nums) <= threshold\n    return min_feasible(1, max(nums), feasible)         # divisor >= 1, never 0\n```\n\n - Lower bound is **1** (divisor 0 is invalid), upper bound `max(nums)` (every term becomes 1).\n - Use integer ceil, `-(-x // dv)`, not `x // dv`.\n - O(n log(max)) time.",
+    "lc": 1283,
+    "source": "english/Binary_Search.ipynb"
+  },
+  {
+    "id": "binary-search-single-element-sorted",
+    "theme": "binary-search",
+    "kind": "problem",
+    "front": "LC 540 Single Element in a Sorted Array (all others appear twice): how do you choose the side in O(log n)?",
+    "back": "Before the single element, pairs occupy `(even, odd)` indices; after it they shift to `(odd, even)`. Test the pair starting at an even `mid`.\n\n ```python\ndef single_non_duplicate(nums):           # LC 540: every value appears twice except one\n    l, r = 0, len(nums) - 1               # len(nums) is odd\n    while l < r:\n        mid = l + (r - l) // 2\n        if mid % 2 == 1:\n            mid -= 1                      # force mid to an EVEN index\n        if nums[mid] == nums[mid + 1]:    # pairs still aligned up to mid+1\n            l = mid + 2                   # single element is to the right\n        else:\n            r = mid                       # pairing broke at or before mid\n    return nums[l]\n```\n\n - `nums[mid] == nums[mid + 1]` (mid even): pairing intact -> single is to the right (`l = mid + 2`).\n - Otherwise the single is at `mid` or to the left (`r = mid`).\n - Array length is odd, so `mid + 1 <= r` always holds after adjusting mid down.\n - O(log n).",
+    "lc": 540,
+    "source": "english/Binary_Search.ipynb"
+  },
+  {
+    "id": "binary-search-next-greater-letter",
+    "theme": "binary-search",
+    "kind": "problem",
+    "front": "LC 744 Find Smallest Letter Greater Than Target: how do you handle \"no larger letter\" cleanly?",
+    "back": "It is an **upper bound** (first letter strictly greater than target); if none exists, wrap around to the first letter.\n\n ```python\ndef next_greatest_letter(letters, target):    # LC 744: sorted, circular\n    i = bisect.bisect_right(letters, target)  # first letter strictly greater\n    return letters[i % len(letters)]          # i == n wraps to the first letter\n```\n\n - `bisect_right` (not `bisect_left`): a letter equal to the target does not count.\n - `i % len(letters)` handles the wrap in one expression.\n - O(log n).",
+    "lc": 744,
+    "source": "english/Binary_Search.ipynb"
+  },
+  {
+    "id": "binary-search-find-duplicate-value-space",
+    "theme": "binary-search",
+    "kind": "problem",
+    "front": "LC 287 Find the Duplicate Number with binary search: what are you searching over and what is the predicate?",
+    "back": "Search over **values** `1..n`, not indices. Count how many array elements are `<= mid`; by pigeonhole, if `count > mid` the duplicate lies in `[l, mid]`.\n\n ```python\ndef find_duplicate(nums):                 # LC 287: n+1 values in [1, n], binary search on VALUES\n    l, r = 1, len(nums) - 1\n    while l < r:\n        mid = l + (r - l) // 2\n        count = sum(1 for x in nums if x <= mid)\n        if count > mid:                   # pigeonhole: too many values <= mid\n            r = mid                       # duplicate is in [l, mid]\n        else:\n            l = mid + 1\n    return l\n```\n\n - No sorting or extra space; array unmodified.\n - O(n log n) time, O(1) space (Floyd cycle detection is O(n)).\n - Example of binary search where the array itself is **not sorted** but the predicate is monotone.",
+    "lc": 287,
+    "source": "english/Binary_Search.ipynb"
+  },
+  {
+    "id": "binary-search-overflow-safe-mid",
+    "theme": "binary-search",
+    "kind": "gotcha",
+    "front": "Why write `mid = l + (r - l) // 2` instead of `(l + r) // 2`, and does it matter in Python?",
+    "back": "In fixed-width integer languages (C++, Java) `l + r` can overflow past 2^31 - 1 for large indices, giving a negative `mid`. `l + (r - l) // 2` never exceeds `r`.\n\n- **Python ints are arbitrary precision**, so `(l + r) // 2` cannot overflow, but the safe form is a good habit and interviewers look for it.\n- Both round **down** (toward `l`). This rounding matters for termination (see the infinite-loop card).\n- Answer-space searches over huge ranges (e.g. up to 10^18) are exactly where this bites in other languages.",
+    "source": "english/Template_Summary.ipynb"
+  },
+  {
+    "id": "binary-search-infinite-loop-check",
+    "theme": "binary-search",
+    "kind": "gotcha",
+    "front": "Binary search infinite loop: how do you check a loop is safe, and when do you need the upper mid?",
+    "back": "Test the **smallest window** (`r == l + 1`). Lower mid is `l`; if an update sets `l = mid` you get no progress -> infinite loop.\n\n - Updates `l = mid + 1` and `r = mid` (or `r = mid - 1`) always shrink the window: safe with lower mid.\n - If a branch must keep `l = mid`, use the **upper mid**:\n\n ```python\n# closed form that moves with l = mid needs the UPPER mid:\nl, r = 0, len(nums) - 1\nwhile l < r:\n    mid = l + (r - l + 1) // 2            # +1 rounds up; lower mid would loop when r == l + 1\n    if nums[mid] <= x:\n        l = mid                           # keeps mid -> no progress unless mid > l\n    else:\n        r = mid - 1\n# l is the LAST index with nums[l] <= x (assuming nums[0] <= x)\n```\n\n - Also confirm the loop condition: `l <= r` pairs with `mid +/- 1` on both sides; `l < r` pairs with one side keeping `mid`.\n - Tip: avoid a bare `else`; write the cases as `if / elif / elif` so each condition and its update is explicit.",
+    "source": "english/Binary_Search.ipynb"
+  },
+  {
+    "id": "binary-search-when-to-use-pattern",
+    "theme": "binary-search",
+    "kind": "pattern",
+    "front": "Problem signal -> binary search: which cues (index space vs answer space) say to use it?",
+    "back": "- **Sorted array** (or sortable) and a target, insertion point, first/last occurrence -> index-space search (bounds).\n- \"Find in a **rotated** array\", \"find a **peak**\" -> the array is not fully sorted, but each step can discard half using local structure (which half is sorted / which way is the slope).\n- \"**Minimum x such that** ...\" / \"**minimize the maximum**\" / \"smallest capacity, speed, time, divisor\" -> answer-space search with a monotone `feasible(x)`.\n- Requirement of O(log n) is a strong hint.\n- Not applicable when the predicate is not monotone (no threshold), or when duplicates make halves indistinguishable without a linear fallback.",
+    "source": "notes/general-guidance.md"
+  }
+]

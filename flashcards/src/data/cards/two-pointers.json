@@ -1,0 +1,150 @@
+[
+  {
+    "id": "two-pointers-decision-checklist",
+    "theme": "two-pointers",
+    "kind": "pattern",
+    "front": "Problem signal -> which two-pointer variant? (converging / same-direction / window / fast-slow)",
+    "back": "Match the signal to the variant:\n\n| Signal | Variant |\n|---|---|\n| Sorted (or sortable) array, pair/triplet by sum | Converging `l=0, r=n-1` |\n| Filter / dedupe / partition **in place**, keep order | Same-direction `slow` (write) + `fast` (scan) |\n| Contiguous subarray/substring, \"longest/shortest/at most K\" | Sliding window (`left`, `right`) |\n| Linked list / functional graph, cycle or midpoint in O(1) space | Fast-slow at different speeds |\n| Two sorted inputs to combine | One pointer per array (merge) |\n| Palindromes | Converge inward, or expand outward from a center |\n\nNone of these fit? It is probably **not** two pointers - try a hashmap or DP first.",
+    "source": "notes/Two_Pointers.md"
+  },
+  {
+    "id": "two-pointers-converging-template",
+    "theme": "two-pointers",
+    "kind": "template",
+    "front": "Template: converging two pointers on a sorted array (LC 167). What is the loop condition and why can we discard one end each step?",
+    "back": "```python\ndef two_sum_sorted(numbers, target):     # LC 167 (1-indexed answer)\n    l, r = 0, len(numbers) - 1\n    while l < r:                          # l == r would reuse one element\n        s = numbers[l] + numbers[r]\n        if s == target:\n            return [l + 1, r + 1]\n        elif s < target:\n            l += 1                        # need a bigger sum -> only l can help\n        else:\n            r -= 1                        # need a smaller sum -> only r can help\n    return []\n```\n\n - Loop `while l < r`: `l == r` would use the same element twice.\n - **Why it is safe**: if the sum is too small, `numbers[l]` can never pair with anything smaller than `numbers[r]` to reach target, so `l` is discarded (symmetric for `r`). No valid pair is skipped.\n - O(n) time, O(1) space (vs O(n^2) brute force).",
+    "lc": 167,
+    "source": "notes/Two_Pointers.md"
+  },
+  {
+    "id": "two-pointers-compaction-template",
+    "theme": "two-pointers",
+    "kind": "template",
+    "front": "Template: same-direction slow/fast pointers to filter an array in place. What does each pointer mean and what is returned?",
+    "back": "```python\ndef compact(nums, keep):\n    slow = 0                              # next write position\n    for fast in range(len(nums)):         # fast = scanner\n        if keep(nums[fast]):\n            nums[slow] = nums[fast]\n            slow += 1\n    return slow                           # nums[:slow] is the kept prefix\n```\n\n - `slow` = next write position (also the count of kept items); `fast` = scanner.\n - Never `remove`/`del` while iterating - indices shift. Overwrite (dedupe/remove) or swap (partition) instead.\n - Python strings are immutable: convert with `list(s)`, mutate, `''.join(...)`.\n - O(n) time, O(1) extra space, order preserved.",
+    "source": "notes/Two_Pointers.md"
+  },
+  {
+    "id": "two-pointers-remove-duplicates-sorted",
+    "theme": "two-pointers",
+    "kind": "problem",
+    "front": "LC 26 Remove Duplicates from Sorted Array: how do slow/fast pointers do it in place?",
+    "back": "Keep `last` = index of the last unique value; when `nums[fast] != nums[last]`, advance `last` and copy.\n\n ```python\ndef remove_duplicates(nums):              # LC 26, sorted input\n    if not nums:\n        return 0\n    last = 0                              # index of last unique value\n    for fast in range(1, len(nums)):\n        if nums[fast] != nums[last]:\n            last += 1\n            nums[last] = nums[fast]\n    return last + 1\n```\n\n - Relies on the array being sorted (duplicates are adjacent). Unsorted -> use a set.\n - O(n) time, O(1) space. Result is `nums[:k]`.",
+    "lc": 26,
+    "source": "english/Two_Pointers.ipynb"
+  },
+  {
+    "id": "two-pointers-move-zeroes",
+    "theme": "two-pointers",
+    "kind": "problem",
+    "front": "LC 283 Move Zeroes: in-place, keep the order of non-zeros. What is the swap-based solution?",
+    "back": "Compaction with a swap: `fast` scans, `slow` marks where the next non-zero belongs.\n\n ```python\ndef move_zeroes(nums):                    # LC 283\n    slow = 0\n    for fast in range(len(nums)):\n        if nums[fast] != 0:\n            nums[slow], nums[fast] = nums[fast], nums[slow]\n            slow += 1\n```\n\n - Alternative (two independent steps): copy all non-zeros to the front, then fill the rest with `0`.\n - Swapping keeps it to one pass and minimal writes. O(n) time, O(1) space.\n - `slow == fast` swaps are harmless self-swaps.",
+    "lc": 283,
+    "source": "notes/Two_Pointers.md"
+  },
+  {
+    "id": "two-pointers-sliding-window-template",
+    "theme": "two-pointers",
+    "kind": "template",
+    "front": "Template: variable-size sliding window (fill in the skeleton). What is true at the `update answer` line?",
+    "back": "```python\ndef window(seq):\n    left = 0\n    state = ...                           # counter / set / running sum\n    best = ...\n    for right in range(len(seq)):\n        add(seq[right])                   # 1. expand: include the entering element\n        while invalid():                  # 2. shrink until valid again\n            remove(seq[left])             #    undo exactly the LEAVING element\n            left += 1\n        best = max(best, right - left + 1)  # 3. window [left, right] is valid here\n    return best\n```\n\n - At step 3 the window `[left, right]` is **valid** (`right - left + 1` is its length).\n - Key questions: how do I update state on add? when do I shrink? what exactly is undone on remove?\n - O(n): each pointer moves forward at most n times. Space O(1) or O(window state).",
+    "source": "notes/Two_Pointers.md"
+  },
+  {
+    "id": "two-pointers-window-when-to-shrink",
+    "theme": "two-pointers",
+    "kind": "concept",
+    "front": "Sliding window checklist: when does the technique apply, and when do you shrink?",
+    "back": "It applies to **contiguous** subarrays/substrings whose constraint is **monotonic**: if a window is valid, any sub-window is too (or the reverse).\n\n- Shrink exactly when the constraint is violated (`while`, not `if` - one removal may not restore validity).\n- Signals: \"longest/shortest ... with property X\", \"at most K distinct\", \"at most K zeros/flips\".\n- Negative numbers usually break monotonicity for sum constraints (LC 209 needs positives) -> use prefix sums + hashmap instead.\n- Fixed-size window (size k): build the first window, then slide: add `s[i]`, remove `s[i-k]`.",
+    "source": "notes/Two_Pointers.md"
+  },
+  {
+    "id": "two-pointers-window-max-min-placement",
+    "theme": "two-pointers",
+    "kind": "gotcha",
+    "front": "Sliding window: where do you update the answer - outside or inside the shrink `while`? (LC 3 vs LC 209)",
+    "back": "- **Longest/max** window (LC 3): update **after** the `while`, when the window is valid again.\n - **Shortest/min** window (LC 209): update **inside** the `while`, because every iteration is a valid window you may still improve by shrinking.\n\n ```python\ndef min_sub_array_len(target, nums):      # LC 209 (positives only)\n    left = total = 0\n    best = float('inf')\n    for right, x in enumerate(nums):\n        total += x\n        while total >= target:            # window is valid -> try to shrink it\n            best = min(best, right - left + 1)   # min: update INSIDE the while\n            total -= nums[left]\n            left += 1\n    return 0 if best == float('inf') else best\n```\n\n Updating a min after the loop would record an invalid or already-shrunk window.",
+    "lc": 209,
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "two-pointers-window-count-constraint",
+    "theme": "two-pointers",
+    "kind": "gotcha",
+    "front": "Sliding window gotcha: \"count the constraint, not the target\" (e.g. flip at most k zeros to get the longest run of 1s)",
+    "back": "Track the **limited resource** (zeros in the window), not the thing you are maximizing (ones).\n\n ```python\ndef longest_ones(nums, k):                # LC 1004: flip at most k zeros\n    left = zeros = 0\n    best = 0\n    for right, x in enumerate(nums):\n        if x == 0:\n            zeros += 1                    # track the LIMITED RESOURCE (zeros)\n        while zeros > k:                  # constraint violated\n            if nums[left] == 0:           # only reclaim when the leaver is a 0\n                zeros -= 1\n            left += 1\n        best = max(best, right - left + 1)\n    return best\n```\n\n - Window valid iff `zeros <= k`; the length `right - left + 1` already equals native 1s + flipped 0s.\n - Decrement the counter only when the element leaving is the tracked one (`nums[left] == 0`).\n - Also: a question asking for a count/length/sum needs numbers, not stored items.",
+    "lc": 1004,
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "two-pointers-window-pop0-gotcha",
+    "theme": "two-pointers",
+    "kind": "gotcha",
+    "front": "Why is `list.pop(0)` / `del lst[0]` a bug-magnet inside a sliding window, and what do you use instead?",
+    "back": "`pop(0)` shifts every remaining element: **O(k)** per call, so an O(n) window becomes O(n*k).\n\n- Track a `left` index instead of physically removing items.\n- If you truly need FIFO removal, use `collections.deque` (`popleft()` is O(1)).\n- Prefer a `set`/`Counter` for membership and counts (`x in list` is O(k) too).\n- Update state for the **exact** element entering (`s[right]`) and leaving (`s[left]`).",
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "two-pointers-longest-substring-no-repeat",
+    "theme": "two-pointers",
+    "kind": "problem",
+    "front": "LC 3 Longest Substring Without Repeating Characters: window approach and complexity?",
+    "back": "Window = substring with all-distinct chars; shrink while the entering char is already in the window.\n\n ```python\ndef length_of_longest_substring(s):       # LC 3\n    seen = set()\n    left = best = 0\n    for right, ch in enumerate(s):\n        while ch in seen:                 # duplicate -> shrink until gone\n            seen.remove(s[left])\n            left += 1\n        seen.add(ch)\n        best = max(best, right - left + 1)   # max: update OUTSIDE the while\n    return best\n```\n\n - O(n) time (each char added and removed at most once), O(min(n, alphabet)) space.\n - Faster variant: store `last_seen[ch]` and jump `left = max(left, last_seen[ch] + 1)`.",
+    "lc": 3,
+    "source": "notes/Two_Pointers.md"
+  },
+  {
+    "id": "two-pointers-fixed-window",
+    "theme": "two-pointers",
+    "kind": "pattern",
+    "front": "Fixed-size window of length k (e.g. max vowels in any length-k substring, LC 1456): how do you slide it?",
+    "back": "Build the first window explicitly, then for each new index add the entering item and remove the leaving one (`s[i-k]`).\n\n ```python\ndef max_vowels(s, k):                     # LC 1456: fixed-size window\n    vowels = set('aeiou')\n    cur = sum(1 for i in range(k) if s[i] in vowels)   # build first window\n    best = cur\n    for i in range(k, len(s)):\n        cur += s[i] in vowels             # entering element s[i]\n        cur -= s[i - k] in vowels         # leaving element s[i-k]\n        best = max(best, cur)\n    return best\n```\n\n - O(n) time, O(1) space; avoids recomputing k items per position.\n - Same shape: LC 643 (max average subarray), LC 1984, LC 567 (permutation in string, compare counts).",
+    "lc": 1456,
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "two-pointers-container-with-most-water",
+    "theme": "two-pointers",
+    "kind": "problem",
+    "front": "LC 11 Container With Most Water: why move the pointer at the shorter wall?",
+    "back": "Area = width * min(heights). Moving the **taller** wall inward shrinks width and cannot raise the min, so it can never improve; only moving the shorter one might.\n\n ```python\ndef max_area(height):                     # LC 11\n    l, r = 0, len(height) - 1\n    best = 0\n    while l < r:\n        best = max(best, (r - l) * min(height[l], height[r]))\n        if height[l] < height[r]:\n            l += 1                        # the shorter wall limits the area\n        else:\n            r -= 1\n    return best\n```\n\n - O(n) time, O(1) space.\n - Same converging shape as LC 167, but the decision uses heights instead of a sum.",
+    "lc": 11,
+    "source": "notes/Two_Pointers.md"
+  },
+  {
+    "id": "two-pointers-three-sum",
+    "theme": "two-pointers",
+    "kind": "problem",
+    "front": "LC 15 3Sum: how do you reduce it to two pointers and avoid duplicate triplets?",
+    "back": "Sort, fix the anchor `i`, then run converging pointers on the suffix (two-sum on a sorted array for `-nums[i]`).\n\n ```python\ndef three_sum(nums):                      # LC 15\n    nums.sort()\n    res = []\n    for i in range(len(nums) - 2):\n        if i and nums[i] == nums[i - 1]:  # skip duplicate anchors\n            continue\n        l, r = i + 1, len(nums) - 1\n        while l < r:\n            s = nums[i] + nums[l] + nums[r]\n            if s < 0:\n                l += 1\n            elif s > 0:\n                r -= 1\n            else:\n                res.append([nums[i], nums[l], nums[r]])\n                l += 1\n                while l < r and nums[l] == nums[l - 1]:   # skip duplicate values\n                    l += 1\n    return res\n```\n\n - Skip duplicate anchors and, after a hit, duplicate `l` values.\n - O(n^2) time, O(1) extra space (besides output and the sort). Same idea extends to 3Sum Closest (LC 16) and 4Sum (LC 18).",
+    "lc": 15,
+    "source": "notes/Two_Pointers.md"
+  },
+  {
+    "id": "two-pointers-merge-from-back",
+    "theme": "two-pointers",
+    "kind": "problem",
+    "front": "LC 88 Merge Sorted Array: why merge from the back, and what is left over at the end?",
+    "back": "`nums1` has free space at the end. Writing from the back (largest first) never overwrites unread elements of `nums1`.\n\n ```python\ndef merge(nums1, m, nums2, n):            # LC 88, nums1 has n spare slots at the end\n    p1, p2, w = m - 1, n - 1, m + n - 1   # w = write index, from the back\n    while p1 >= 0 and p2 >= 0:\n        if nums1[p1] > nums2[p2]:\n            nums1[w] = nums1[p1]\n            p1 -= 1\n        else:\n            nums1[w] = nums2[p2]\n            p2 -= 1\n        w -= 1\n    nums1[:p2 + 1] = nums2[:p2 + 1]       # leftover nums2; leftover nums1 is already in place\n```\n\n - Only leftover `nums2` needs copying; leftover `nums1` is already in place.\n - Merging from the front would need O(m) extra space or O(m*n) shifting.\n - O(m + n) time, O(1) space.",
+    "lc": 88,
+    "source": "notes/Two_Pointers.md"
+  },
+  {
+    "id": "two-pointers-expand-around-center",
+    "theme": "two-pointers",
+    "kind": "problem",
+    "front": "LC 5 Longest Palindromic Substring: what is expand-around-center and how many centers are there?",
+    "back": "Treat each index (odd length) and each gap between adjacent indices (even length) as a center; expand outward while the ends match. That is `2n - 1` centers.\n\n ```python\ndef longest_palindrome(s):                # LC 5\n    start = end = 0\n    def expand(l, r):\n        while l >= 0 and r < len(s) and s[l] == s[r]:\n            l -= 1\n            r += 1\n        return r - l - 1                  # length of the palindrome found\n    for i in range(len(s)):\n        n = max(expand(i, i), expand(i, i + 1))   # odd center, even center\n        if n > end - start + 1:\n            start = i - (n - 1) // 2\n            end = i + n // 2\n    return s[start:end + 1]\n```\n\n - Start index from length `n` and center `i`: `i - (n - 1) // 2`.\n - O(n^2) time, O(1) space. (Manacher's algorithm is O(n) but rarely expected.)",
+    "lc": 5,
+    "source": "notes/Two_Pointers.md"
+  },
+  {
+    "id": "two-pointers-floyd-array-duplicate",
+    "theme": "two-pointers",
+    "kind": "problem",
+    "front": "LC 287 Find the Duplicate Number: how does Floyd cycle detection apply to an array with no linked list?",
+    "back": "Treat index `i` as a node with `next = nums[i]`. Values are in `[1, n]` for `n + 1` slots, so index 0 is never a target and two indices point to the duplicate value -> a cycle whose **entrance is the duplicate**.\n\n ```python\ndef find_duplicate(nums):                 # LC 287: n+1 values in [1, n], read-only\n    slow = fast = 0                       # i -> nums[i] is a \"next\" pointer\n    while True:\n        slow = nums[slow]\n        fast = nums[nums[fast]]\n        if slow == fast:\n            break                         # phase 1: meet inside the cycle\n    slow = 0\n    while slow != fast:                   # phase 2: walk from head and meeting point\n        slow = nums[slow]\n        fast = nums[fast]\n    return slow                           # cycle entrance = duplicate value\n```\n\n - O(n) time, O(1) space, array not modified (unlike sorting or negative-marking).\n - Phase 2 works for the same reason as LC 142: head-to-entrance distance equals meeting-point-to-entrance distance (mod cycle length).",
+    "lc": 287,
+    "source": "notes/Two_Pointers.md"
+  }
+]

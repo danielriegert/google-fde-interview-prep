@@ -1,0 +1,165 @@
+[
+  {
+    "id": "stack-queue-python-stack",
+    "theme": "stack-queue",
+    "kind": "concept",
+    "front": "How do you use a stack in Python, and what are the push/pop/peek costs?",
+    "back": "A plain `list` is the stack; the **right end is the top**.\n\n```python\nstack = []\nstack.append(x)      # push  O(1) amortized\ntop = stack[-1]      # peek  O(1)\nx = stack.pop()      # pop   O(1)\nif not stack: ...    # empty check (don't call pop() on empty -> IndexError)\n```\n\n- `collections.deque` also works as a stack (`append`/`pop`); no real advantage over a list here.\n- Linked-list stacks have no advantage in Python: pushes/pops only touch one end, which a dynamic array already does in O(1).\n- Space O(n).",
+    "source": "english/Stack_and_Queue_Part1_Stack.ipynb"
+  },
+  {
+    "id": "stack-queue-python-queue-deque",
+    "theme": "stack-queue",
+    "kind": "gotcha",
+    "front": "Python queue: why must you never use `list.pop(0)`, and how do `deque` and `queue.Queue` differ?",
+    "back": "`list.pop(0)` shifts every remaining element: **O(n)**. A BFS with it becomes O(n^2).\n\n```python\nfrom collections import deque\nq = deque([start])\nq.append(x)          # enqueue at the back  O(1)\nfront = q.popleft()  # dequeue from the front O(1)\n```\n\n- `deque`: doubly-ended, O(1) at both ends; the **left is the front** of the queue. Indexing the middle (`q[i]`) is O(n).\n- `queue.Queue`: thread-safe, blocking `put()/get()` (`get` on empty waits). It has locking overhead - use it for producer/consumer threads, not for BFS.\n- Use `deque(maxlen=k)` for a fixed-size sliding buffer (old items drop off automatically).",
+    "source": "english/Stack_and_Queue_Part2_Queue.ipynb"
+  },
+  {
+    "id": "stack-queue-when-stack-pattern",
+    "theme": "stack-queue",
+    "kind": "pattern",
+    "front": "Which problem signals say \"use a stack\"?",
+    "back": "- **Matching / nesting**: brackets, tags, decode `k[...]` (LC 20, 394).\n- **Undo / cancel / cascading deletion of the most recent item**: remove adjacent duplicates, `#` backspace, `..` in a path (LC 1047, 71).\n- **Postfix / expression evaluation** with operands on the stack (LC 150).\n- **Collisions where the latest survivor fights the newcomer** (LC 735).\n- **\"Next greater/smaller element\"** -> monotonic stack.\n- Iterative DFS / replacing recursion.\n\nMethod: brute-force it first, spot the repeated work, and ask whether a stack can keep exactly the still-relevant items. Multi-digit numbers need `k = k*10 + int(ch)`; sometimes you need two stacks (numbers and strings).",
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "stack-queue-bracket-matching-template",
+    "theme": "stack-queue",
+    "kind": "template",
+    "front": "Template: valid brackets with a stack (LC 20). What are the three failure cases?",
+    "back": "```python\ndef is_valid(s):                          # LC 20\n    pairs = {')': '(', ']': '[', '}': '{'}\n    stack = []\n    for ch in s:\n        if ch in pairs:                   # closer: must match the top opener\n            if not stack or stack.pop() != pairs[ch]:\n                return False\n        else:\n            stack.append(ch)              # opener\n    return not stack                      # leftover openers -> invalid\n```\n\n Invalid when: (1) a closer arrives with an **empty** stack, (2) it does not match the top, (3) openers are **left over** at the end.\n - O(n) time, O(n) space.\n - Odd length can early-exit. Variant: min additions to make it valid = unmatched closers + leftover openers (LC 921).",
+    "lc": 20,
+    "source": "english/Stack_and_Queue_Part1_Stack.ipynb"
+  },
+  {
+    "id": "stack-queue-monotonic-stack-template",
+    "theme": "stack-queue",
+    "kind": "template",
+    "front": "Template: monotonic stack for \"next greater element\" (forward pass). What does the stack hold and when do you pop?",
+    "back": "```python\ndef next_greater(nums):\n    res = [-1] * len(nums)\n    stack = []                            # INDICES; values strictly decrease bottom -> top\n    for i, x in enumerate(nums):\n        while stack and nums[stack[-1]] < x:   # x is the next greater for the popped\n            res[stack.pop()] = x\n        stack.append(i)                   # still waiting for its answer\n    return res                            # leftovers keep -1\n```\n\n - Stack holds **indices** of elements still waiting for a greater one; their values decrease bottom -> top.\n - Pop while `nums[top] < x`: `x` is the answer for each popped index.\n - Next **smaller**: flip the comparison (`>`) -> increasing stack (`[4,8,5,2,25]` -> `[2,5,2,-1,-1]`).\n - LC 496 = run this on `nums2`, store answers in a dict, look up `nums1`.",
+    "source": "notes/stacks_and_queues.py"
+  },
+  {
+    "id": "stack-queue-monotonic-stack-indices-strict",
+    "theme": "stack-queue",
+    "kind": "gotcha",
+    "front": "Monotonic stack gotchas: store indices or values? `<` or `<=` when popping? Forward or backward pass?",
+    "back": "- **Indices, not values**: you can still read `nums[i]`, and you need positions for distances (LC 739) or widths. Store values only when you never need positions (the backward version below).\n - **Strictness decides ties**: forward pass with `pop while nums[top] < x` answers \"next *strictly* greater\"; with `<=` it becomes \"next greater-or-equal\" (equal elements get resolved too).\n - Backward pass (from the notes' template) must use `<=` so that only strictly greater values survive:\n\n ```python\ndef next_greater_backward(nums):\n    res = [-1] * len(nums)\n    stack = []                            # candidates to the right, decreasing toward top\n    for i in range(len(nums) - 1, -1, -1):\n        while stack and stack[-1] <= nums[i]:  # <= : we want STRICTLY greater\n            stack.pop()                   # too small to matter for anything to the left\n        res[i] = stack[-1] if stack else -1\n        stack.append(nums[i])\n    return res\n```\n\n - Forward and backward give identical answers; forward also works on linked lists and streams.\n - Decreasing stack -> next greater; increasing stack -> next smaller.",
+    "source": "english/Template_Summary.ipynb"
+  },
+  {
+    "id": "stack-queue-monotonic-stack-complexity",
+    "theme": "stack-queue",
+    "kind": "complexity",
+    "front": "Why is a monotonic stack O(n) overall even though there is a `while` inside the `for`?",
+    "back": "**Amortized analysis**: every element is pushed exactly once and popped at most once, so total pops <= n. The inner `while` does O(n) work in total across all iterations, not per iteration.\n\n- Time O(n), space O(n) (stack + result).\n- Nested loops \"for each i, scan right until greater\" would be O(n^2) on a decreasing array.\n- Same amortized argument applies to the monotonic queue and to two-pointer windows.",
+    "source": "english/Stack_and_Queue_Part1_Stack.ipynb"
+  },
+  {
+    "id": "stack-queue-daily-temperatures",
+    "theme": "stack-queue",
+    "kind": "problem",
+    "front": "LC 739 Daily Temperatures: how does the monotonic stack give days-until-warmer in O(n)?",
+    "back": "Keep a stack of indices of days still waiting for a warmer day; a warmer day `i` resolves all colder days on top of the stack.\n\n ```python\ndef daily_temperatures(temps):            # LC 739: days until a warmer day\n    res = [0] * len(temps)\n    stack = []                            # indices of days still waiting\n    for i, t in enumerate(temps):\n        while stack and temps[stack[-1]] < t:\n            j = stack.pop()\n            res[j] = i - j                # distance in DAYS -> that is why we store indices\n        stack.append(i)\n    return res\n```\n\n - The answer is an **index difference**, which is why indices (not temperatures) go on the stack.\n - Equal temperatures do not pop (need strictly warmer). Leftover days keep `0`.\n - O(n) time, O(n) space. Same shape: LC 901 (stock span looks backward for previous greater).",
+    "lc": 739,
+    "source": "english/Stack_and_Queue_Part1_Stack.ipynb"
+  },
+  {
+    "id": "stack-queue-next-greater-circular",
+    "theme": "stack-queue",
+    "kind": "problem",
+    "front": "LC 503 Next Greater Element II (circular array): how do you handle the wrap-around?",
+    "back": "Loop `2n` times and read `nums[i % n]`; only push indices in the first pass.\n\n ```python\ndef next_greater_circular(nums):          # LC 503\n    n = len(nums)\n    res = [-1] * n\n    stack = []\n    for i in range(2 * n):                # two passes simulate the wrap-around\n        x = nums[i % n]\n        while stack and nums[stack[-1]] < x:\n            res[stack.pop()] = x\n        if i < n:                         # only push indices in the first pass\n            stack.append(i)\n    return res\n```\n\n - Second pass lets elements near the end find greater elements at the front.\n - General trick for circular arrays: conceptually double the array (use `% n` instead of copying it).\n - O(n) time, O(n) space.",
+    "lc": 503,
+    "source": "english/Stack_and_Queue_Part1_Stack.ipynb"
+  },
+  {
+    "id": "stack-queue-monotonic-queue-template",
+    "theme": "stack-queue",
+    "kind": "template",
+    "front": "Template: monotonic (deque) queue to get the max of every length-k window in O(n). What invariant does the deque keep?",
+    "back": "```python\nfrom collections import deque\n\ndef sliding_window_max(nums, k):          # max of every length-k window, O(n)\n    dq = deque()                          # INDICES; nums[dq[0]] >= nums[dq[1]] >= ...\n    out = []\n    for i, x in enumerate(nums):\n        while dq and nums[dq[-1]] <= x:   # dominated: older AND smaller -> never the max\n            dq.pop()\n        dq.append(i)\n        if dq[0] <= i - k:                # front slid out of the window\n            dq.popleft()\n        if i >= k - 1:\n            out.append(nums[dq[0]])       # front = current window max\n    return out\n```\n\n - Deque holds **indices**; their values are decreasing front -> back, so the **front is the window max**.\n - Back: pop while the new value is >= them (they are older and smaller, so they can never be a max again).\n - Front: `popleft()` when its index leaves the window (`<= i - k`).\n - O(n) time (each index in/out once), O(k) space. Min version: flip the comparison.",
+    "source": "english/Stack_and_Queue_Part2_Queue.ipynb"
+  },
+  {
+    "id": "stack-queue-monotonic-queue-vs-heap",
+    "theme": "stack-queue",
+    "kind": "concept",
+    "front": "When do you need a monotonic queue instead of a heap or recomputing the max?",
+    "back": "Scenario: a window where adding is easy (compare with current max) but **removing** the oldest element may invalidate the max.\n\n- Recompute each time: O(k) per step -> O(nk).\n- Heap: gives the max but does not track arrival order; expired items need lazy deletion; O(n log n).\n- **Monotonic queue**: keeps both the max **and** FIFO order -> O(n), because every element enters and leaves once.\n\nSignals: \"max/min in every window of size k\", or DP transitions over the last k positions (min/max over a sliding range).",
+    "source": "english/Stack_and_Queue_Part2_Queue.ipynb"
+  },
+  {
+    "id": "stack-queue-circular-queue-extra-slot",
+    "theme": "stack-queue",
+    "kind": "concept",
+    "front": "Circular queue in a fixed array: how do you tell empty from full, and what are the index formulas?",
+    "back": "Use `k + 1` slots and keep one always empty. Then `head == tail` is empty and `(tail + 1) % size == head` is full.\n\n ```python\nclass MyCircularQueue:                    # LC 622\n    def __init__(self, k):\n        self.size = k + 1                 # one spare slot to tell full from empty\n        self.buf = [None] * self.size\n        self.head = self.tail = 0         # head = front, tail = next write slot\n    def enQueue(self, v):\n        if self.isFull():\n            return False\n        self.buf[self.tail] = v\n        self.tail = (self.tail + 1) % self.size\n        return True\n    def deQueue(self):\n        if self.isEmpty():\n            return False\n        self.head = (self.head + 1) % self.size\n        return True\n    def Front(self):\n        return -1 if self.isEmpty() else self.buf[self.head]\n    def Rear(self):\n        return -1 if self.isEmpty() else self.buf[(self.tail - 1) % self.size]\n    def isEmpty(self):\n        return self.head == self.tail\n    def isFull(self):\n        return (self.tail + 1) % self.size == self.head\n```\n\n - `head` = front index, `tail` = next write slot; advance both with `% size`.\n - Last element is at `(tail - 1) % size`.\n - Alternatives to the spare slot: keep a `count`, or a flag for the last operation.\n - Purpose: reuse freed front slots instead of wasting space as `head` moves right. All ops O(1).",
+    "lc": 622,
+    "source": "english/Stack_and_Queue_Part2_Queue.ipynb"
+  },
+  {
+    "id": "stack-queue-min-stack",
+    "theme": "stack-queue",
+    "kind": "problem",
+    "front": "LC 155 Min Stack: how do you get O(1) `getMin` and what is the space-saving variant?",
+    "back": "Store with every element the **minimum so far**, so popping restores the previous min automatically.\n\n ```python\nclass MinStack:                           # LC 155: O(1) push/pop/top/getMin\n    def __init__(self):\n        self.st = []                      # (value, min of stack up to here)\n    def push(self, x):\n        cur_min = min(x, self.st[-1][1]) if self.st else x\n        self.st.append((x, cur_min))\n    def pop(self):\n        self.st.pop()\n    def top(self):\n        return self.st[-1][0]\n    def getMin(self):\n        return self.st[-1][1]\n```\n\n - Naive \"single min variable\" breaks: popping the min forces an O(n) rescan.\n - Space-saver: a second stack that gets a value only when `x <= current min` (the **equal** case matters), popped when the popped value equals its top.\n - All ops O(1); space O(n).",
+    "lc": 155,
+    "source": "english/Stack_and_Queue_Part1_Stack.ipynb"
+  },
+  {
+    "id": "stack-queue-simplify-path",
+    "theme": "stack-queue",
+    "kind": "problem",
+    "front": "LC 71 Simplify Path: how does a stack process the components?",
+    "back": "Split on `/`; `..` pops, `.` and empty strings are ignored, everything else is pushed. Rejoin with a leading `/`.\n\n ```python\ndef simplify_path(path):                  # LC 71\n    stack = []\n    for part in path.split('/'):\n        if part == '..':\n            if stack:                     # '..' at root stays at root\n                stack.pop()\n        elif part and part != '.':        # skip '' (from '//') and '.'\n            stack.append(part)\n    return '/' + '/'.join(stack)\n```\n\n - `'//'` produces empty parts -> must skip them.\n - `..` at the root must not pop an empty stack.\n - O(n) time and space.",
+    "lc": 71,
+    "source": "english/Stack_and_Queue_Part1_Stack.ipynb"
+  },
+  {
+    "id": "stack-queue-eval-rpn",
+    "theme": "stack-queue",
+    "kind": "problem",
+    "front": "LC 150 Evaluate Reverse Polish Notation: what is the loop, and what are the two classic bugs?",
+    "back": "Push numbers; on an operator pop two operands, apply, push the result.\n\n ```python\ndef eval_rpn(tokens):                     # LC 150\n    stack = []\n    for t in tokens:\n        if t in ('+', '-', '*', '/'):\n            b = stack.pop()               # right operand is popped FIRST\n            a = stack.pop()\n            if t == '+': stack.append(a + b)\n            elif t == '-': stack.append(a - b)\n            elif t == '*': stack.append(a * b)\n            else: stack.append(int(a / b))   # truncate toward zero (// floors!)\n        else:\n            stack.append(int(t))          # note: '-3' is a number, not an operator\n    return stack[0]\n```\n\n - **Operand order**: the first pop is the right operand (`a - b`, `a / b`).\n - **Division truncates toward zero** in this problem; `//` floors (`-7 // 2 == -4`). Use `int(a / b)`.\n - A token like `\"-3\"` is a number; test membership in the operator set, not `t[0]`.\n - O(n) time and space.",
+    "lc": 150,
+    "source": "english/Stack_and_Queue_Part1_Stack.ipynb"
+  },
+  {
+    "id": "stack-queue-decode-string",
+    "theme": "stack-queue",
+    "kind": "problem",
+    "front": "LC 394 Decode String (`3[a2[c]]`): what do you push on the stack at `[`?",
+    "back": "On `[`, save the **string built so far and the repeat count**, then start fresh; on `]`, pop and combine: `prev + cur * rep`.\n\n ```python\ndef decode_string(s):                     # LC 394: \"3[a2[c]]\" -> \"accaccacc\"\n    stack = []                            # saved (string before '[', repeat count)\n    cur, k = '', 0\n    for ch in s:\n        if ch.isdigit():\n            k = k * 10 + int(ch)          # multi-digit counts\n        elif ch == '[':\n            stack.append((cur, k))\n            cur, k = '', 0\n        elif ch == ']':\n            prev, rep = stack.pop()\n            cur = prev + cur * rep\n        else:\n            cur += ch\n    return cur\n```\n\n - Nested brackets match LIFO. Conceptually wrap the whole input in an outer `1[...]`.\n - Multi-digit counts: `k = k * 10 + int(ch)`.\n - Two values per frame (string and number) - alternatively use two stacks.\n - O(output length) time.",
+    "lc": 394,
+    "source": "english/Stack_and_Queue_Part1_Stack.ipynb"
+  },
+  {
+    "id": "stack-queue-asteroid-collision",
+    "theme": "stack-queue",
+    "kind": "problem",
+    "front": "LC 735 Asteroid Collision: what is the stack loop, and how does `while ... else` decide survival?",
+    "back": "A collision only happens when the stack top moves right (`> 0`) and the newcomer moves left (`< 0`).\n\n ```python\ndef asteroid_collision(asteroids):        # LC 735\n    stack = []\n    for a in asteroids:\n        while stack and a < 0 < stack[-1]:    # right-mover on top meets left-mover a\n            if stack[-1] < -a:\n                stack.pop()               # top explodes, keep fighting\n                continue\n            if stack[-1] == -a:\n                stack.pop()               # both explode\n            break                         # a is destroyed\n        else:\n            stack.append(a)               # no break -> a survived every fight\n    return stack\n```\n\n - `else` on a `while` runs only if the loop finished **without `break`** -> the newcomer survives and is pushed.\n - Smaller top: pop and `continue` (keep fighting). Equal: pop and `break`. Larger top: `break` (newcomer dies).\n - Left-movers arriving on an empty/left-moving stack are just pushed.\n - O(n) time (each asteroid pushed/popped once), O(n) space. It can be done in place by reusing the input array with a top pointer `j`.",
+    "lc": 735,
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "stack-queue-validate-stack-sequences",
+    "theme": "stack-queue",
+    "kind": "problem",
+    "front": "LC 946 Validate Stack Sequences: how do you simulate it greedily?",
+    "back": "Push each element of `pushed`; whenever the stack top equals the next `popped` value, pop immediately. Valid iff the stack ends empty.\n\n ```python\ndef validate_stack_sequences(pushed, popped):    # LC 946\n    stack, j = [], 0\n    for x in pushed:\n        stack.append(x)\n        while stack and j < len(popped) and stack[-1] == popped[j]:\n            stack.pop()                   # greedily pop whenever the top matches\n            j += 1\n    return not stack\n```\n\n - Popping as early as possible is always safe (the next required pop is fixed).\n - O(n) time, O(n) space.",
+    "lc": 946,
+    "source": "english/Stack_and_Queue_Part1_Stack.ipynb"
+  },
+  {
+    "id": "stack-queue-remove-k-digits",
+    "theme": "stack-queue",
+    "kind": "problem",
+    "front": "LC 402 Remove K Digits: why does a greedy monotonic stack give the smallest number?",
+    "back": "A number is smaller if its first differing digit is smaller. So whenever a digit is **bigger than the one after it**, deleting it helps - pop while `stack[-1] > ch` and removals remain.\n\n ```python\ndef remove_k_digits(num, k):              # LC 402: smallest number after removing k digits\n    stack = []\n    for ch in num:\n        while k and stack and stack[-1] > ch:   # a bigger digit before a smaller one -> drop it\n            stack.pop()\n            k -= 1\n        stack.append(ch)\n    if k:\n        stack = stack[:-k]                # still owe removals: drop from the end\n    return ''.join(stack).lstrip('0') or '0'\n```\n\n - Increasing stack with a **removal budget** `k`. If budget is left at the end, trim from the back (the tail is the largest part).\n - Strip leading zeros and return `'0'` for an empty result.\n - O(n) time, O(n) space. Variant with a \"keep each letter once, lexicographically smallest\" condition: LC 316.",
+    "lc": 402,
+    "source": "english/Stack_and_Queue_Part1_Stack.ipynb"
+  }
+]

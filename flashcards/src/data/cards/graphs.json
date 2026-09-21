@@ -1,0 +1,346 @@
+[
+  {
+    "id": "graphs-adjacency-list-vs-matrix",
+    "theme": "graphs",
+    "kind": "concept",
+    "front": "Graph representation: adjacency list vs adjacency matrix - space, edge lookup, neighbor iteration, when to use each?",
+    "back": "| | Adjacency list | Adjacency matrix |\n|---|---|---|\n| Space | `O(V + E)` | `O(V^2)` |\n| Is `u`-`v` an edge? | `O(deg u)` (`O(1)` if neighbors are stored in a set/dict) | `O(1)` |\n| Iterate neighbors of `u` | `O(deg u)` | `O(V)` (scan a row) |\n| Full traversal (DFS/BFS) | `O(V + E)` | `O(V^2)` |\n\n- Default to the **adjacency list** for sparse graphs (most interview graphs).\n- Use a **matrix** for dense graphs, when you need fast \"edge exists?\" checks, or when the input is already a matrix (LC 547) or all-pairs algorithms like Floyd-Warshall.\n- Edge list (`[u, v]` pairs) is the usual input. Build with `graph[u].append(v)` (plus `graph[v].append(u)` if undirected); `defaultdict(list)` for arbitrary labels, or `[[] for _ in range(n)]` for `0..n-1` so isolated nodes still exist.\n- Check the edge direction for input like `[course, prereq]` (the edge is `prereq -> course`).",
+    "source": "english/Tree_and_Graph_Part3_Graph.ipynb"
+  },
+  {
+    "id": "graphs-dfs-recursive-template",
+    "theme": "graphs",
+    "kind": "template",
+    "front": "Template: recursive graph DFS with a visited set. Time/space, and what breaks without visited?",
+    "back": "```python\ndef dfs(graph, start):\n    visited = set()\n    def visit(u):\n        visited.add(u)                     # mark when entering\n        for v in graph[u]:\n            if v not in visited:\n                visit(v)\n    visit(start)\n    return visited\n```\n- Time `O(V + E)` (`O(V^2)` with an adjacency matrix); space `O(V)` for `visited` plus recursion depth up to `O(V)`.\n- Without `visited`, any cycle (or any undirected edge, which is a 2-cycle) recurses forever. Trees need no `visited`, only a `parent` check.\n- Very deep graphs can hit Python's recursion limit: use the iterative version.\n- DFS suits feasibility questions: reachability, components, cycles, all paths, topological order.",
+    "source": "notes/graphs.py"
+  },
+  {
+    "id": "graphs-dfs-iterative-template",
+    "theme": "graphs",
+    "kind": "template",
+    "front": "Template: iterative DFS with an explicit stack. When do you mark a node visited?",
+    "back": "```python\ndef dfs_iterative(graph, start):\n    visited, stack = set(), [start]\n    while stack:\n        u = stack.pop()\n        if u in visited:                   # duplicates can be on the stack\n            continue\n        visited.add(u)                     # mark when POPPED\n        for v in graph[u]:\n            if v not in visited:\n                stack.append(v)\n    return visited\n```\nMark visited on **pop** (not on push): the same node can be pushed several times before it is first popped, so skip it if already visited. `O(V + E)` time, `O(V)` space.\n\nVisiting order differs from recursive DFS unless you push neighbors in reverse (`reversed(graph[u])`). The iterative form avoids the recursion limit.",
+    "source": "notes/graphs.py"
+  },
+  {
+    "id": "graphs-dfs-three-color-cycle-detection",
+    "theme": "graphs",
+    "kind": "template",
+    "front": "Detect a cycle in a DIRECTED graph with DFS: the 3-color (white/gray/black) template and why 2 states are not enough?",
+    "back": "```python\ndef has_cycle(n, graph):                   # directed graph, nodes 0..n-1\n    WHITE, GRAY, BLACK = 0, 1, 2           # unvisited / on current path / finished\n    color = [WHITE] * n\n    def dfs(u):\n        color[u] = GRAY\n        for v in graph[u]:\n            if color[v] == GRAY:           # back edge -> cycle\n                return True\n            if color[v] == WHITE and dfs(v):\n                return True\n        color[u] = BLACK\n        return False\n    return any(color[u] == WHITE and dfs(u) for u in range(n))\n```\n- **Gray** = on the current recursion path, **black** = fully explored. Reaching a **gray** node is a back edge = cycle.\n- Reaching a black node is fine (a cross/forward edge into a finished, cycle-free part). A plain `visited` set would wrongly flag it.\n- `O(V + E)`. Undirected graphs are simpler: a cycle exists iff you see a visited neighbor that is not your parent (or use union-find).\n- Nodes turning black in postorder, reversed, give a topological order.",
+    "source": "notes/graphs.py"
+  },
+  {
+    "id": "graphs-bfs-template",
+    "theme": "graphs",
+    "kind": "template",
+    "front": "Template: graph BFS with a queue and visited set. Complexity, and when is the visited mark set?",
+    "back": "```python\nfrom collections import deque\n\ndef bfs(graph, start):\n    visited = {start}                      # mark when ENQUEUED\n    queue = deque([start])\n    order = []\n    while queue:\n        u = queue.popleft()\n        order.append(u)\n        for v in graph[u]:\n            if v not in visited:\n                visited.add(v)\n                queue.append(v)\n    return order\n```\n- **Mark visited when you enqueue**, not when you dequeue. Marking on dequeue lets a node be enqueued many times (wasted work, and it breaks distance counting).\n- `O(V + E)` time, `O(V)` space (`visited` + queue).\n- Use `collections.deque`: `list.pop(0)` is `O(n)`.\n- BFS suits shortest path (fewest edges), level-by-level processing, and multi-source spreading.",
+    "source": "notes/graphs.py"
+  },
+  {
+    "id": "graphs-bfs-shortest-path-unweighted",
+    "theme": "graphs",
+    "kind": "concept",
+    "front": "Why does BFS give the shortest path in an unweighted graph, and when does it stop working?",
+    "back": "BFS visits nodes in **non-decreasing distance** from the source (all nodes at distance `k` are dequeued before any at `k+1`). So the first time a node is discovered (enqueued) or dequeued, that is its shortest distance in edges.\n\n- Track distance as a `dist` map, `(node, steps)` in the queue, or by processing level by level.\n- Works for grids, mazes, word ladders, game boards: each move costs 1.\n- **Fails with weights** (a 2-edge path can be cheaper than a 1-edge path): use Dijkstra (non-negative weights) or Bellman-Ford (negative weights). If weights are only 0 or 1, use 0-1 BFS (deque).\n- Time `O(V + E)`; for a grid `O(rows * cols)`.",
+    "source": "notes/graphs.py"
+  },
+  {
+    "id": "graphs-bfs-parent-path-reconstruction",
+    "theme": "graphs",
+    "kind": "template",
+    "front": "BFS when you need the actual shortest path (not just its length): how do you reconstruct it?",
+    "back": "Store, for each node, the node that discovered it (`parent`). When the target is reached, follow parents back to the start and reverse.\n\n```python\ndef shortest_path(graph, start, target):\n    parent = {start: None}                 # doubles as the visited set\n    queue = deque([start])\n    while queue:\n        u = queue.popleft()\n        if u == target:\n            path = []\n            while u is not None:           # walk parents back to start\n                path.append(u)\n                u = parent[u]\n            return path[::-1]\n        for v in graph[u]:\n            if v not in parent:\n                parent[v] = u\n                queue.append(v)\n    return None                            # unreachable\n```\n`parent` also serves as the visited set, and the start maps to `None` as the sentinel. `O(V + E)` time, `O(V)` space.",
+    "source": "notes/graphs.py"
+  },
+  {
+    "id": "graphs-bfs-state-steps-template",
+    "theme": "graphs",
+    "kind": "template",
+    "front": "Template: BFS over an implicit state space returning the minimum number of steps (word ladder, snakes & ladders, mazes). What must a state be?",
+    "back": "```python\ndef bfs_steps(start, is_goal, neighbors):\n    queue = deque([(start, 0)])            # (state, steps)\n    visited = {start}\n    while queue:\n        state, steps = queue.popleft()\n        if is_goal(state):\n            return steps\n        for nxt in neighbors(state):       # apply the problem's legal moves\n            if nxt not in visited:\n                visited.add(nxt)\n                queue.append((nxt, steps + 1))\n    return -1                              # goal unreachable\n```\n- A **state** is everything that defines \"where we are\": a cell `(r, c)`, a string, or `(r, c, keys_held)`.\n- States must be **hashable** to go in `visited`: use tuples / strings / ints, never lists or sets (use `tuple(...)` or `frozenset`).\n- The state must contain all information that affects future moves, otherwise visited-pruning drops valid paths.\n- Complexity is `O(#states * moves per state)`.",
+    "source": "notes/graphs.py"
+  },
+  {
+    "id": "graphs-multi-source-bfs",
+    "theme": "graphs",
+    "kind": "template",
+    "front": "Multi-source BFS: what is the trick and how do you write it (LC 542 01 Matrix, LC 994)? Why is it better than a BFS from every cell?",
+    "back": "Put **all sources into the queue at distance 0 before starting** (and mark them visited). The frontier then expands from every source simultaneously, so each cell is first reached by its nearest source.\n\n```python\ndef update_matrix(mat):                    # LC 542: distance to nearest 0\n    m, n = len(mat), len(mat[0])\n    dist = [[-1] * n for _ in range(m)]\n    queue = deque()\n    for r in range(m):\n        for c in range(n):\n            if mat[r][c] == 0:             # seed ALL sources at distance 0\n                dist[r][c] = 0\n                queue.append((r, c))\n    while queue:\n        r, c = queue.popleft()\n        for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):\n            nr, nc = r + dr, c + dc\n            if 0 <= nr < m and 0 <= nc < n and dist[nr][nc] == -1:\n                dist[nr][nc] = dist[r][c] + 1\n                queue.append((nr, nc))\n    return dist\n```\n- `O(rows * cols)` total, versus `O((rows * cols)^2)` for a BFS from every cell.\n- LC 994 rotting oranges: seed all rotten cells, count fresh ones, process **level by level** (one level = one minute), loop `while queue and fresh` so no extra minute is counted, return `-1` if `fresh` remains.\n- Same idea: LC 1162 as far from land as possible, \"nearest gate/exit\".\n- Equivalent to adding a virtual super-source connected to all sources.",
+    "source": "notes/graphs.py",
+    "lc": 542
+  },
+  {
+    "id": "graphs-nearest-exit-maze",
+    "theme": "graphs",
+    "kind": "problem",
+    "front": "LC 1926 Nearest Exit from Entrance in Maze: approach and the entrance gotcha?",
+    "back": "BFS from the entrance over open cells `'.'`; the first **border** cell reached (other than the entrance itself) gives the minimum steps.\n\n```python\ndef nearest_exit(maze, entrance):\n    m, n = len(maze), len(maze[0])\n    er, ec = entrance\n    maze[er][ec] = '+'                     # visited = turn into a wall\n    queue = deque([(er, ec, 0)])\n    while queue:\n        r, c, steps = queue.popleft()\n        for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):\n            nr, nc = r + dr, c + dc\n            if 0 <= nr < m and 0 <= nc < n and maze[nr][nc] == '.':\n                if nr in (0, m - 1) or nc in (0, n - 1):\n                    return steps + 1       # first border cell reached = nearest\n                maze[nr][nc] = '+'\n                queue.append((nr, nc, steps + 1))\n    return -1\n```\n- The entrance is marked visited before the loop and the border check happens on **neighbors**, so an entrance sitting on the border is never counted as its own exit.\n- Check bounds before indexing, and the exit test before enqueueing so you return `steps + 1` immediately.\n- `O(m * n)` time and space.",
+    "source": "notes/graphs.py",
+    "lc": 1926
+  },
+  {
+    "id": "graphs-grid-flood-fill-islands",
+    "theme": "graphs",
+    "kind": "template",
+    "front": "Template: count connected components in a grid with DFS flood fill (LC 200 Number of Islands). What are the two classic bugs?",
+    "back": "```python\ndef num_islands(grid):\n    m, n = len(grid), len(grid[0])\n    def sink(r, c):\n        if r < 0 or r >= m or c < 0 or c >= n or grid[r][c] != '1':\n            return                          # out of bounds FIRST, then the cell test\n        grid[r][c] = '0'                    # mark visited in place\n        for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):\n            sink(r + dr, c + dc)\n    count = 0\n    for r in range(m):\n        for c in range(n):\n            if grid[r][c] == '1':           # unvisited land = new component\n                count += 1\n                sink(r, c)\n    return count\n```\n- Trigger a fill at each unvisited land cell and count once per fill (component counting pattern).\n- **Bounds check before indexing**, using `>=` for the upper bounds (`r >= m`, `c >= n`) because indices are 0-based.\n- Mark visited **before** recursing (mutating the grid, or a `visited` set if the input must be preserved), otherwise infinite recursion.\n- `O(m * n)` time, `O(m * n)` recursion depth worst case (a snake-shaped island); use BFS/iterative for big grids.",
+    "source": "notes/graphs.py",
+    "lc": 200
+  },
+  {
+    "id": "graphs-clone-graph",
+    "theme": "graphs",
+    "kind": "problem",
+    "front": "LC 133 Clone Graph: approach, and what is the role of the old_to_new map?",
+    "back": "DFS (or BFS) with a hash map `old_to_new`. It plays **two roles**: it is the `visited` set (stops infinite loops on cycles) and it stores the clones so back-references reuse the same copy.\n\n```python\nclass Node:\n    def __init__(self, val=0, neighbors=None):\n        self.val = val\n        self.neighbors = neighbors if neighbors is not None else []\n\ndef clone_graph(node):\n    if not node:\n        return None\n    old_to_new = {}\n    def dfs(cur):\n        if cur in old_to_new:                    # already cloned: reuse it\n            return old_to_new[cur]\n        copy = Node(cur.val)\n        old_to_new[cur] = copy                   # register BEFORE recursing\n        for nb in cur.neighbors:\n            copy.neighbors.append(dfs(nb))\n        return copy\n    return dfs(node)\n```\nCreate the copy and put it in the map **before** visiting neighbors; otherwise a neighbor pointing back would recurse forever. `O(V + E)` time and space. Handle `None` for an empty graph.",
+    "source": "notes/graphs.py",
+    "lc": 133
+  },
+  {
+    "id": "graphs-number-of-provinces",
+    "theme": "graphs",
+    "kind": "problem",
+    "front": "LC 547 Number of Provinces: the input is an adjacency matrix. Approach and complexity?",
+    "back": "Count connected components: loop over cities, and for each unvisited city start a DFS (increment the count once), marking everything reachable.\n\n```python\ndef find_circle_num(is_connected):\n    n = len(is_connected)\n    visited = [False] * n\n    def dfs(i):\n        visited[i] = True\n        for j in range(n):\n            if is_connected[i][j] == 1 and not visited[j]:\n                dfs(j)\n    provinces = 0\n    for i in range(n):\n        if not visited[i]:\n            provinces += 1                 # new component\n            dfs(i)\n    return provinces\n```\n- `O(n^2)` time because each DFS step scans a full matrix row (an adjacency list would give `O(n + E)`), `O(n)` space.\n- Union-find is an equally good solution: start with `n` sets, decrement on every successful union.",
+    "source": "notes/graphs.py",
+    "lc": 547
+  },
+  {
+    "id": "graphs-evaluate-division",
+    "theme": "graphs",
+    "kind": "problem",
+    "front": "LC 399 Evaluate Division: how do you model it as a graph, and what happens along a path?",
+    "back": "Each variable is a node; the equation `a / b = v` is an edge `a -> b` of weight `v` **plus a reciprocal edge** `b -> a` of weight `1/v`. A query `x / y` is the **product of edge weights** on any path from `x` to `y` (multiplicative weights). Unknown variable or no path -> `-1.0`.\n\n```python\ndef calc_equation(equations, values, queries):\n    graph = defaultdict(dict)\n    for (a, b), v in zip(equations, values):\n        graph[a][b] = v                     # a / b = v\n        graph[b][a] = 1.0 / v               # reciprocal edge\n    def dfs(cur, target, seen):\n        if cur == target:\n            return 1.0\n        seen.add(cur)\n        for nb, w in graph[cur].items():\n            if nb not in seen:\n                res = dfs(nb, target, seen)\n                if res != -1.0:\n                    return w * res          # multiply ratios along the path\n        return -1.0\n    return [dfs(a, c, set()) if a in graph and c in graph else -1.0\n            for a, c in queries]\n```\n- `x / x = 1.0` only if `x` exists in the graph (unknown `x` gives `-1.0`).\n- Per query `O(V + E)`. Alternative: weighted union-find that stores the ratio to the root.",
+    "source": "notes/graphs.py",
+    "lc": 399
+  },
+  {
+    "id": "graphs-reorder-routes-to-city-zero",
+    "theme": "graphs",
+    "kind": "problem",
+    "front": "LC 1466 Reorder Routes to Make All Paths Lead to the City Zero: the model and the trick?",
+    "back": "The road network is a tree. Store **each edge in both directions** with a cost: `1` for the original direction `u -> v` (when we walk away from 0 along it, it points away and must be flipped) and `0` for the reverse. DFS from city `0`, summing the costs of the edges you traverse outward.\n\n```python\ndef min_reorder(n, connections):\n    graph = defaultdict(list)\n    for u, v in connections:                # road u -> v\n        graph[u].append((v, 1))             # leaving 0's side: must be reversed (cost 1)\n        graph[v].append((u, 0))             # reverse direction: already points toward 0\n    visited = {0}\n    def dfs(node):\n        total = 0\n        for nb, cost in graph[node]:\n            if nb not in visited:\n                visited.add(nb)\n                total += cost + dfs(nb)\n        return total\n    return dfs(0)\n```\n`O(n)` time and space. The undirected copy lets you traverse the whole tree from `0` while the weight remembers the original orientation.",
+    "source": "notes/graphs.py",
+    "lc": 1466
+  },
+  {
+    "id": "graphs-snakes-and-ladders",
+    "theme": "graphs",
+    "kind": "problem",
+    "front": "LC 909 Snakes and Ladders: model, and how do you map a square number to board coordinates (boustrophedon)?",
+    "back": "BFS over square numbers (state = square, cost = dice rolls); each roll goes to `s+1 .. s+6`, and if the landing cell holds a snake/ladder (value != -1) you **must** follow it. Fewest moves = BFS distance to `n*n`.\n\nCoordinate mapping (board is numbered from the bottom row, alternating direction): with `q, rem = divmod(s-1, n)`, `row = n-1-q`, `col = rem` if `q` is even else `n-1-rem`.\n\n```python\ndef snakes_and_ladders(board):\n    n = len(board)\n    def coord(s):                            # square number (1-based) -> (row, col)\n        q, rem = divmod(s - 1, n)\n        row = n - 1 - q                      # rows counted from the bottom\n        col = rem if q % 2 == 0 else n - 1 - rem   # odd rows run right-to-left\n        return row, col\n    queue, visited = deque([(1, 0)]), {1}\n    while queue:\n        s, moves = queue.popleft()\n        if s == n * n:\n            return moves\n        for nxt in range(s + 1, min(s + 6, n * n) + 1):\n            r, c = coord(nxt)\n            dest = board[r][c] if board[r][c] != -1 else nxt   # follow snake/ladder\n            if dest not in visited:\n                visited.add(dest)\n                queue.append((dest, moves + 1))\n    return -1\n```\n`O(n^2)` time and space. Mark the *destination* after the jump as visited.",
+    "source": "notes/graphs.py",
+    "lc": 909
+  },
+  {
+    "id": "graphs-bipartite-graph-check",
+    "theme": "graphs",
+    "kind": "problem",
+    "front": "LC 785 Is Graph Bipartite? (also LC 886 Possible Bipartition): approach and pitfall?",
+    "back": "2-color the graph: BFS/DFS, giving each neighbor the opposite color; a neighbor already having the **same** color as the current node means an odd cycle, so not bipartite. A graph is bipartite iff it has no odd cycle.\n\n```python\ndef is_bipartite(graph):\n    color = {}\n    for start in range(len(graph)):          # graph may be disconnected\n        if start in color:\n            continue\n        color[start] = 0\n        queue = deque([start])\n        while queue:\n            u = queue.popleft()\n            for v in graph[u]:\n                if v not in color:\n                    color[v] = 1 - color[u]  # opposite color\n                    queue.append(v)\n                elif color[v] == color[u]:   # same color on an edge -> odd cycle\n                    return False\n    return True\n```\n- **The graph may be disconnected**: start a new coloring from every uncolored node.\n- LC 886: build the graph from the `dislikes` pairs, then run the same check.\n- `O(V + E)`. Union-find also works (union all neighbors of `u` together; fail if `u` ends up in the same set as a neighbor).",
+    "source": "english/Tree_and_Graph_Part3_Graph.ipynb",
+    "lc": 785
+  },
+  {
+    "id": "graphs-bidirectional-bfs-min-mutation",
+    "theme": "graphs",
+    "kind": "template",
+    "front": "Bidirectional BFS (taught via LC 433 Minimum Genetic Mutation): idea, template, and when does it help?",
+    "back": "Search from **both start and end** at once and stop when the frontiers touch. Branching factor `b` and distance `d` cost `O(b^d)` one-way but roughly `O(b^(d/2))` two-way. Always expand the **smaller** frontier.\n\n```python\ndef min_mutation(start, end, bank):\n    bank = set(bank)\n    if start == end:\n        return 0\n    if end not in bank:\n        return -1\n    front, back = {start}, {end}\n    visited = {start, end}\n    steps = 0\n    while front and back:\n        if len(front) > len(back):           # always expand the smaller frontier\n            front, back = back, front\n        nxt = set()\n        for gene in front:\n            for i in range(len(gene)):\n                for ch in 'ACGT':\n                    cand = gene[:i] + ch + gene[i + 1:]\n                    if cand in back:         # the two searches meet\n                        return steps + 1\n                    if cand in bank and cand not in visited:\n                        visited.add(cand)\n                        nxt.add(cand)\n        front = nxt\n        steps += 1\n    return -1\n```\n- Needs a known target and reversible moves.\n- Helps when the branching factor is large (word ladder with a big dictionary). In LC 433 (bank <= 10, 4 letters) one-way BFS is already fast, so it is mostly a teaching example.\n- Check `cand in back` when generating, and add to `visited` only otherwise.",
+    "source": "english/Tree_and_Graph_Part3_Graph.ipynb",
+    "lc": 433
+  },
+  {
+    "id": "graphs-kahn-topological-sort-template",
+    "theme": "graphs",
+    "kind": "template",
+    "front": "Template: Kahn's algorithm (BFS topological sort) with an indegree array. Complexity?",
+    "back": "Repeatedly remove nodes with **indegree 0**; removing a node decrements its neighbors' indegrees.\n\n```python\ndef topological_order(n, edges):            # edge (u, v): u must come before v\n    adj = [[] for _ in range(n)]\n    indegree = [0] * n\n    for u, v in edges:\n        adj[u].append(v)\n        indegree[v] += 1\n    queue = deque(i for i in range(n) if indegree[i] == 0)\n    order = []\n    while queue:\n        u = queue.popleft()\n        order.append(u)\n        for v in adj[u]:\n            indegree[v] -= 1\n            if indegree[v] == 0:            # all prerequisites done\n                queue.append(v)\n    return order if len(order) == n else []   # fewer than n -> cycle\n```\n- `O(V + E)` time, `O(V + E)` space. Only valid for **directed acyclic graphs**.\n- Several valid orders may exist; a queue gives one of them. Use a min-heap instead of a deque for the lexicographically smallest order.\n- Applies to LC 207 (can finish? return `len(order) == n`) and LC 210 (return the order).",
+    "source": "notes/graphs.py",
+    "lc": 210
+  },
+  {
+    "id": "graphs-kahn-cycle-detection",
+    "theme": "graphs",
+    "kind": "gotcha",
+    "front": "Kahn's algorithm: how do you detect a cycle, and why does it work?",
+    "back": "**If the number of processed nodes is less than `n`, the graph has a cycle.**\n\nNodes on a cycle (and everything downstream of one) never reach indegree 0, because each one is waiting on another node of the cycle. The queue drains with those nodes unprocessed. Equivalently: the queue empties while some node still has indegree > 0 if and only if there is a cycle.\n\n- LC 207: `return processed == numCourses`.\n- LC 210: return `[]` when `len(order) != numCourses`.\n- Checking only that the initial queue is non-empty is not enough: a cycle can hide downstream of nodes that are free at the start.",
+    "source": "english/Tree_and_Graph_Part3_Graph.ipynb"
+  },
+  {
+    "id": "graphs-topo-sort-edge-direction",
+    "theme": "graphs",
+    "kind": "gotcha",
+    "front": "Course Schedule input is `[course, prereq]`. Which way does the edge point and what goes in the indegree?",
+    "back": "`[a, b]` means \"to take `a` you must first take `b`\", so the edge is **`b -> a`** (prerequisite -> course).\n\n```python\nfor course, pre in prerequisites:\n    adj[pre].append(course)      # pre must come BEFORE course\n    indegree[course] += 1        # course has one more prerequisite\n```\n- `adj[u]` = courses unlocked by `u` (outgoing edges); `indegree[c]` = number of prerequisites of `c` (incoming edges).\n- If you flip it (`adj[course].append(pre)`, indegree on `pre`) you get courses **before** their prerequisites, i.e. the reversed order. Reverse that list, or the LC 210 answer is wrong. Cycle detection (`processed < n`) is unaffected.",
+    "source": "notes/graphs.py",
+    "lc": 210
+  },
+  {
+    "id": "graphs-topological-sort-dfs",
+    "theme": "graphs",
+    "kind": "template",
+    "front": "DFS-based topological sort: what order do you output, and how is a cycle detected?",
+    "back": "Run DFS; append a node **after** all its descendants are done (postorder), then **reverse** the list. A node always finishes after everything it points to, so reversing puts it before them.\n\n```python\ndef topological_order_dfs(n, adj):\n    WHITE, GRAY, BLACK = 0, 1, 2\n    color = [WHITE] * n\n    order = []\n    def dfs(u):                              # returns False if a cycle is found\n        color[u] = GRAY\n        for v in adj[u]:\n            if color[v] == GRAY:\n                return False\n            if color[v] == WHITE and not dfs(v):\n                return False\n        color[u] = BLACK\n        order.append(u)                      # postorder: after all descendants\n        return True\n    for u in range(n):\n        if color[u] == WHITE and not dfs(u):\n            return []\n    return order[::-1]                       # reverse postorder\n```\n- A **gray** neighbor (currently on the recursion path) is a back edge = cycle.\n- `O(V + E)`. Equivalent to Kahn in results validity; Kahn is iterative (no recursion limit) and naturally reports cycles.",
+    "source": "english/Tree_and_Graph_Part3_Graph.ipynb"
+  },
+  {
+    "id": "graphs-union-find-template",
+    "theme": "graphs",
+    "kind": "template",
+    "front": "Template: union-find (disjoint set union) with path compression and union by size. Complexity?",
+    "back": "```python\nclass UnionFind:\n    def __init__(self, n):\n        self.parent = list(range(n))\n        self.size = [1] * n\n        self.count = n                       # number of components\n\n    def find(self, x):\n        if self.parent[x] != x:\n            self.parent[x] = self.find(self.parent[x])   # path compression\n        return self.parent[x]\n\n    def union(self, a, b):\n        ra, rb = self.find(a), self.find(b)\n        if ra == rb:\n            return False                     # already connected (edge would form a cycle)\n        if self.size[ra] < self.size[rb]:    # union by size: attach small under large\n            ra, rb = rb, ra\n        self.parent[rb] = ra\n        self.size[ra] += self.size[rb]\n        self.count -= 1\n        return True\n```\n- With **path compression + union by rank/size** each operation is **amortized ~O(1)** (`O(alpha(n))`, inverse Ackermann, effectively constant).\n- Without them `find` can degrade to `O(n)`.\n- `union` returning `False` means the two nodes were already connected: that is how you detect a redundant edge / cycle (LC 684, Kruskal).\n- `count` gives the number of components (LC 547, 323).",
+    "source": "english/Topic_Union_Find.ipynb"
+  },
+  {
+    "id": "graphs-union-find-vs-dfs-bfs",
+    "theme": "graphs",
+    "kind": "pattern",
+    "front": "When do you choose union-find over DFS/BFS for connectivity problems?",
+    "back": "Most union-find problems can also be solved with DFS/BFS (usually at higher cost). Pick union-find when:\n- **Dynamic connectivity**: edges arrive over time and you must answer \"connected now?\" or \"how many components?\" after each one.\n- You process **edges incrementally** (Kruskal's MST, redundant-connection, \"first time these become connected\", LC 1631 by sorted edges).\n- Grouping by shared keys: assign an id to each entity and union those that share something (LC 721 accounts merge, LC 959 regions cut by slashes, LC 399 with a ratio-to-root, LC 128 as an alternative to the hash-set solution).\n\nStick with DFS/BFS when you need paths, distances, or a one-shot component count on a static graph. Union-find only answers \"same set?\", it does not give the path.",
+    "source": "english/Topic_Union_Find.ipynb"
+  },
+  {
+    "id": "graphs-union-find-virtual-node",
+    "theme": "graphs",
+    "kind": "concept",
+    "front": "Union-find \"virtual node\" trick: what is it and when do you use it?",
+    "back": "Add one **extra node** and union it with every element that has a special property, so that \"has the property\" becomes \"connected to the virtual node\".\n\n- Grids: union every border cell with a virtual \"outside\" node, then a cell survives / escapes iff `find(cell) == find(virtual)` (LC 130 surrounded regions, and \"bricks falling\" style problems).\n- Multi-source: union all sources to one super-source.\n- Size: allocate `n + 1` slots (`virtual = n`).\n\nSame idea as adding a super-source in multi-source BFS.",
+    "source": "english/Topic_Union_Find.ipynb"
+  },
+  {
+    "id": "graphs-union-find-directed-caveat",
+    "theme": "graphs",
+    "kind": "gotcha",
+    "front": "Why does plain union-find fail on directed-graph problems?",
+    "back": "Union-find models **undirected** connectivity. In a directed graph it cannot tell direction, and path compression / union by rank **destroy parent information** (the tree structure no longer reflects who points to whom), so problems that need the predecessor of a node (e.g. finding the redundant edge in a *directed* graph where a node may have two parents) cannot use path compression or union by rank.\n\n- Undirected redundant-connection style (LC 684): plain union-find is perfect.\n- Directed dependency / ordering questions: use DFS with 3 colors or topological sort.\n- Union-find is a way of thinking, not a fixed template: adapt it (maps for string keys, virtual nodes, weights) rather than forcing the integer version.",
+    "source": "english/Topic_Union_Find.ipynb"
+  },
+  {
+    "id": "graphs-accounts-merge",
+    "theme": "graphs",
+    "kind": "problem",
+    "front": "LC 721 Accounts Merge: approach with union-find (what are the nodes?) and complexity?",
+    "back": "Nodes are **account indices**. Map each email to the first account that owned it; when an email is seen again, `union` the two accounts. Finally group emails by root, sort, and prefix the name.\n\n```python\ndef accounts_merge(accounts):\n    uf = UnionFind(len(accounts))\n    owner = {}                                 # email -> first account index seen\n    for i, (_, *emails) in enumerate(accounts):\n        for e in emails:\n            if e in owner:\n                uf.union(i, owner[e])          # shared email -> same person\n            else:\n                owner[e] = i\n    groups = defaultdict(list)\n    for email, i in owner.items():\n        groups[uf.find(i)].append(email)\n    return [[accounts[root][0]] + sorted(es) for root, es in groups.items()]\n```\nNames alone are not identifiers (two people can share a name); shared **emails** are the linking key. About `O(N * alpha(N) + E log E)` for `E` emails (the sort dominates).",
+    "source": "english/Topic_Union_Find.ipynb",
+    "lc": 721
+  },
+  {
+    "id": "graphs-dijkstra-template",
+    "theme": "graphs",
+    "kind": "template",
+    "front": "Template: Dijkstra with a heap (shortest paths from a source, non-negative weights). Fill in the loop: what is pushed and what is skipped?",
+    "back": "```python\nimport heapq\n\ndef dijkstra(graph, src, target=None):       # graph[u] = [(v, weight), ...], weights >= 0\n    dist = {src: 0}\n    heap = [(0, src)]                         # (distance so far, node)\n    while heap:\n        d, u = heapq.heappop(heap)\n        if d > dist.get(u, float('inf')):\n            continue                          # stale entry: a shorter path was already found\n        if u == target:\n            return d                          # early exit: u's distance is final\n        for v, w in graph[u]:\n            nd = d + w                        # NEW total distance, not just w\n            if nd < dist.get(v, float('inf')):\n                dist[v] = nd\n                heapq.heappush(heap, (nd, v))\n    return dist if target is None else float('inf')\n```\n- Push `(new_dist, neighbor)`, i.e. the **cumulative** distance `d + w`, never just the edge weight.\n- **Skip stale entries** (`d > dist[u]`) instead of decreasing keys (`heapq` has no decrease-key), so a node may be pushed several times.\n- The first time a node is popped its distance is final; with a known target you can stop there.\n- `O((V + E) log V)` time, `O(V + E)` space.",
+    "source": "english/Template_Summary.ipynb"
+  },
+  {
+    "id": "graphs-dijkstra-bugs",
+    "theme": "graphs",
+    "kind": "gotcha",
+    "front": "Two classic Dijkstra bugs in a heap implementation: what are they?",
+    "back": "1. **Pushing the edge weight instead of the total distance.** `heappush(pq, (weight, neighbor))` orders the heap by single-edge cost, which is not the path distance. Push `(dist[u] + weight, neighbor)` (the new distance). This mistake appears in some published templates.\n2. **Not skipping stale entries.** The same node is pushed each time its distance improves; when an outdated `(d, u)` pops later, `d > dist[u]` and you must `continue`, otherwise you re-expand `u` from a worse distance (wasted work, up to `O(E)` extra expansions).\n\nAlso: initialize `dist[src] = 0` and push `(0, src)`; and if the target is known, return when it is **popped** (not when first pushed, since a shorter path may still come).",
+    "source": "english/Template_Summary.ipynb"
+  },
+  {
+    "id": "graphs-dijkstra-requirements-complexity",
+    "theme": "graphs",
+    "kind": "complexity",
+    "front": "Dijkstra: why non-negative weights only, and what are the time/space complexities and alternatives?",
+    "back": "Dijkstra is greedy: when a node is popped with the smallest tentative distance, no later path can improve it **because every remaining edge adds >= 0**. A negative edge can make a longer-hop path cheaper after a node was finalized, so results become wrong.\n\n- Binary-heap version with lazy deletion: **O((V + E) log V)** (`E log E` = `E log V`), space `O(V + E)`.\n- Array version (scan for min): `O(V^2)`; better for **dense** graphs (`E ~ V^2`).\n- Unweighted graph: plain BFS, `O(V + E)`.\n- Negative edges: Bellman-Ford `O(VE)`. All pairs: Floyd-Warshall `O(V^3)`.\n- On grids, \"distance\" can be any monotone combination (sum, or max of edge costs for minimax paths, see LC 1631).",
+    "source": "english/Tree_and_Graph_Part3_Graph.ipynb"
+  },
+  {
+    "id": "graphs-network-delay-time",
+    "theme": "graphs",
+    "kind": "problem",
+    "front": "LC 743 Network Delay Time: what algorithm, and what is the answer once you have all distances?",
+    "back": "Single-source shortest paths with non-negative weights -> **Dijkstra** from `k`. The time for all nodes to receive the signal is the **maximum** shortest distance; if some node was never reached, return `-1`.\n\n```python\ndef network_delay_time(times, n, k):\n    graph = defaultdict(list)\n    for u, v, w in times:\n        graph[u].append((v, w))\n    dist = {}\n    heap = [(0, k)]\n    while heap:\n        d, u = heapq.heappop(heap)\n        if u in dist:                       # already finalized (stale entry)\n            continue\n        dist[u] = d\n        for v, w in graph[u]:\n            if v not in dist:\n                heapq.heappush(heap, (d + w, v))\n    return max(dist.values()) if len(dist) == n else -1\n```\n- Adjacency list (not scanning the edge list per pop): `O(E log E)` time, `O(V + E)` space.\n- Alternative using \"finalized\" marking (`if u in dist: continue`) is the same as the stale-entry check.\n- Bellman-Ford (`O(VE)`) also works; use an adjacency matrix + array Dijkstra `O(V^2)` if the graph is dense.",
+    "source": "english/Tree_and_Graph_Part3_Graph.ipynb",
+    "lc": 743
+  },
+  {
+    "id": "graphs-path-with-minimum-effort",
+    "theme": "graphs",
+    "kind": "problem",
+    "front": "LC 1631 Path With Minimum Effort: what changes in Dijkstra when the path cost is the max edge instead of the sum? Other approaches?",
+    "back": "Same Dijkstra skeleton on the grid, but the cost of a path is the **maximum** absolute height difference on it, so the new cost is `max(effort_so_far, edge_diff)` instead of `+`. This still works because the cost never decreases along a path (monotone).\n\n```python\ndef minimum_effort_path(heights):\n    m, n = len(heights), len(heights[0])\n    best = [[float('inf')] * n for _ in range(m)]\n    best[0][0] = 0\n    heap = [(0, 0, 0)]                          # (max effort on the path so far, r, c)\n    while heap:\n        effort, r, c = heapq.heappop(heap)\n        if (r, c) == (m - 1, n - 1):\n            return effort\n        if effort > best[r][c]:\n            continue\n        for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):\n            nr, nc = r + dr, c + dc\n            if 0 <= nr < m and 0 <= nc < n:\n                ne = max(effort, abs(heights[nr][nc] - heights[r][c]))  # path cost = max edge\n                if ne < best[nr][nc]:\n                    best[nr][nc] = ne\n                    heapq.heappush(heap, (ne, nr, nc))\n```\n- `O(mn log(mn))` time, `O(mn)` space.\n- Other solutions: binary search on the answer + BFS/DFS feasibility check `O(mn log H)`; Kruskal-style union-find adding edges in increasing weight until start and end connect.",
+    "source": "english/Tree_and_Graph_Part3_Graph.ipynb",
+    "lc": 1631
+  },
+  {
+    "id": "graphs-bellman-ford-template",
+    "theme": "graphs",
+    "kind": "template",
+    "front": "Bellman-Ford: template, complexity, and when to prefer it over Dijkstra?",
+    "back": "Relax **every edge** up to `V - 1` times (a shortest path has at most `V - 1` edges); after round `k` distances are correct for paths using at most `k` edges.\n\n```python\ndef bellman_ford(n, edges, src):             # edges = (u, v, w), negative w allowed\n    dist = [float('inf')] * n\n    dist[src] = 0\n    for _ in range(n - 1):                    # a shortest path has at most n-1 edges\n        changed = False\n        for u, v, w in edges:\n            if dist[u] + w < dist[v]:\n                dist[v] = dist[u] + w\n                changed = True\n        if not changed:                       # early exit\n            break\n    for u, v, w in edges:                     # one more pass: still improving?\n        if dist[u] + w < dist[v]:\n            return None                       # reachable negative cycle\n    return dist\n```\n- **O(V * E)** time, `O(V)` space.\n- Use it when there are **negative edge weights** (Dijkstra breaks), to detect a negative cycle (extra pass still relaxes), or when the path length is limited to `k` edges.\n- SPFA is a queue-based variant that only re-relaxes nodes whose distance changed: often fast, worst case still `O(VE)`.",
+    "source": "english/Tree_and_Graph_Part3_Graph.ipynb"
+  },
+  {
+    "id": "graphs-cheapest-flights-k-stops",
+    "theme": "graphs",
+    "kind": "problem",
+    "front": "LC 787 Cheapest Flights Within K Stops: why Bellman-Ford with k+1 rounds, and why copy the distance array each round?",
+    "back": "The constraint is on the **number of edges** (at most `k + 1`), which is exactly what Bellman-Ford rounds control; plain Dijkstra's \"best distance\" pruning can discard a pricier path that uses fewer stops.\n\n```python\ndef find_cheapest_price(n, flights, src, dst, k):\n    dist = [float('inf')] * n\n    dist[src] = 0\n    for _ in range(k + 1):                    # k stops = at most k + 1 edges\n        nxt = dist[:]                         # relax from the PREVIOUS round only\n        for u, v, w in flights:\n            if dist[u] + w < nxt[v]:\n                nxt[v] = dist[u] + w\n        dist = nxt\n    return -1 if dist[dst] == float('inf') else dist[dst]\n```\n- **Copy `dist` each round** (`nxt`): otherwise a single round could chain several edges (using this round's updates) and exceed the stop limit.\n- `O(k * E)` time, `O(V)` space.\n- Alternative: BFS/Dijkstra with state `(node, stops)`.",
+    "source": "english/Tree_and_Graph_Part3_Graph.ipynb",
+    "lc": 787
+  },
+  {
+    "id": "graphs-mst-kruskal",
+    "theme": "graphs",
+    "kind": "template",
+    "front": "Kruskal's algorithm for a minimum spanning tree: steps, template and complexity?",
+    "back": "A spanning tree connects all `n` vertices with `n - 1` edges; the MST minimizes total weight. Kruskal: **sort edges by weight, add an edge if it joins two different components** (checked with union-find), stop at `n - 1` edges.\n\n```python\ndef kruskal(n, edges):                        # edges = (weight, u, v)\n    uf = UnionFind(n)                          # union-find card\n    total = used = 0\n    for w, u, v in sorted(edges):              # cheapest edge first\n        if uf.union(u, v):                     # joins two different components\n            total += w\n            used += 1\n            if used == n - 1:\n                break\n    return total if used == n - 1 else None    # None: graph is disconnected\n```\n- **O(E log E)** time (sorting dominates), `O(V)` extra space.\n- Best when edges are already a list or the graph is sparse.\n- Fewer than `n - 1` edges accepted means the graph is disconnected.",
+    "source": "english/Template_Summary.ipynb"
+  },
+  {
+    "id": "graphs-mst-prim",
+    "theme": "graphs",
+    "kind": "template",
+    "front": "Prim's algorithm for a minimum spanning tree: idea (cut property), template and complexity? How does it compare to Kruskal?",
+    "back": "**Cut property**: the lightest edge crossing any cut of the graph belongs to some MST. Prim grows one tree from a start vertex, each time adding the cheapest edge from the tree to a vertex outside it (a heap holds candidate edges). It is Dijkstra-like, but the key is the **edge weight**, not the total distance.\n\n```python\ndef prim(n, graph):                            # graph[u] = [(v, w), ...], undirected\n    seen = [False] * n\n    heap = [(0, 0)]                            # (edge weight into the tree, node)\n    total = count = 0\n    while heap:\n        w, u = heapq.heappop(heap)\n        if seen[u]:\n            continue\n        seen[u] = True\n        total += w\n        count += 1\n        for v, wt in graph[u]:\n            if not seen[v]:\n                heapq.heappush(heap, (wt, v))  # candidate cut edge\n    return total if count == n else None\n```\n- **O(E log V)** with a binary heap, `O(V + E)` space.\n- Prim: good for dense graphs / adjacency lists. Kruskal: good for sparse graphs given as edge lists.",
+    "source": "english/Template_Summary.ipynb"
+  },
+  {
+    "id": "graphs-eulerian-path-concept",
+    "theme": "graphs",
+    "kind": "concept",
+    "front": "Eulerian path vs circuit: definitions, existence conditions, and the algorithm?",
+    "back": "An **Eulerian path** uses **every edge exactly once** (nodes may repeat); an **Eulerian circuit** is one that starts and ends at the same node. (Hamiltonian = every *vertex* once: NP-hard.)\n\n- Undirected, connected edges: circuit iff **all degrees even**; path iff **exactly 0 or 2 odd-degree** vertices (the path starts and ends at the odd ones).\n- Directed: circuit iff `indegree == outdegree` everywhere; path iff at most one node has `out - in = 1` (start) and one has `in - out = 1` (end), all others balanced.\n- **Hierholzer's algorithm**, `O(E)`: DFS consuming edges, append a node in postorder, reverse at the end.\n\n```python\ndef eulerian_path(graph, start):              # directed; start = node with out-in == 1 (any node for a circuit)\n    graph = {u: list(vs) for u, vs in graph.items()}   # consume edges from a copy\n    path = []\n    def dfs(u):\n        while graph.get(u):\n            dfs(graph[u].pop())               # use each edge once\n        path.append(u)                        # postorder\n    dfs(start)\n    return path[::-1]                         # Hierholzer: reverse postorder\n```\nFor lexicographically smallest itineraries keep each adjacency list sorted (pop the smallest).",
+    "source": "english/Tree_and_Graph_Part3_Graph.ipynb"
+  },
+  {
+    "id": "graphs-graph-clarifying-questions",
+    "theme": "graphs",
+    "kind": "pattern",
+    "front": "What should you ask the interviewer before coding a graph problem?",
+    "back": "- **Directed or undirected?** (are edges symmetric?)\n- **Connected?** If not, you need an outer loop over all nodes (components, coloring, cycle detection).\n- **Cycles / self-loops / duplicate edges?** They affect `visited` logic, indegrees and cycle checks.\n- **Weighted?** Non-negative -> Dijkstra, negative -> Bellman-Ford, unweighted -> BFS.\n- **How large?** Number of nodes and edges, range of node labels (integers `0..n-1` vs strings/objects), which drives list vs matrix, recursion depth, and whether `O(V^2)` is acceptable.\n- **What is asked?** Existence, shortest path (length or actual path), count of components, an ordering, all paths.\n- **Input format?** Edge list, adjacency list, matrix or grid (implicit graph).",
+    "source": "english/Tree_and_Graph_Part3_Graph.ipynb"
+  },
+  {
+    "id": "graphs-bitmask-bfs-concept",
+    "theme": "graphs",
+    "kind": "concept",
+    "front": "Bitmask (state-compression) BFS: when is it needed and what is the state?",
+    "back": "Use it when the goal involves **visiting/collecting a subset of up to ~15-20 items** and revisiting a node is fine if the subset differs (visit all nodes, collect all keys).\n\n- State = `(node, mask)`, where bit `i` of `mask` says item `i` was visited/collected.\n- Start with all sources at once: `(i, 1 << i)`; goal when `mask == (1 << n) - 1`.\n- Visited set is over **states**, not nodes: the same node may be processed once per distinct mask.\n- Cost: up to `n * 2^n` states, so `n` must be small; transitions are `O(deg)`, so roughly `O(2^n * n * deg)` time.\n- Set a bit: `mask | (1 << i)`; test it: `mask >> i & 1`.",
+    "source": "english/Tree_and_Graph_Part3_Graph.ipynb"
+  },
+  {
+    "id": "graphs-dag-dfs-memoization",
+    "theme": "graphs",
+    "kind": "concept",
+    "front": "DFS with memoization on a DAG: when is it valid and what is the complexity?",
+    "back": "On a **directed acyclic graph**, the answer for a node (number of paths, longest path, \"can reach target\") depends only on its outgoing neighbors, so cache it per node: each node is computed once.\n\n```python\nfrom functools import cache\n\ndef count_paths(graph, src, dst):             # graph must be a DAG\n    @cache\n    def go(u):\n        if u == dst:\n            return 1\n        return sum(go(v) for v in graph[u])   # each node computed once\n    return go(src)\n```\n- **O(V + E)** time and `O(V)` memo instead of exponential re-enumeration of paths.\n- Only valid without cycles: with a cycle the recursion never bottoms out (use 3-color DFS to detect cycles first, or LC 802 \"eventual safe states\"-style coloring).\n- Same recurrence bottom-up = DP in topological order.",
+    "source": "notes/graphs.py"
+  },
+  {
+    "id": "graphs-dfs-vs-bfs-choice",
+    "theme": "graphs",
+    "kind": "pattern",
+    "front": "Signals: when do you reach for graph DFS, BFS, topological sort, union-find, Dijkstra?",
+    "back": "| Signal in the problem | Technique |\n|---|---|\n| Fewest steps / shortest path, unweighted | **BFS** |\n| Spread from several starts at once (nearest X, rotting) | **Multi-source BFS** |\n| Explore all paths, backtracking, does a path exist | **DFS** |\n| Islands / provinces / connected components | **DFS/BFS or union-find** |\n| Cycle in a directed graph, prerequisites, ordering | **Topological sort** (Kahn or DFS) |\n| Two-coloring / odd cycle | **BFS/DFS coloring** |\n| Weighted shortest path, non-negative | **Dijkstra** |\n| Negative weights, at most `k` edges | **Bellman-Ford** |\n| Connectivity as edges arrive, group by shared key | **Union-find** |\n| Connect everything at minimum total cost | **MST** (Kruskal / Prim) |\n\nChoose whichever is simplest while still meeting the goal.",
+    "source": "notes/graphs.py"
+  }
+]

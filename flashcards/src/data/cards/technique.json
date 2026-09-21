@@ -1,0 +1,122 @@
+[
+  {
+    "id": "technique-shortest-fewest-bfs",
+    "theme": "technique",
+    "kind": "pattern",
+    "front": "Problem asks for the shortest path / fewest steps / minimum moves. Which technique, and what if there is extra state or weights?",
+    "back": "**BFS** on an unweighted graph or grid: the first time you reach the goal is the shortest distance (level = number of steps).\n\n- **Extra state** (obstacles you may remove, keys collected): BFS over `(cell, extra_state)` and put that tuple in `visited`. A set of keys is naturally a **bitmask** (<= 26 keys fit in one int).\n- **Weighted edges** -> Dijkstra (heap of `(dist, node)`, push the *new* distance).\n- **Minimising a count of a resource** (e.g. bombs used) instead of steps -> Dijkstra with that resource as the cost.\n- Multiple sources (closest cafe for everyone) -> multi-source BFS, or one BFS per source.\n- O(V + E) for plain BFS.",
+    "source": "english/Google_Real_Interview_Questions.ipynb"
+  },
+  {
+    "id": "technique-connectivity-static-vs-dynamic",
+    "theme": "technique",
+    "kind": "pattern",
+    "front": "Connectivity question: when do you use DFS/BFS and when union-find?",
+    "back": "- **Static** graph (given up front, asked once): DFS or BFS flood fill / component count - O(V + E).\n- **Dynamic** graph (edges/nodes added over time, repeated 'are A and B connected?' queries): **union-find** (path compression + union by rank/size), near O(1) per operation.\n- Grids/islands: DFS/BFS is fine when static; union-find when cells are added one by one.\n- Groups defined by an implicit relation (e.g. circles that overlap): compare pairs O(n^2) and union, then count roots.\n- Union-find only tells you connectivity, not paths or distances (use BFS for those).",
+    "source": "english/Google_Real_Interview_Questions.ipynb"
+  },
+  {
+    "id": "technique-dependencies-topological-sort",
+    "theme": "technique",
+    "kind": "pattern",
+    "front": "Statement mentions dependencies / prerequisites / ordering constraints or 'is this set of inequalities consistent'. Which technique?",
+    "back": "**Topological sort** (Kahn's BFS with in-degrees, or DFS with three colours) on the dependency graph.\n\n- Course-schedule style: node = item, edge `A -> B` = A must come before B. If not every node is emitted, there is a **cycle** -> impossible.\n- Recipes with supplies, build order, task scheduling: same graph, start from in-degree 0 (or the given supplies).\n- Inequalities `d > e, e > f, f > d`: edges from bigger to smaller; a cycle means contradiction. Directions such as N/S and E/W are independent, so run **two separate** topological sorts.\n- Union-find is the wrong tool here (edges are directed).\n- O(V + E).",
+    "source": "english/Google_Real_Interview_Questions.ipynb"
+  },
+  {
+    "id": "technique-dag-dfs-memo",
+    "theme": "technique",
+    "kind": "pattern",
+    "front": "Problem is a DAG / each item's answer depends on other items' answers. What is the usual technique and its trap?",
+    "back": "**DFS + memoisation**: compute each node's answer once and cache it - O(V + E) instead of re-walking shared sub-structures.\n\nExample (folder -> path to root): brute force walks up from every folder, O(n^2). With `memo[id]` = resolved path, resolving a folder reuses its parent's cached path, so each folder is computed once.\n\n- Detect **cycles** with a \"currently visiting\" state (bad input); a memo alone does not protect against cycles.\n- Same idea as top-down DP.\n- Interviewers may then ask for a topological order / bottom-up version, or better space.",
+    "source": "english/Google_Real_Interview_Questions.ipynb"
+  },
+  {
+    "id": "technique-count-possible-all-solutions",
+    "theme": "technique",
+    "kind": "pattern",
+    "front": "'How many ways', 'is it possible', 'return all solutions': which technique for each?",
+    "back": "- **Count** the ways / optimum value -> **DP** (usually on an array or matrix). Greedy cannot count.\n- **Is it possible** (reachable, can be formed, partition) -> often DP too (boolean state); sometimes BFS or greedy.\n- **All solutions** (list every combination/permutation/subset) -> **backtracking** (path + choices + terminate).\n\nBacktracking vs DP: backtracking is a pure brute-force traversal of an N-ary decision tree and is exponential; DP wins when subproblems **overlap** (memo/table). If results only need a count or a best value, add a memo and it becomes DP.\n\nPath to a DP answer: brute-force recursion -> memo -> bottom-up -> compress space.",
+    "source": "english/Google_Real_Interview_Questions.ipynb"
+  },
+  {
+    "id": "technique-sorting-first",
+    "theme": "technique",
+    "kind": "pattern",
+    "front": "Why is 'sorting is always worth considering' good advice, and what does it unlock?",
+    "back": "Sorting costs only O(n log n) and often turns a hard problem into an easy one:\n\n- Equal/close values become **adjacent** (duplicates, closest pair, anagram groups by sorted key)\n- Enables **two pointers** and **binary search**\n- Enables **greedy** (sort by cost, end time, ratio) and **interval merging** (sort by start)\n- Ordered processing (smallest first) for scheduling\n\nWatch: sorting loses original indices (sort `(value, index)` pairs), and it is unnecessary if a hash map or bucket sort gives O(n). If n <= 1e5 and brute force is O(n^2), ask 'what if sorted?'.",
+    "source": "english/Google_Real_Interview_Questions.ipynb"
+  },
+  {
+    "id": "technique-hashmap-when-in-doubt",
+    "theme": "technique",
+    "kind": "pattern",
+    "front": "'When in doubt, think HashMap': what are its typical jobs?",
+    "back": "A hash map/set trades O(n) space for O(1) average lookups:\n\n- **Complement lookup**: seen `target - x`? (Two Sum)\n- **Frequency counting** / anagram signatures / bulls-and-cows style counts\n- **Grouping** by a canonical key (sorted word, serialised subtree)\n- **First/last index** of a value, or **prefix-sum -> count** to count subarrays with a given sum\n- **Memo/cache** for repeated queries\n- **Lazy-update alternative to a window**: e.g. rate limiter stores `message -> last timestamp` instead of maintaining a sliding window\n- **Adjacency lists** for graphs\n\nCosts: extra space, O(n) worst-case collisions, keys must be hashable (use tuples, not lists).",
+    "source": "english/Google_Real_Interview_Questions.ipynb"
+  },
+  {
+    "id": "technique-stack-pattern",
+    "theme": "technique",
+    "kind": "pattern",
+    "front": "'Looking for a pattern / matching / most recent unresolved item': when do you reach for a stack?",
+    "back": "Use a stack when the newest item must be resolved first (LIFO):\n\n- Matching/nesting: brackets, decode nested `3[a2[c]]` (LC 394), file-system depth\n- **Monotonic stack**: next greater/smaller element, sliding window extremes (deque), remove duplicate letters keeping smallest order (LC 316)\n- Expression evaluation: postfix/RPN (LC 150), calculators\n- Undoing / backtracking state, iterative DFS\n- Streams where old values are dominated by new ones (max in last 24 hours -> monotonic deque)\n\nEach element is pushed and popped at most once -> amortised O(n).",
+    "source": "english/Google_Real_Interview_Questions.ipynb"
+  },
+  {
+    "id": "technique-sorted-input-decision",
+    "theme": "technique",
+    "kind": "pattern",
+    "front": "Input is sorted (or has a monotonic property): binary search or two pointers, and how do you choose?",
+    "back": "| Situation | Technique |\n|---|---|\n| Sorted array, find a target / boundary / first true in a monotone predicate | **Binary search** O(log n) |\n| Sorted array, pair/triplet with a target sum | Opposite-direction **two pointers** O(n) |\n| Compact/filter array in place | Fast-slow pointers, same start |\n| Linked list cycle / midpoint in O(1) space | Fast-slow, different speeds |\n| Contiguous subarray/substring whose constraint is monotone as the window grows | **Sliding window** |\n\nIf none of these fit (\"two things converge/compare\" but not sorted), check hash map or DP before forcing two pointers. Unsorted but sortable: sort first (O(n log n)).",
+    "source": "english/Two_Pointers.ipynb"
+  },
+  {
+    "id": "technique-topk-heap",
+    "theme": "technique",
+    "kind": "pattern",
+    "front": "'Top K', 'K-th largest', 'merge K sorted', running median: which structure?",
+    "back": "**Heap.**\n\n- Top-K largest: keep a **min-heap of size K**; push, pop when size > K. O(n log K), O(K) space (root = K-th largest).\n- Streaming data: same heap works incrementally.\n- Merge K sorted lists: heap of `(value, list_id, idx)`.\n- Running median: max-heap for the lower half + min-heap for the upper half.\n- Scheduling by earliest deadline/finish time: min-heap keyed by that time.\n- Alternative for a one-off K-th: quickselect, O(n) average.\n- Sorting everything is O(n log n) - only worth it when K is close to n.",
+    "source": "english/Google_Real_Interview_Questions.ipynb"
+  },
+  {
+    "id": "technique-window-vs-prefix-sum",
+    "theme": "technique",
+    "kind": "pattern",
+    "front": "Contiguous subarray/substring problem: sliding window or prefix sum + hash map?",
+    "back": "**Sliding window** when the constraint is *monotone* (growing the window can only make it 'worse', or better) - e.g. all values non-negative, at most K distinct chars, fixed size K. O(n).\n\n**Prefix sum** when you need many range sums `sum(i..j) = P[j+1] - P[i]`, or when values can be **negative** (window breaks): store prefix sums in a hash map to count/find subarrays with sum K, O(n).\n\nRecognise disguised windows: 'pick K cards from either end' (LC 1423) = the best K-card total is `total - min sum of a contiguous window of size n-K`.\n\nRange updates instead of queries -> difference array.",
+    "source": "english/Google_Real_Interview_Questions.ipynb"
+  },
+  {
+    "id": "technique-dp-followup-optimize",
+    "theme": "technique",
+    "kind": "concept",
+    "front": "Interviewer says 'I'm not interested in DFS with memoization - optimise time/space'. What is your move?",
+    "back": "Don't stop at top-down. Walk the standard path out loud:\n\n1. State the recurrence / state dimensions (what the DFS parameters are).\n2. Convert to **bottom-up** with a table in a valid dependency order.\n3. **Compress space**: rolling row / a few variables when only adjacent states are read (mind loop direction).\n4. Look for a **structural shortcut**: greedy, two pointers, monotone property, or a state reduction.\n5. State time = #states x transition cost, and test on a tiny example - a hasty rewrite is where bugs appear.\n\nAlso note the interviewers' habit of posing greedy problems that look like DP; check for a simple sort key.",
+    "source": "english/Google_Real_Interview_Questions.ipynb"
+  },
+  {
+    "id": "technique-distributed-graph-dfs",
+    "theme": "technique",
+    "kind": "concept",
+    "front": "Follow-up: 'each graph node lives on a different server, no global memory - visit every node exactly once.' Core idea?",
+    "back": "Move the **visited state to the nodes**, not a global set.\n\n- Each node keeps a local `visited` flag. On the first `visit(node)` request it marks itself, forwards `visit` to its unvisited/all neighbours, and replies when children reply.\n- Duplicate requests (from other neighbours) find the flag set and return immediately, so every node does its work once.\n- Alternatively carry the visited set inside the message (token passing): fine for small graphs, but messages grow.\n- Discuss failure handling and completion detection (count acks / a coordinator).\n\nSame DFS logic as usual (mark before recursing) with the cache/visited distributed.",
+    "source": "english/Google_Real_Interview_Questions.ipynb"
+  },
+  {
+    "id": "technique-close-value-window",
+    "theme": "technique",
+    "kind": "pattern",
+    "front": "Check for two elements with index distance <= a and value distance <= b: how do you beat the O(n*a) brute force?",
+    "back": "Sliding window of the last `a` elements plus a structure that answers 'is any window value within `b` of x?'.\n\n- **Sorted container / BST** (interviewer's hint): find the neighbour of x in the window and compare - O(n log a).\n- **Buckets** (O(n)): key = `x // (b + 1)`. Two values in one bucket differ by <= b; check only adjacent buckets for a difference <= b.\n\n```python\ndef near(nums, a, b):\n    buckets, w = {}, b + 1\n    for i, x in enumerate(nums):\n        k = x // w\n        if (k in buckets\n                or (k - 1 in buckets and x - buckets[k - 1] <= b)\n                or (k + 1 in buckets and buckets[k + 1] - x <= b)):\n            return True\n        buckets[k] = x\n        if i >= a:\n            del buckets[nums[i - a] // w]    # slide the window\n    return False\n```\n\nFloor division buckets negatives correctly in Python.",
+    "source": "english/Google_Real_Interview_Questions.ipynb"
+  },
+  {
+    "id": "technique-first-timeout-logs",
+    "theme": "technique",
+    "kind": "pattern",
+    "front": "Logs of (task id, timestamp, start/end) sorted by time and a timeout: find the first task that times out. How, and what changes for per-task timeouts or a stream?",
+    "back": "Queue of starts + set of unfinished tasks; **expire before handling each log**.\n\n```python\nfrom collections import deque\n\ndef first_timeout(logs, timeout):\n    q, open_ = deque(), set()\n    for tid, t, ev in logs:\n        while q and q[0][0] + timeout < t:   # deadline passed before this event\n            _, x = q.popleft()\n            if x in open_:\n                return x                     # still unfinished -> timed out\n        if ev == \"start\":\n            q.append((t, tid)); open_.add(tid)\n        else:\n            open_.discard(tid)\n    while q:                                 # tasks that never got an end log\n        _, x = q.popleft()\n        if x in open_:\n            return x\n```\n\n- Fixed timeout: deadlines are already in start order, so a **queue** suffices. O(n).\n- **Per-task timeout**: deadlines are no longer sorted -> **min-heap** keyed by `t + timeout_i`; O(n log n).\n- **Stream**: same loop works online (each log handled once).",
+    "source": "english/Google_Real_Interview_Questions.ipynb"
+  }
+]

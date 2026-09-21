@@ -1,0 +1,137 @@
+[
+  {
+    "id": "hash-table-how-it-works",
+    "theme": "hash-table",
+    "kind": "concept",
+    "front": "How does a hash table (dict/set) find a key in O(1)? Walk through insert and lookup.",
+    "back": "It is an **array of buckets** indexed by a hash of the key.\n\n1. `h = hash(key)`, then `index = h % table_size` (compression step).\n2. Insert: store key + value (or a pointer to it) in that slot. Lookup: recompute the index and compare keys there.\n3. Different keys can land on the same index (a **collision**) - see chaining / open addressing.\n4. When the **load factor** (`n / size`) passes a threshold the table is resized and every key is rehashed (amortized O(1) per insert).\n\n- A set is the same structure without values. Space is O(n) plus slack (trades memory for time).\n- Python `dict` keeps insertion order (3.7+); `set` does not.",
+    "source": "english/Hash_Table.ipynb"
+  },
+  {
+    "id": "hash-table-complexity-avg-vs-worst",
+    "theme": "hash-table",
+    "kind": "complexity",
+    "front": "Hash table time complexity: why is insert/lookup/delete \"O(1) average\" but O(n) worst case?",
+    "back": "- **Average O(1)**: a good hash spreads keys evenly, so each bucket holds O(1) items (bounded load factor).\n- **Worst O(n)**: all keys collide into one bucket (bad hash or adversarial input), so a lookup scans them all. Buckets turned into balanced trees cap it at O(log n) (Java `HashMap`).\n- Insert is **amortized** O(1): occasional O(n) resize/rehash is spread over many inserts.\n- Iteration is O(n + capacity); building from n items is O(n); space O(n).\n- Hash tables give **no ordering** and no range queries (`min`, next larger key) - use a sorted structure/heap for those.\n- Hashing a long string key costs O(length), not O(1).",
+    "source": "english/Hash_Table.ipynb"
+  },
+  {
+    "id": "hash-table-collision-resolution",
+    "theme": "hash-table",
+    "kind": "concept",
+    "front": "Hash collisions: how do chaining and open addressing resolve them, and how does deletion differ?",
+    "back": "A collision = two different keys map to the same slot.\n\n- **Chaining**: each bucket holds a list (or tree) of entries; colliding keys are appended. Delete = remove from the chain. Degrades to O(chain length).\n- **Open addressing**: on collision, probe other slots in a fixed sequence (linear, quadratic, double hashing) until an empty one is found. Lookup follows the same probe sequence and compares stored keys.\n- Open-addressing deletion cannot just empty the slot (it would break probe chains) - it leaves a **tombstone** marker.\n- Open addressing needs a lower load factor; Python's `dict` uses open addressing, Java's `HashMap` uses chaining.",
+    "source": "english/Hash_Table.ipynb"
+  },
+  {
+    "id": "hash-table-hash-function-properties",
+    "theme": "hash-table",
+    "kind": "concept",
+    "front": "What properties should a good hash function have, and what does Python require of dict keys?",
+    "back": "- **Deterministic/consistent**: same key -> same hash every time (within a process).\n- **Uniform**: spreads keys evenly to minimize collisions.\n- **Efficient** to compute (cheap relative to a lookup).\n- Compressive: maps a huge key space into a small table index.\n\nPython rule: keys must be **hashable** - `a == b` implies `hash(a) == hash(b)` - and effectively immutable. `int`, `str`, `tuple` (of hashables), `frozenset` work; `list`, `dict`, `set` do not.\nCryptographic hashes (SHA-256) add irreversibility and collision resistance but are slower - not used for dict keys.",
+    "source": "english/Hash_Table.ipynb"
+  },
+  {
+    "id": "hash-table-unhashable-keys-gotcha",
+    "theme": "hash-table",
+    "kind": "gotcha",
+    "front": "Gotcha: `TypeError: unhashable type: list` (e.g. a list as a dict key or in `Counter`). What are the fixes?",
+    "back": "Mutable containers cannot be keys because their hash would change if they changed.\n\n - Convert to a hashable canonical form: `tuple(lst)`, `tuple(sorted(word))`, `frozenset(items)`, or a string.\n - Grouping anagrams (LC 49):\n\n ```python\ndef group_anagrams(strs):                 # LC 49\n    groups = defaultdict(list)\n    for s in strs:\n        groups[tuple(sorted(s))].append(s)    # hashable canonical key\n    return list(groups.values())\n```\n\n - `Counter(list_of_lists)` fails; `Counter(map(tuple, rows))` works.\n - Sort-based key is O(k log k) per word; a 26-slot count tuple is O(k).",
+    "lc": 49,
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "hash-table-counter-defaultdict",
+    "theme": "hash-table",
+    "kind": "template",
+    "front": "Counter and defaultdict: how do you use them, and which one inserts a key on a plain read?",
+    "back": "```python\nfrom collections import Counter, defaultdict\n\ncnt = Counter(\"abbcb\")            # Counter({'b': 3, 'a': 1, 'c': 1})\ncnt[\"z\"] += 1                     # missing key starts at 0, no KeyError\nmissing = cnt[\"q\"]                # 0 -- and Counter does NOT insert \"q\"\ntop2 = cnt.most_common(2)         # [('b', 3), ('a', 1)]\n\ngroups = defaultdict(list)\ngroups[\"k\"].append(1)             # auto-creates [] on first access\n_ = groups[\"other\"]               # gotcha: plain READ inserts \"other\": []\n```\n\n - `Counter` for frequencies (`+= 1`, `most_common(k)`, `Counter(a) == Counter(b)` for anagrams).\n - `defaultdict(list)` for grouping; `defaultdict(int)` behaves like a counter.\n - **`defaultdict` inserts on read** (can bloat the dict or change `len`); `Counter` returns 0 without inserting. Use `d.get(k, 0)` on a plain dict when you do not want insertion.",
+    "source": "english/Hash_Table.ipynb"
+  },
+  {
+    "id": "hash-table-when-to-use-pattern",
+    "theme": "hash-table",
+    "kind": "pattern",
+    "front": "Problem signal -> hash table: which cues say \"use a dict/set\", and when is it the wrong tool?",
+    "back": "Reach for a hash map/set when you see:\n\n- \"Have I seen this before?\" / duplicates -> `set` (O(1) membership vs O(n) for a list).\n- Frequencies, anagrams, majority -> `Counter`.\n- \"Find a pair/complement\" (`target - x`) in one pass -> value -> index map (LC 1).\n- Grouping by a canonical key -> `defaultdict(list)`.\n- Subarray sums with negatives/zeros -> prefix sum + map (LC 560).\n- Precomputing to remove a nested loop.\n\nWrong tool when order/range matters (sorted order, nearest key) or the array is already sorted (two pointers gives O(1) space).",
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "hash-table-two-sum-one-pass",
+    "theme": "hash-table",
+    "kind": "problem",
+    "front": "LC 1 Two Sum: one-pass hash-map solution and why insert after checking?",
+    "back": "Store `value -> index` for elements already visited; for each `x`, ask whether `target - x` is in the map.\n\n ```python\ndef two_sum(nums, target):                # LC 1\n    seen = {}                             # value -> index\n    for i, x in enumerate(nums):\n        if target - x in seen:            # complement already seen?\n            return [seen[target - x], i]\n        seen[x] = i                       # insert AFTER checking (no self-pairing)\n    return []\n```\n\n - Checking before inserting stops an element from pairing with itself (`[3, 3]`, target 6 still works).\n - O(n) time, O(n) space. Brute force is O(n^2); if the input is sorted, converging pointers (LC 167) use O(1) space.",
+    "lc": 1,
+    "source": "notes/general-guidance.md"
+  },
+  {
+    "id": "hash-table-prefix-sum-map-template",
+    "theme": "hash-table",
+    "kind": "template",
+    "front": "Template: count subarrays with sum k using prefix sums + a hash map (LC 560). What is the map seeded with and why?",
+    "back": "`sum(nums[i..j]) == k` <=> `prefix[j+1] - prefix[i] == k`. For each new prefix P, add how many earlier prefixes equal `P - k`.\n\n ```python\ndef subarray_sum(nums, k):                # LC 560: count subarrays with sum == k\n    count = prefix = 0\n    seen = {0: 1}                         # empty prefix seen once\n    for x in nums:\n        prefix += x\n        count += seen.get(prefix - k, 0)  # earlier prefixes P with prefix - P == k\n        seen[prefix] = seen.get(prefix, 0) + 1   # record AFTER querying\n    return count\n```\n\n - Seed `{0: 1}`: the empty prefix, so subarrays starting at index 0 (where `prefix == k`) are counted.\n - Query **before** recording the current prefix (or `k == 0` would count an empty subarray).\n - Works with negatives and zeros (sliding window does not). O(n) time, O(n) space.",
+    "lc": 560,
+    "source": "english/Hash_Table.ipynb"
+  },
+  {
+    "id": "hash-table-prefix-map-seed-gotcha",
+    "theme": "hash-table",
+    "kind": "gotcha",
+    "front": "Prefix-sum + hash map: what breaks if you forget the `{0: 1}` seed, or record the prefix before querying?",
+    "back": "Example: `nums = [3]`, `k = 3`.\n\n- **No seed**: at `prefix = 3` we look up `3 - 3 = 0`, find nothing, and return 0 instead of 1 - every subarray that starts at index 0 is missed.\n- **Record before query**: for `k = 0` the current prefix matches itself, counting an empty subarray.\n- Same seed idea, different payload: \"longest subarray with sum k\" stores `{0: -1}` (first index of each prefix, and do **not** overwrite it); \"subarray sum divisible by k\" seeds remainder `{0: 1}`.\n- Prefer `dict.get(x, 0)` over `defaultdict` here to avoid inserting on lookups.",
+    "source": "english/Hash_Table.ipynb"
+  },
+  {
+    "id": "hash-table-longest-consecutive-set",
+    "theme": "hash-table",
+    "kind": "problem",
+    "front": "LC 128 Longest Consecutive Sequence in O(n): what is the set-based idea and why is the inner walk not O(n^2)?",
+    "back": "Put everything in a set; only start counting from numbers with no left neighbor (`x - 1 not in s`), then walk right while `y + 1 in s`.\n\n ```python\ndef longest_consecutive(nums):            # LC 128\n    s = set(nums)\n    best = 0\n    for x in s:\n        if x - 1 not in s:                # x starts a run -> walk it once\n            y = x\n            while y + 1 in s:\n                y += 1\n            best = max(best, y - x + 1)\n    return best\n```\n\n - Each run is walked exactly once (from its start), so total work is O(n).\n - Sorting also works but is O(n log n).\n - Iterate over the **set**, not the list, so duplicates do not repeat work.",
+    "lc": 128,
+    "source": "english/Hash_Table.ipynb"
+  },
+  {
+    "id": "hash-table-longest-consecutive-endpoints",
+    "theme": "hash-table",
+    "kind": "problem",
+    "front": "LC 128 alternative: how does storing run lengths at the interval endpoints work?",
+    "back": "Map `number -> length of the run that number belongs to`, but keep it **accurate only at run endpoints**. A new `x` merges its left run and right run.\n\n ```python\ndef longest_consecutive(nums):            # LC 128, interval-endpoint variant\n    length = {}                           # only endpoints are kept accurate\n    best = 0\n    for x in nums:\n        if x in length:                   # duplicate\n            continue\n        left = length.get(x - 1, 0)       # run ending at x-1\n        right = length.get(x + 1, 0)      # run starting at x+1\n        total = left + 1 + right\n        length[x - left] = length[x + right] = length[x] = total\n        best = max(best, total)\n    return best\n```\n\n - `length.get(x - 1)` is the run ending at `x - 1`; `length.get(x + 1)` the run starting at `x + 1`.\n - Only the two new endpoints (`x - left`, `x + right`) and `x` are updated; interior values may go stale but are never read.\n - One pass, O(n) time and space (same as the set approach).",
+    "lc": 128,
+    "source": "english/Hash_Table.ipynb"
+  },
+  {
+    "id": "hash-table-longest-substring-last-index",
+    "theme": "hash-table",
+    "kind": "problem",
+    "front": "LC 3 with a hash map: how does storing each character's last index remove the inner shrink loop?",
+    "back": "On a repeat, jump `left` straight past the previous occurrence instead of shrinking one step at a time.\n\n ```python\ndef length_of_longest_substring(s):       # LC 3, one pass with last-seen indices\n    last = {}                             # char -> most recent index\n    left = best = 0\n    for right, ch in enumerate(s):\n        if ch in last and last[ch] >= left:\n            left = last[ch] + 1           # jump straight past the previous copy\n        last[ch] = right\n        best = max(best, right - left + 1)\n    return best\n```\n\n - `last[ch] >= left` guards against stale entries that are already outside the window (`\"abba\"`).\n - O(n) single pass (versus ~2n with the set + while version); both are O(n).\n - Window + hash map (counts/last-seen) is the general shape for \"longest substring with property\".",
+    "lc": 3,
+    "source": "english/Hash_Table.ipynb"
+  },
+  {
+    "id": "hash-table-bloom-filter",
+    "theme": "hash-table",
+    "kind": "concept",
+    "front": "What is a Bloom filter and what trade-off does it make versus a hash set?",
+    "back": "A bit array plus k independent hash functions. **Add**: set the k bits `h_i(x)`. **Query**: if all k bits are 1 -> \"probably present\", if any is 0 -> \"definitely absent\".\n\n- **False positives** possible, **no false negatives** (\"better to over-flag than to miss\").\n- Very small memory (bits, no keys stored); O(k) per operation.\n- Cannot delete (bits are shared) unless using a counting variant.\n- Uses: skip disk/DB lookups for missing keys, dedupe URLs in a crawler, cache-penetration guard.",
+    "source": "english/Hash_Table.ipynb"
+  },
+  {
+    "id": "hash-table-real-world-uses",
+    "theme": "hash-table",
+    "kind": "concept",
+    "front": "Where do hash tables show up in real systems (Redis, LSH, ID generation)?",
+    "back": "- **Language runtimes**: Python `dict` / `set` are hash tables.\n- **Redis / KV stores**: the main keyspace is a hash table that grows by **incremental rehashing** (moving buckets over time instead of one stop-the-world resize).\n- **Non-cryptographic hashes** (e.g. MurmurHash) for IDs, sharding and consistent hashing: fast and uniform.\n- **Cryptographic hashes** (SHA-256) for integrity and Bitcoin: irreversible, collision-resistant.\n- **Locality-sensitive hashing (LSH)**: intentionally puts **similar** items in the same bucket (the opposite of uniform hashing) to find near-neighbors without comparing all pairs.",
+    "source": "english/Hash_Table.ipynb"
+  },
+  {
+    "id": "hash-table-close-strings",
+    "theme": "hash-table",
+    "kind": "problem",
+    "front": "LC 1657 Determine if Two Strings Are Close: what three conditions make it true, and why compare sorted counts?",
+    "back": "Operations allow swapping any two characters (reorder freely) and swapping the **identities** of two letters (permute the frequencies). So the strings are close iff:\n\n 1. same length,\n 2. same **set** of distinct letters,\n 3. same **multiset of frequencies**.\n\n ```python\ndef close_strings(w1, w2):                # LC 1657\n    if len(w1) != len(w2) or set(w1) != set(w2):\n        return False                      # same length and same set of letters\n    return sorted(Counter(w1).values()) == sorted(Counter(w2).values())   # same multiset of counts\n```\n\n - Compare `sorted(counts)`, not the frequency dicts themselves: `aab` vs `abb` have different dicts but are close.\n - O(n + k log k) time, O(k) space (k = alphabet size).",
+    "lc": 1657,
+    "source": "english/leet-code-problems.py"
+  }
+]
