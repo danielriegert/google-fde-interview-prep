@@ -27,6 +27,13 @@ non-contiguous memory locations. Each node contains two parts:
 Useful tips:
 - When creating a new linked list we might have to creat a dummy head to which we can link the new nodes then we return dummy_head.next
 - Should check for empty head as edge case
+- Should ask if linked list can have a cycle
+- in most cases assingn head to new variable e.g. current = head as we need the unmodified head
+- use dummy node to handle head edge cases like remnoving head
+- be creaful with mutation e.g. LC 234. cannot jsut reverse entire list and compare against original as I am mutating the linked list
+- pay attention when using for loop what to set for range. often need to subtract 1.
+ Also remember for loop is 0 indexed and upper range not inclusive whereas linked list is 1 indexed
+- In some scenarios we might want to link the tail wiht the head of the list and then break it again at the new tail e.g. LC 61
 """
 # Delete from a Linked List
 def delete_by_value(head, key):
@@ -38,18 +45,96 @@ def delete_by_value(head, key):
     if head.data == key:
         return head.next
 
+    # Init current and previous
     current = head
     prev = None
     while current and current.data != key:
         prev = current
         current = current.next
 
+    # if value is not found
     if not current:
         print(f"Value {key} not found in the list.")
         return head
 
+    # if we find value it will be at current. so we point pre.next at the element after current i.e. current.next
     prev.next = current.next
     return head
+
+# LC 83:
+# This removes dupes so that there are only unique values e.g. 1,2,2,3 -> 1,2,3
+def deleteDuplicates(self, head: ListNode | None) -> ListNode | None:
+    if not head:
+        return None
+        
+    prev = head
+    current = head.next
+    
+    while current:
+        if current.val == prev.val:
+            # Duplicate found: bypass it using prev
+            prev.next = current.next
+        else:
+            # Unique node found: move prev forward to it
+            prev = current
+            
+        # Always move current forward to check the next node
+        current = current.next
+        
+    return head
+
+# LC 82
+# This removes ALL elements that are duplicates e.g. 1,2,2,3 -> 1,3
+def deleteDuplicates(self, head: ListNode | None) -> ListNode | None:
+    # need dummy node to handle head edge cases
+    dummy = ListNode(0, head)
+    prev = dummy
+    
+    current = head
+    while current:
+        # Check if it's the start of a duplicate sub-sequence
+        if current.next and current.val == current.next.val:
+            # Skip all nodes with the same value
+            while current.next and current.val == current.next.val:
+                current = current.next
+            # Link prev to the node after the duplicates
+            prev.next = current.next
+        else:
+            # No duplicate, move prev forward
+            prev = prev.next
+            
+        current = current.next
+        
+    return dummy.next
+
+# LC 19
+def removeNthFromEnd(self, head: ListNode | None, n: int) -> ListNode | None:
+    """
+    By moving fast n steps ahead first, the distance between fast and slow is always n nodes.
+    When fast.next reaches the end of the list, slow is sitting directly before the node that needs to be deleted.
+    The dummy node ensures that if head itself is deleted, dummy.next correctly points to the new head of the list
+    Time: O(n)
+    Space: O(1)
+    """
+    # Use a dummy node to handle edge cases (like removing the head)
+    dummy = ListNode(0, head)
+    slow = dummy
+    fast = dummy
+
+    # 1. Move fast n steps ahead to create the gap
+    for _ in range(n):
+        fast = fast.next
+
+    # 2. Move both pointers until fast reaches the end
+    # need to include fast.next to avoid None with slow.next.next
+    while fast and fast.next:
+        slow = slow.next
+        fast = fast.next
+
+    # 3. Skip the target node
+    slow.next = slow.next.next
+
+    return dummy.next
 
 # Insert into Linked List
 def insert_at_position(head, position, data):
@@ -83,6 +168,7 @@ def insert_at_position(head, position, data):
     return head
 
 # Find the middle of the linked list using slow and fast pointers
+# if it has cycle then might not finish
 slow = head
 fast = head
 while fast and fast.next:
@@ -90,6 +176,7 @@ while fast and fast.next:
     fast = fast.next.next
 
 # Traverse to the end of the linked list
+# if we don#t do and head.next last value of head will be None
 while head and head.next:
     head = head.next
 
@@ -105,6 +192,111 @@ def reverseList(self, head: Optional[ListNode]) -> Optional[ListNode]:
             current = nxt           # 4. Move current forward
         
         return prev                 # Return the new head of the reversed list
+
+
+# LC 92
+def reverseBetween(self, head: ListNode | None, left: int, right: int) -> ListNode | None:
+        """
+        Time: O(n)
+        Space: O(1)
+        """
+        if not head or left == right:
+            return head
+
+        # Use a dummy node to handle edge cases where left == 1
+        dummy = ListNode(0, head)
+        prev_node = dummy
+
+        # 1. Move prev_node to the node just before the 'left' position
+        for _ in range(left - 1):
+            prev_node = prev_node.next
+
+        # 2. 'current' will point to the first node of the sublist to reverse
+        current = prev_node.next
+        
+        # 3. Reverse the sublist from left to right
+        prev = None
+        for _ in range(right - left + 1):
+            nxt = current.next
+            current.next = prev
+            prev = current
+            current = nxt
+
+        # 4. Reconnect the reversed sublist with the rest of the list
+        # prev is now the new head of the reversed section
+        # prev_node.next was the old start of the section (now points to the node after 'right')
+        # the old head of the list is now the tail
+        tail = prev_node.next
+        # connect the tail of the list with the next element after right
+        tail.next = current
+        # connect the element before left with the new head of the list
+        prev_node.next = prev
+
+        return dummy.next
+
+# LC 61
+def rotateRight(self, head: ListNode | None, k: int) -> ListNode | None:
+    if not head or not head.next or k == 0:
+        return head
+    
+    # Step 1: Find the length and the tail
+    length = 1
+    tail = head
+    while tail.next:
+        tail = tail.next
+        length += 1
+        
+    # Step 2: Handle cases where k is a multiple of length
+    k = k % length
+    if k == 0:
+        return head
+    
+    # Step 3: Make it a circular linked list
+    tail.next = head
+    
+    # Step 4: Find the new tail (length - k steps from head) and subtract 1
+    steps_to_new_tail = length - k - 1
+    new_tail = head
+    for _ in range(steps_to_new_tail):
+        new_tail = new_tail.next
+        
+    # Step 5: Break the circle and get the new head
+    new_head = new_tail.next
+    new_tail.next = None
+    
+    return new_head
+
+
+# LC 86
+def partition(self, head: ListNode | None, x: int) -> ListNode | None:
+    """
+    1. Init dummy heads for smaller and larger sub linked lists
+    2. Iterate through current list and link elements to sub lists
+    3. Terminate larger sub list to make sure no cycles
+    4. Link lists together
+    """
+    # Create dummy heads for the two partitions
+    smaller_head = ListNode(0, None)
+    larger_head = ListNode(0, None)
+
+    current = head
+    larger_current = larger_head
+    smaller_current = smaller_head
+    while current:
+        if current.val < x:
+            smaller_current.next = current
+            smaller_current = current
+        else:
+            larger_current.next = current
+            larger_current = current
+        current = current.next
+
+    # Terminate the greater list to avoid cycles
+    larger_current.next = None
+    # Link the lists together
+    smaller_current.next = larger_head.next
+
+    return smaller_head.next
 
 # Iterate through both halves simultaneously and find max twin sum
 max_sum = 0
@@ -367,3 +559,39 @@ def copyRandomList(self, head: 'Optional[Node]') -> 'Optional[Node]':
         curr = curr.next
         
         return dummy_head.next
+
+# LC 239
+"""
+Can NOT reverse entire list and then compare as I would mutate the list.
+Would have to copy it instead e.g. copy nodes or iterate linked list and store all values in array.
+Right approach:
+- Find middle of linked list
+- Reverse one half
+- Compare the two halfs
+Time: O(n)
+Space: O(1)
+"""
+def isPalindrome(self, head: ListNode | None) -> bool:
+    # Step 1: Find the middle of the linked list
+    slow = fast = head
+    while fast and fast.next:
+        slow = slow.next
+        fast = fast.next.next
+    
+    # Step 2: Reverse the second half of the list
+    prev = None
+    while slow:
+        nxt = slow.next
+        slow.next = prev
+        prev = slow
+        slow = nxt
+    
+    # Step 3: Compare the first half and the reversed second half
+    left, right = head, prev
+    while right:
+        if left.val != right.val:
+            return False
+        left = left.next
+        right = right.next
+        
+    return True

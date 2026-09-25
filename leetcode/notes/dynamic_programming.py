@@ -292,7 +292,10 @@ Base case for bottom up: first row and first column (or first cell)
     - Often, the first row and first column are initialized based on the problem's constraints (e.g., only one way to reach any cell in the first row or column).
 Transition: For each cell (r, c), the value is derived from its neighbors (usually the cell above and the cell to the left). The specific formula depends on the problem (e.g., sum, min, max, count).
     - Example: dp[r][c] = dp[r-1][c] + dp[r][c-1] for counting paths, or dp[r][c] = min(dp[r-1][c], dp[r][c-1]) + grid[r][c] for minimum path sum problems.
-"""
+General:
+    - If I am given grid and need to find sum, max, min of values in grid then can modify grid in place
+    - If need to acount unique paths, steps, etc then need dp
+    """
 # Templates
 def gridDPProblem(m: int, n: int) -> int:
     # Step 1 & 2: Initialize DP table with base cases
@@ -368,6 +371,7 @@ def uniquePathsWithObstacles(self, obstacleGrid: list[list[int]]) -> int:
     # Initialize the first column
     # Set it to 1 if reachable,0 if blocked
     for r in range(1, m):
+        # 0 on grid means reachable, 1 in dp means reachabale i.e. current cell not blocked and previous one also note
         if obstacleGrid[r][0] == 0 and dp[r - 1][0] == 1:
             dp[r][0] = 1
             
