@@ -3,8 +3,14 @@ Key Python operations: Heaps & Priority Queues (heapq).
 """
 
 """
-heapq has no heap class -- it operates in place on an ordinary list, which it
-treats as a min-heap. There is no built-in max-heap; negate values to simulate one.
+Priority Queue is an Abstract Data Type, and Heap is the concrete data structure we use to implement a priority queue.
+There are two kinds of heaps - Min Heap and Max Heap. 
+A Min Heap is a tree that has two properties:
+  - almost complete, i.e. every level is filled except possibly the last(deepest) level. The filled items in the last level are left-justified.
+  - for any node, its key (priority) is greater than its parent's key (Min Heap).
+A Max Heap has the same property #1 and opposite property #2, i.e. for any node, its key is less than its parent's key
+
+heapq is a min-heap i.e. element at top is smallest. There is no built-in max-heap; negate values when inserting and poping to simulate one.
 
 Complexity (n = heap size, k = items requested for top-k operations):
 | Operation      | Call                              | Cost       |
@@ -26,7 +32,7 @@ nums = [5, 1, 8, 3, 9, 2]
 heapq.heapify(nums)          # nums is now heap-ordered, not fully sorted
 # nums[0] is now the smallest value; the rest only satisfy the heap property
 
-# --- push: add x, then sift it up until the heap property holds again ---
+# --- push: add x, then shift it up until the heap property holds again ---
 heapq.heappush(nums, 4)      # O(log n)
 
 # --- pop: remove & return the smallest item ---
@@ -46,7 +52,7 @@ heapq.heapreplace(nums, 4)   # pops the root FIRST, then pushes 4 -- heap must b
 # Accepts a key function -- handy on dicts and objects. O(n log k)
 data = {'a': 5, 'b': 1, 'c': 9}
 heapq.nlargest(2, data.items(), key=lambda x: x[1])   # [('c', 9), ('a', 5)]
-
+heapq.nsmallest(2, data.items(), key=lambda x: x[1]) # [('b', 1), ('a', 5)]
 # --- merge: lazily merge already-sorted iterables into one sorted iterator ---
 # Does not load everything into memory. O(n log k)
 a = [1, 4, 7]
@@ -104,3 +110,24 @@ Heap vs. deque, in one line each:
   ordered by insertion, O(1) to push or pop at either end, no notion of priority.
 """
 
+# LC 215
+"""
+Time O(n log k) as it builds a heap of size k
+Space O(k) as it maintains a heap of size k
+"""
+def findKthLargest(self, nums: list[int], k: int) -> int:
+    import heapq
+
+    top_k = heapq.nlargest(k, nums)
+    return top_k[k - 1]
+
+# Alternatively wihtout using nlargest
+def findKthLargest(self, nums: list[int], k: int) -> int:
+  min_heap = []
+  for num in nums:
+      heapq.heappush(min_heap, num)
+      if len(min_heap) > k:
+          heapq.heappop(min_heap)
+
+  # The root of the heap is the k-th largest element
+  return min_heap[0]

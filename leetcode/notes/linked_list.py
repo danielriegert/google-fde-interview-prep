@@ -595,3 +595,119 @@ def isPalindrome(self, head: ListNode | None) -> bool:
         right = right.next
         
     return True
+
+# LC 146: LRU Cache
+"""
+An LRU cache needs to do two things rapidly:
+Find and update an item instantly (which points straight to a Hash Map, providing $O(1)$ lookups).
+Track the recency of usage and evict the oldest item when capacity is reached (which a standard hash map cannot do because dictionaries are unordered).
+
+To solve this, pair the Hash Map with a Doubly Linked List:
+Hash Map: Stores key -> Node references. This lets us jump straight to any node in $O(1)$ time without searching.
+Doubly Linked List: Maintains the order of usage. Because it's doubly linked, if we have a reference to a node, 
+we can remove it from its current position and insert it elsewhere in O(1) time.
+
+Steps:
+1. put():
+- check if key exists in cache if yes remove from linked list
+- add new Node to cache
+- add new Node before tail of linked list (new recently used element)
+- remove lru element if capacity is exceeded
+
+2. get():
+- check if key in cache. if not return - 1
+- if key in cache remove element from linked list, then add it to element before tail of linked list (new recently used element)
+- return node value
+
+
+Time Complexity:
+get(key): O(1) average and worst case.
+put(key, value): O(1) average and worst case.
+
+Space Complexity: 
+O(capacity) to store the keys, values, and linked list nodes up to the specified limit
+"""
+
+class Node:
+    """A doubly linked list node representing a cache entry."""
+    def __init__(self, key: int = 0, val: int = 0):
+        self.key = key          # Stored so we can delete it from the hash map during eviction
+        self.val = val          # The actual value stored in the cache
+        self.prev = None        # Pointer to the previous node in the list
+        self.next = None        # Pointer to the next node in the list
+
+
+class LRUCache:
+    def __init__(self, capacity: int):
+        self.capacity = capacity
+        # Hash map for O(1) lookups: maps cache keys directly to their Doubly Linked List nodes
+        self.cache = {}  
+        
+        # Sentinel dummy head and tail nodes eliminate edge cases (e.g., empty lists or head/tail deletions)
+        self.head = Node()
+        self.tail = Node()
+        
+        # Link the dummy nodes together initially
+        self.head.next = self.tail
+        self.tail.prev = self.head
+
+    def _remove(self, node: Node) -> None:
+        """Helper method to excise a node from its current position in the doubly linked list.
+        Runs in O(1) time since doubly linked nodes hold direct references to neighbors.
+        """
+        prev_node = node.prev
+        next_node = node.next
+        
+        # Bypass the target node by stitching its neighbors together
+        prev_node.next = next_node
+        next_node.prev = prev_node
+
+    def _add_to_tail(self, node: Node) -> None:
+        """Helper method to insert a node right before the dummy tail.
+        In this convention, the tail represents the MOST RECENTLY USED position.
+        """
+        prev_node = self.tail.prev
+        
+        # Insert the new node between the old tail-prev and the dummy tail
+        prev_node.next = node
+        node.prev = prev_node
+        node.next = self.tail
+        self.tail.prev = node
+
+    def get(self, key: int) -> int:
+        """Retrieves a value by key in O(1) time and marks it as recently used."""
+        if key in self.cache:
+            node = self.cache[key]
+            
+            # Accessing the item makes it most recently used; move it to the tail
+            self._remove(node)
+            self._add_to_tail(node)
+            
+            return node.val
+        
+        # Key does not exist in cache
+        return -1
+
+    def put(self, key: int, value: int) -> None:
+        """Inserts or updates a key-value pair in O(1) time, evicting the LRU item if capacity is exceeded."""
+        if key in self.cache:
+            # If the key already exists, remove the old node to prepare for replacement
+            self._remove(self.cache[key])
+        
+        # Create a new node and map it in the hash table
+        node = Node(key, value)
+        self.cache[key] = node
+        
+        # Place the new/updated node at the tail (most recent)
+        self._add_to_tail(node)
+        
+        # Enforce cache capacity constraints
+        if len(self.cache) > self.capacity:
+            # The least recently used item sits immediately after the dummy head
+            lru = self.head.next
+            
+            # Remove it from the linked list
+            self._remove(lru)
+            
+            # Delete it from the hash map using its stored key
+            del self.cache[lru.key]

@@ -349,6 +349,7 @@ ToDo: summaries of different flavours of BS, DP (string, grid, array) and common
 | **Day 20–21** | Final Review & Rest                     | Lightly review your personal error log and key template structures. Prioritize rest over cramming before your loop.                                                                          |
 
 Linked List: 138, 2, 141
+heap & priority queue, intervals & backtracking, bit manipultaion
 
 # Approach:
 
