@@ -131,3 +131,37 @@ def findKthLargest(self, nums: list[int], k: int) -> int:
 
   # The root of the heap is the k-th largest element
   return min_heap[0]
+
+# LC 373
+import heapq
+from typing import List
+"""
+Time Complexity: O(K \og(min(K, N))), where N is the length of nums1. 
+We perform at most K heap operations, and the size of the heap is bounded by min(K, N).
+
+Space Complexity: 
+O(min(K, N)) to store the elements inside the min-heap and the output array.
+"""
+def kSmallestPairs(
+      self, nums1: List[int], nums2: List[int], k: int
+  ) -> List[List[int]]:
+    if not nums1 or not nums2:
+      return []
+
+    min_heap = []
+    # Initialize the heap with the first element of nums2 paired with each element of nums1 (up to k)
+    for i in range(min(k, len(nums1))):
+      heapq.heappush(min_heap, (nums1[i] + nums2[0], i, 0))
+
+    result = []
+
+    # Extract k elements or until the heap is empty
+    while min_heap and len(result) < k:
+      current_sum, i, j = heapq.heappop(min_heap)
+      result.append([nums1[i], nums2[j]])
+
+      # If there is a next element in nums2 for the current nums1[i], push it to the heap
+      if j + 1 < len(nums2):
+        heapq.heappush(min_heap, (nums1[i] + nums2[j + 1], i, j + 1))
+
+    return result

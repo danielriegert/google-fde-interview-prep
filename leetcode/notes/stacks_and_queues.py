@@ -17,6 +17,29 @@ Key Python operations: Stacks & Queues.
 Stack will hold my result e.g. LC 150, 71
 - Might need to combine wiht hasmap where I need to match pairs e.g. opening and closing brackets such as LC 5
 - In some cases might need while loop within for loop where I need to modify stack until certain condition is met i.e. remove multiple elements (see LC 735)
+
+When to use:
+
+## 1. Nested Structures and Bracket Matching
+* **The Sign:** The problem involves pairs of matching items, nested scopes, or hierarchical blocks—such as validating parentheses `()`, curly braces `{}`, XML/HTML tags, or JSON parsing.
+* **Why a Stack Fits:** As you iterate forward, you store opening tokens. When you encounter a closing token, it *must* match the most recent opening token you stored.
+
+## 2. The "Next Greater / Smaller Element" Pattern
+* **The Sign:** You need to look ahead or behind in an array to find the first element that is strictly greater or smaller than the current element (e.g., finding how many days until a warmer temperature).
+* **Why a Stack Fits:** A **monotonic stack** (keeping elements in strictly increasing or decreasing order) allows you to efficiently pop elements that are smaller/larger than the current element as you sweep across the array, resolving dependencies in $O(N)$ time instead of $O(N^2)$.
+e.g. when we need to find min or max in array e.g. LC 2104
+
+## 3. Simulating Recursion or Depth-First Search (DFS)
+* **The Sign:** You are traversing a tree or graph, exploring a maze, or evaluating an expression tree where you need to go deep before going wide, or you need to convert a recursive algorithm into an iterative one.
+* **Why a Stack Fits:** Recursion naturally uses the system call stack. By replacing recursion with an explicit stack data structure, you can manage the state, backtrack cleanly, and avoid stack overflow errors on deep graphs.
+
+## 4. Sequential History and Undo/Redo Mechanisms
+* **The Sign:** The application requires tracking state history where the most recent action is the first one undone (e.g., text editor Ctrl+Z, browser history, or calculator history).
+* **Why a Stack Fits:** Pushing state snapshots or operations onto a stack allows you to pop them off in reverse chronological order instantly.
+
+---
+
+Are you currently working through a specific problem or exploring a particular pattern like monotonic stacks?
 """
 # ==========================================================
 # Basic Stack Using List
@@ -346,3 +369,67 @@ def decodeString(self, s: str) -> str:
             current_string += char
             
     return current_string
+
+# LC 2345
+from collections import Counter
+from typing import List
+
+"""
+Time Complexity: O(N log N) to sort the peaks array. The stack operations take O(N) amortized time as each element is pushed and popped at most once.  
+Space Complexity: O(N) for the stack and peak_counts hash map.
+"""
+def visibleMountains(self, peaks: List[List[int]]) -> int:
+    # Step 1: Count exact duplicate peaks
+    peak_counts = Counter(tuple(p) for p in peaks)
+    
+    # Step 2: Sort peaks by x-coordinate
+    sorted_peaks = sorted(peaks)
+    
+    # Helper function: Check if p1 is inside p2
+    def is_within(p1: List[int], p2: List[int]) -> bool:
+        x1, y1 = p1
+        x2, y2 = p2
+        # Height of p2 at x1
+        y2_at_x1 = y2 - abs(x2 - x1)
+        return y1 <= y2_at_x1
+
+    stack = []
+
+    for p in sorted_peaks:
+        # 1. Pop mountains off the stack if the current mountain 'p' completely covers them
+        while stack and is_within(stack[-1], p):
+            stack.pop()
+
+        # 2. Skip 'p' if it is completely covered by the top mountain in the stack
+        if stack and is_within(p, stack[-1]):
+            continue
+
+        # 3. 'p' is a candidate for visibility
+        stack.append(p)
+
+    # Step 3: Only count mountains from stack that are unique (count == 1)
+    return sum(1 for p in stack if peak_counts[tuple(p)] == 1)
+
+# LC: 2104
+def subArrayRanges(self, nums: List[int]) -> int:
+    n, answer = len(nums), 0 
+    stack = []
+    
+    # Find the sum of all the minimum.
+    for right in range(n + 1):
+        while stack and (right == n or nums[stack[-1]] >= nums[right]):
+            mid = stack.pop()
+            left = -1 if not stack else stack[-1]
+            answer -= nums[mid] * (mid - left) * (right - mid)
+        stack.append(right)
+
+    # Find the sum of all the maximum.
+    stack.clear()
+    for right in range(n + 1):
+        while stack and (right == n or nums[stack[-1]] <= nums[right]):
+            mid = stack.pop()
+            left = -1 if not stack else stack[-1]
+            answer += nums[mid] * (mid - left) * (right - mid)
+        stack.append(right)
+    
+    return answer
