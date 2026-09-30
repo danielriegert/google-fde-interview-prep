@@ -379,6 +379,131 @@ class Solution:
         # Return the accumulated reversals for this node and its entire subtree.
         return reversals
 
+# LC 200
+class Solution:
+    """
+    Can be modelled as finding connected components in a graph using DFS.
+    Iterate through matrix
+    If we find a 1 increase island count by one and launch DFS to explore all neighborign cells
+    I neighboring cell is 1 mark it as 0 to recrod that we visited it
+    Stop DFS if neighboring cell is 0 or out of bounds og grid
+    Time and Space: O(M X N) for space due to call stack in worst case i.e. all islands have to visit every node
+    """
+    def dfs(self,grid: List[List[str]], r: int, c: int, rows: int, columns: int):
+        # Base case: out of bounds or water
+        if r < 0 or c < 0 or r >= rows or c >= columns or grid[r][c] == "0":
+            return
+        
+        # Set visited land to 0 so we don't visit again
+        grid[r][c] = "0"
+
+        # Explore adjacent elements
+        self.dfs(grid, r - 1, c, rows, columns)
+        self.dfs(grid, r + 1, c, rows, columns)
+        self.dfs(grid, r, c - 1, rows, columns)
+        self.dfs(grid, r, c + 1, rows, columns)
+
+    def numIslands(self, grid: List[List[str]]) -> int:
+        # Edge case: empty grid
+        if not grid:
+            return 0
+
+        island_count = 0
+        # Get grid size
+        rows, columns = len(grid), len(grid[0])
+
+        # iterate over grid when 1 is found increade island count and launch dfs to
+        # explore adjacent elements
+        for r in range(rows):
+            for c in range(columns):
+                if grid[r][c] == "1":
+                    island_count += 1
+                    self.dfs(grid, r, c, rows, columns)
+
+        return island_count
+    
+# LC 130
+class Solution:
+    def dfs(self, board, r, c, rows, columns):
+        if r < 0 or c < 0 or r >= rows or c >= columns or board[r][c] != "O":
+            return
+        
+        # Mark as visited / safe from being captured
+        board[r][c] = "E"
+        self.dfs(board, r - 1, c, rows, columns)
+        self.dfs(board, r + 1, c, rows, columns)
+        self.dfs(board, r, c - 1, rows, columns)
+        self.dfs(board, r, c + 1, rows, columns)
+
+    def solve(self, board: List[List[str]]) -> None:
+        """
+        Do not return anything, modify board in-place instead.
+        """
+        if not board or not board[0]:
+            return
+
+        rows, columns = len(board), len(board[0])
+
+        # 1. Start DFS from all 'O's on the borders
+        for r in range(rows):
+            for c in range(columns):
+                if (r == 0 or r == rows - 1 or c == 0 or c == columns - 1) and board[r][c] == "O":
+                    self.dfs(board, r, c, rows, columns)
+
+        # 2. Sweep the board: capture surrounded 'O's, restore border-connected 'E's
+        for r in range(rows):
+            for c in range(columns):
+                if board[r][c] == "O":
+                    board[r][c] = "X"
+                elif board[r][c] == "E":
+                    board[r][c] = "O"
+
+# LC 1254
+# This is a combination of LC 200 Number of Islands and LC 130 Surrounded Regions.
+# Key words: enclosed and count connected components
+# We first mark all the land that touches the edge (top, bottom, left, and right rows) into water to mark as visited
+# Then we count the remaining connected components which will be our closed islands
+# By definition every island that does not touch the edge needs to be surrounded by water and hence be enclosed
+# Time: O(N x M)
+# Space: O(N x M) due to recursion stack
+class Solution:
+    def dfs(self, grid, row, col, rows, columns):
+        if row < 0 or col < 0 or row >= rows or col >= columns or grid[row][col] == 1:
+            return 
+        
+        grid[row][col] = 1
+
+        self.dfs(grid, row + 1, col, rows, columns)
+        self.dfs(grid, row - 1, col, rows, columns)
+        self.dfs(grid, row, col + 1, rows, columns)
+        self.dfs(grid, row, col - 1, rows, columns)
+
+    def closedIsland(self, grid: list[list[int]]) -> int:
+        rows, columns = len(grid), len(grid[0])
+        closed_island_count = 0
+
+        # Step 1: Eliminate 0s (land) touching the top and bottom borders as these cannot be closed islands by definition
+        for col in range(columns):
+            if grid[0][col] == 0:
+                self.dfs(grid, 0, col, rows, columns)
+            if grid[rows - 1][col] == 0:
+                self.dfs(grid, rows - 1, col, rows, columns)
+        
+        # Step 2: Eliminate 0s (land) touching the left and right borders as these cannot be closed islands by definition
+        for row in range(rows):
+            if grid[row][0] == 0:
+                self.dfs(grid, row, 0, rows, columns)
+            if grid[row][columns - 1] == 0:
+                self.dfs(grid, row, columns - 1, rows, columns)
+
+        # Step 3: Count remaining interior closed islands (count connected components)
+        for row in range(rows):
+            for col in range(columns):
+                if grid[row][col] == 0:
+                    closed_island_count += 1
+                    self.dfs(grid, row, col, rows, columns)
+
+        return closed_island_count
 
 # ==========================================================
 # Graph BFS

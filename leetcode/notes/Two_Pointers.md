@@ -267,3 +267,90 @@ def longestPalindrome(s: str) -> str:
 ```
 
 - **Explanation:** For every index `i`, we test how far we can stretch outward to the left and right while characters match. This checks every possible palindrome center in $O(n^2)$ time without redundant checks.
+
+---
+
+# LC Questions:
+
+# LC: 581
+
+Core idea:
+Instead of checking vevery possible subarray we check for violations in the order.
+A sorted array naturally increases left from right.
+We try to find the right and left most elements that are out of order.
+We divided it into two subproblems.
+The difference is the lenght of the subarray.
+Time: O(n)
+Space: O(1)
+
+```python
+def findUnsortedSubarray(self, nums: list[int]) -> int:
+    n = len(nums)
+
+    # Initialize pointers for the unsorted window boundaries.
+    # If they remain -1 at the end, it means the array is already sorted.
+    left, right = -1, -1
+
+    # Track the maximum element seen so far from left to right.
+    # Initialized to negative infinity so the first element is always larger.
+    max_seen = -float('inf')
+
+    # Track the minimum element seen so far from right to left.
+    # Initialized to positive infinity so the last element is always smaller.
+    min_seen = float('inf')
+
+    # -------------------------------------------------------------
+    # PASS 1: Find the RIGHT boundary of the unsorted subarray
+    # -------------------------------------------------------------
+    # As we move forward, numbers should strictly increase or stay equal.
+    for i in range(n):
+        if nums[i] < max_seen:
+            # Violation found! This number is smaller than a previous max,
+            # meaning it's out of order and forces the right boundary out.
+            right = i
+        else:
+            # No violation; update our maximum tracked value.
+            max_seen = nums[i]
+
+    # -------------------------------------------------------------
+    # PASS 2: Find the LEFT boundary of the unsorted subarray
+    # -------------------------------------------------------------
+    # As we move backward, numbers should strictly decrease or stay equal.
+    for i in range(n - 1, -1, -1):
+        if nums[i] > min_seen:
+            # Violation found! This number is larger than a subsequent min,
+            # meaning it's out of order and pulls the left boundary back.
+            left = i
+        else:
+            # No violation; update our minimum tracked value.
+            min_seen = nums[i]
+
+    # -------------------------------------------------------------
+    # RESULT CALCULATION
+    # -------------------------------------------------------------
+    # If the left pointer never moved, no violations were found anywhere.
+    if left == -1:
+        return 0
+
+    # The length of the subarray between the left and right violations.
+    return right - left + 1
+
+# Alternatively
+# We sort the array first the we compare the sorted array with the original one and find the most left and right elements that differ.
+# Time: O(n log n), Space: O(n)
+def findUnsortedSubarray(self, nums: list[int]) -> int:
+    # Create a sorted copy of the array (equivalent to nums.clone() + Arrays.sort())
+    snums = sorted(nums)
+
+    # Initialize start to max possible index, end to 0
+    start, end = len(nums), 0
+
+    # Compare the original array with the sorted array element by element
+    for i in range(len(nums)):
+        if snums[i] != nums[i]:
+            start = min(start, i)
+            end = max(end, i)
+
+    # If end - start >= 0, return the length of the window; otherwise, return 0
+    return end - start + 1 if end - start >= 0 else 0
+```

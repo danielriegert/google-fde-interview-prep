@@ -12,7 +12,7 @@ Key Python operations: Stacks & Queues.
 # ==========================================================
 # Stack
 """
-- Useful when we need to evaluate sequences in LIFO
+- Useful when we need to evaluate sequences in LIFO, only current and previous element are relevant
 - When I am given a sequence then most likely need to iterate through it and based on conditions append or pop from stack.
 Stack will hold my result e.g. LC 150, 71
 - Might need to combine wiht hasmap where I need to match pairs e.g. opening and closing brackets such as LC 5
@@ -433,3 +433,37 @@ def subArrayRanges(self, nums: List[int]) -> int:
         stack.append(right)
     
     return answer
+
+# LC: 581
+"""
+Core idea:
+We need to find the left and right boundary of the subarray.
+We can do this by using monotonic stacks to find the max and min
+"""
+def findUnsortedSubarray(self, nums: list[int]) -> int:
+    n = len(nums)
+    left = n
+    right = 0
+    
+    # 1. Find the left boundary using a monotonic increasing stack
+    stack = []
+    for i in range(n):
+        # If current element breaks the increasing order
+        while stack and nums[stack[-1]] > nums[i]:
+            left = min(left, stack.pop())
+        # important: this is index!!!
+        stack.append(i)
+        
+    # 2. Find the right boundary using a monotonic decreasing stack
+    stack = []
+    for i in range(n - 1, -1, -1):
+        # If current element breaks the decreasing order from the right
+        while stack and nums[stack[-1]] < nums[i]:
+            right = max(right, stack.pop())
+        stack.append(i)
+        
+    # If left and right never expanded, the array is already sorted
+    if left >= right:
+        return 0
+        
+    return right - left + 1
