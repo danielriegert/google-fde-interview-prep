@@ -22,6 +22,9 @@ Three-State Coloring: Advanced implementations use color markings—White (unvis
 Initialization: Select a starting vertex, mark it as visited, and push it onto the stack (or enter the recursive call).
 Recursive Exploration: Look at an unvisited adjacent neighbor of the current node, mark it, and immediately shift focus to it.
 Backtracking Step: When a vertex has no remaining unvisited neighbors, the algorithm pops it or returns from the recursive function to resume exploration from the parent node.
+
+General:
+- In some cases we might want to first launch DFS from the edges of the grid (e.g. LC 1254, LC 1020)
 """
 # Recursive DFS Implementation
 def dfs_recursive_adjacency_list(graph, vertex, visited=None):
@@ -863,6 +866,9 @@ def topological_sort_dict(adj):
 
 #-----------------------------------------------------
 # Example Course Schedule I
+# Important:
+# In graph theory and topological sorting, the direction pre -> course matches 
+# the natural flow of time and dependencies: you must complete a prerequisite before you can take the dependent course
 def canFinish(self, numCourses: int, prerequisites: List[List[int]]) -> bool:
         from collections import deque
 

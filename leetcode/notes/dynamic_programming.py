@@ -290,11 +290,16 @@ Brute force: DFS with memoization. DP: Bottom up tabulation.
 Grid based problems: 2D DP:
 Base case for bottom up: first row and first column (or first cell)
     - Often, the first row and first column are initialized based on the problem's constraints (e.g., only one way to reach any cell in the first row or column).
-Transition: For each cell (r, c), the value is derived from its neighbors (usually the cell above and the cell to the left). The specific formula depends on the problem (e.g., sum, min, max, count).
+Transition: For each cell (r, c), the value is derived from its neighbors !!!(usually the cell above and the cell to the left)!!!. The specific formula depends on the problem (e.g., sum, min, max, count).
     - Example: dp[r][c] = dp[r-1][c] + dp[r][c-1] for counting paths, or dp[r][c] = min(dp[r-1][c], dp[r][c-1]) + grid[r][c] for minimum path sum problems.
 General:
     - If I am given grid and need to find sum, max, min of values in grid then can modify grid in place
-    - If need to acount unique paths, steps, etc then need dp
+    - If need to acount unique paths, steps, etc then need dp. 
+    !!!Important!!! this only works if movement is restricted to right and down. If we can move in all directions it is not DP, might be BFS then.
+    - DFS should usually return the same return type as parent function / answer
+    - Use DP if asked to find path with certain properties (e.g., min cost, max sum, unique paths) and the problem can be broken down into subproblems based on grid positions.
+    - There might be cases where we need to track multiple states at each cell e.g. all possible counts of 0s and 1s to reach the bottom right corner (LC 2510). 
+    In such cases, we can use a set or list at each cell to store all achievable states.
     """
 # Templates
 def gridDPProblem(m: int, n: int) -> int:
@@ -473,8 +478,6 @@ def minimumTotal(self, triangle: list[list[int]]) -> int:
     return triangle[0][0]
 
 
-
-# Graph DFs with memo top down approach
 """
 Time: O(N^2)
 Space: O(N^2)
@@ -555,6 +558,94 @@ def minPathSum(self, grid: list[list[int]]) -> int:
             return result
         
         return dfs(0, 0)
+
+# LC 2510
+"""
+!!!Important!!! we need to keep track of all possible counts of 0s and 1s to reach the bottom right corner.
+Each cell can be reached with different counts of 0s and 1s depending on the path taken. 
+Therefore, we need to store all possible counts at each cell in the DP table.
+
+State: all counts to reach dp[i][j]
+Base case: first row and first column
+Transition: dp[i][j] = all counts from dp[i - 1][j] + all counts from dp[i][j - 1]
+"""
+def isThereAPath(self, grid: list[list[int]]) -> bool:
+    rows, cols = len(grid), len(grid[0])
+    
+    # Quick pruning: total path length must be even
+    if (rows + cols - 1) % 2 != 0:
+        return False
+        
+    # dp[i][j] will be a set of all possible counts at cell (i, j)
+    dp = [[set() for _ in range(cols)] for _ in range(rows)]
+    
+    # 1. Base Case: Starting cell (0, 0)
+    start_val = 1 if grid[0][0] == 0 else -1
+    dp[0][0].add(start_val)
+    
+    # 2. Base Case: Fill the First Row (can only come from the left)
+    for c in range(1, cols):
+        cell_val = 1 if grid[0][c] == 0 else -1
+        for prev_count in dp[0][c - 1]:
+            dp[0][c].add(prev_count + cell_val)
+            
+    # 3. Base Case: Fill the First Column (can only come from above)
+    for r in range(1, rows):
+        cell_val = 1 if grid[r][0] == 0 else -1
+        for prev_count in dp[r - 1][0]:
+            dp[r][0].add(prev_count + cell_val)
+            
+    # 4. Transition for the rest of the grid (can come from top OR left)
+    for r in range(1, rows):
+        for c in range(1, cols):
+            cell_val = 1 if grid[r][c] == 0 else -1
+            
+            # Pull counts from top
+            for prev_count in dp[r - 1][c]:
+                dp[r][c].add(prev_count + cell_val)
+                
+            # Pull counts from left
+            for prev_count in dp[r][c - 1]:
+                dp[r][c].add(prev_count + cell_val)
+                
+    # Check if 0 is achievable at the bottom-right corner
+    return 0 in dp[rows - 1][cols - 1]
+
+class Solution:
+    """
+    Time and Space complexity O(m x n x (m + n)) as recuriosn is m x n and we can have m+n different counts of 0s and 1s
+    """
+    def dfs(self, row, col, rows, columns, grid, memo, count) -> bool:
+        # 1. Out of bounds base case
+        if row >= rows or col >= columns:
+            return False
+        
+        # 2. Update count for the current cell (+1 for 0, -1 for 1)
+        # Assuming grid contains 0 and 1. If 0 means +1 and 1 means -1:
+        current_val = 1 if grid[row][col] == 0 else -1
+        new_count = count + current_val
+        
+        # 3. Destination base case (checked after including the final cell)
+        if row == rows - 1 and col == columns - 1:
+            return new_count == 0
+        
+        # 4. Check memoization cache
+        state = (row, col, new_count)
+        if state in memo:
+            return memo[state]
+        
+        # 5. Recursive case: Explore down or right
+        down = self.dfs(row + 1, col, rows, columns, grid, memo, new_count)
+        right = self.dfs(row, col + 1, rows, columns, grid, memo, new_count)
+        
+        # 6. Store in memo and return
+        memo[state] = down or right
+        return memo[state]
+
+    def isThereAPath(self, grid: list[list[int]]) -> bool:
+        rows, columns = len(grid), len(grid[0])
+        memo = {}
+        return self.dfs(0, 0, rows, columns, grid, memo, 0)
 
 # ----------------Subsequence / String Problems: 2D DP (Leetcode 1143)-----------------------
 """

@@ -380,3 +380,19 @@ class Solution:
                 visible_count += 1
                 
         return visible_count
+
+# LC 946
+def validateStackSequences(self, pushed: list[int], popped: list[int]) -> bool:
+    i = 0
+    stack = []
+
+    for num in pushed:
+        # Important need to append before I pop or the stack will never be popped
+        # completly
+        stack.append(num)
+
+        while stack and stack[-1] == popped[i]:
+            stack.pop()
+            i += 1
+        
+    return True if len(stack) == 0 else False
