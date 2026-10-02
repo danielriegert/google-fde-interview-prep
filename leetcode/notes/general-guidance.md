@@ -177,27 +177,55 @@ Step Candidate Behavior
 
 # Topic comparison — complexity & when to use
 
-Covers everything through the Aug 14-20 schedule (sliding window/two pointers
-through binary search). DP, heaps/priority queue, and intervals come later
-and aren't included yet.
+**Two Pointers** is the classic O(n) pattern when you have two indices moving toward each other or in lockstep across a sorted or array-like structure. It is most useful for sorted-array checks, pair/triplet sums, in-place partitioning, and palindrome-style problems. The main tradeoff is that it usually uses O(1) extra space and depends on a strong invariant about ordering or index movement.
 
-| Topic                        | Core idea                                                                                          | Time                                                               | Space                                                           | When to use / signal                                                                                                         |
-| ---------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Two Pointers                 | two indices moving toward each other or in step over a sorted/array structure                      | O(n)                                                               | O(1)                                                            | sorted array, pair/triplet sum, in-place partition, palindrome check                                                         |
-| Sliding Window               | window `[left, right]` expands/shrinks over a contiguous range instead of recomputing from scratch | O(n) — each pointer moves forward at most n times                  | O(1) or O(k) for window state                                   | "contiguous subarray/substring", min/max length under a constraint (sum ≤ k, ≤ k distinct chars)                             |
-| Hash Map / Set               | array + hash function for O(1) average key lookup                                                  | O(n) to build, O(1) avg per op                                     | O(n)                                                            | dedup, counting/frequency, one-pass lookup ("have I seen this"), anagrams, pairs summing to target when order doesn't matter |
-| Stack                        | LIFO, push/pop from one end (Python `list`)                                                        | O(n) traversal, O(1) per push/pop                                  | O(n)                                                            | matching/nesting (parentheses), undo, backtracking, monotonic stack base, iterative DFS                                      |
-| Queue                        | FIFO, enqueue one end / dequeue other (`collections.deque`, never `list`)                          | O(n) traversal, O(1) per enqueue/dequeue                           | O(n)                                                            | BFS frontier, level-order processing, task scheduling, rate limiting                                                         |
-| Monotonic Stack              | stack kept increasing or decreasing; pop while the invariant would break                           | O(n) amortized — each element pushed/popped at most once           | O(n)                                                            | "next greater/smaller element", histogram/rectangle problems, span problems                                                  |
-| Linked List                  | nodes with `val` + `next` pointer(s), no random access                                             | O(n) traversal/search, O(1) insert/delete at a known node          | O(n), O(1) extra if in-place                                    | frequent insert/delete at known position, LRU cache, reordering, fast/slow pointer problems (cycle detection, middle node)   |
-| Binary Tree DFS              | recurse into children, process pre/in/post-order                                                   | O(n) — visits every node once                                      | O(h) call stack — O(log n) balanced, O(n) worst case (skewed)   | path sums, subtree properties, tree backtracking, "explore full path before backtracking"                                    |
-| Binary Tree BFS              | level-by-level traversal via a queue                                                               | O(n)                                                               | O(w) queue width — worst case O(n) at the last level            | level-order output, shortest path/min depth in an unweighted tree, "process nodes grouped by distance"                       |
-| Trie                         | tree of characters, each path from root = a prefix                                                 | O(L) insert/search, L = word length, independent of n words stored | O(total characters stored across all words)                     | prefix matching, autocomplete, word search / dictionary problems                                                             |
-| Graph DFS                    | recurse/stack into unvisited neighbors, backtrack on dead ends                                     | O(V + E)                                                           | O(V) for visited set + O(V) recursion/explicit stack worst case | connected components, cycle detection, topological sort, "all paths", flood fill/islands                                     |
-| Graph BFS                    | level-by-level traversal via a queue, optionally multi-source                                      | O(V + E)                                                           | O(V) for visited set + queue                                    | shortest path in an unweighted graph, "fewest steps", multi-source spread (rotting oranges, nearest water cell)              |
-| Topological Sort             | DFS post-order reversed, or Kahn's BFS with in-degree counts                                       | O(V + E)                                                           | O(V)                                                            | ordering tasks with dependencies/prerequisites, detecting a cycle in a DAG, build/scheduling systems                         |
-| Binary Search (index space)  | halve a _sorted_ search space each step                                                            | O(log n)                                                           | O(1)                                                            | searching a sorted array, peak finding, rotated sorted arrays                                                                |
-| Binary Search (answer space) | halve the range of _possible answers_, using a monotonic feasibility check                         | O(log(range)) × O(cost of feasibility check)                       | O(1)                                                            | "minimum/maximum X such that condition holds" where feasibility is monotonic (min capacity, min speed, min time)             |
+**Sliding Window** keeps a contiguous range `[left, right]` and expands or shrinks it instead of recomputing from scratch. Its total time is O(n) because each pointer advances forward at most n times, and the extra space is O(1) or O(k) depending on the state being tracked. It is the right pattern for any problem with a contiguous subarray or substring, especially when you want the minimum or maximum length under a constraint such as sum ≤ k or at most k distinct characters.
+
+**Hash Map / Set** are the default O(n) pattern for one-pass lookup and frequency tracking. They are excellent for deduplication, counting, anagrams, and pair-sum problems when order does not matter. A hash table gives average O(1) lookup, insert, and delete, but it uses O(n) extra space because the keys or counts are stored explicitly.
+
+**Stack**
+
+- A LIFO structure: push/pop from one end, usually with Python's list as the backing container.
+- Time is O(n) across a full traversal, with O(1) per push/pop and O(n) total space in the worst case.
+- Stacks are ideal for matching or nesting problems such as parentheses validation, undo operations, and any task where the current item must be compared with the most recent one e.g.
+  we need to remove the left neighbour based on a condition.
+- The most recent element you encountered is the first one you need to process, match, or eliminate.
+- Elements interact or cancel each other out when they meet (e.g., asteroids colliding moving in opposite directions, or removing adjacent duplicate characters like "abbaca").
+
+**Monotonic Stack** is a stronger variant that maintains an increasing (pop the top of the stack if it is greater then current element) or decreasing (pop the top of the stack if it is greater then current element) invariant and is especially useful for next greater/smaller element problems, finding max/min, maintaining orders.
+
+- When you are asked to find the first element to the left or right that is strictly greater or smaller than the current element.
+  Examples: LC 402
+
+**Queue** is the FIFO analogue: items are enqueued at one end and dequeued at the other, and Python should use `collections.deque`, not a plain list. It supports O(n) traversals with O(1) enqueue/dequeue operations and O(n) total storage. Queues show up in BFS frontiers, level-order processing, scheduling, and rate-limiting tasks.
+
+**Linked List** is a node-based structure with a `val` and `next` pointer, so it has no random access. Traversal and search are O(n), while insert/delete at a known node can be O(1), with O(n) total memory for the list itself and O(1) extra space if the algorithm is truly in-place. They are useful for frequent insertions/deletions at known positions, LRU-style caches, reordering problems, and fast/slow pointer tasks like cycle detection and middle-node work.
+
+**Binary Tree DFS** recursively walks a node's children and processes them in pre-order, in-order, or post-order. It is O(n) because every node is visited once, with O(h) stack space where h is the tree height; in a balanced tree this is O(log n), but in a skewed tree it can degrade to O(n). Use DFS for path sums, subtree properties, backtracking, and any problem where you want to "explore the full path before backtracking."
+
+**Binary Tree BFS** processes nodes level by level using a queue. It is O(n) overall and uses O(w) queue space, where w is the maximum width of the tree and can be O(n) at the widest level. It is the natural choice for level-order output, shortest path in an unweighted tree, and tasks where the answer depends on processing nodes grouped by distance.
+
+**Trie** is a tree of characters where each root-to-node path represents a prefix. Insertion and lookup are O(L), where L is the length of the key or word, independent of the total number of words stored; the space is proportional to the total number of characters across all stored strings. It is used for prefix matching, autocomplete, dictionary lookups, and word-search problems.
+
+**Graph DFS** uses recursion or an explicit stack to walk unvisited neighbors and backtrack on dead ends. It runs in O(V + E) and uses O(V) memory for the visited set and worst-case recursion/stack. This pattern is used for connected components, cycle detection, topological ordering, all-path exploration, and flood-fill/island problems.
+
+**Graph BFS** explores the graph layer by layer via a queue and is also O(V + E) with O(V) memory for the visited set and queue. It is the correct tool for shortest paths in unweighted graphs, fewest-step tasks, and multi-source spread problems such as rotting oranges or nearest water cells.
+
+**Topological Sort** orders tasks with dependencies, typically by DFS post-order or Kahn's BFS with in-degree counts. It runs in O(V + E) time and O(V) space, and it is used when you need a valid ordering of prerequisites, to detect a cycle in a DAG, or to schedule build-dependent work.
+
+**Binary Search (index space)** repeatedly halves a sorted search space and is O(log n) with O(1) extra space. Use it for searching a **sorted array**, finding peaks, and working with rotated sorted arrays where one half is guaranteed to be sorted.
+
+**Binary Search (answer space)** is different: instead of searching the array itself, you search the range of possible answers using a monotonic feasibility check, which is ideal for optimization questions that ask for extremes like "minimum/maximum X such that a condition holds". Binary search only works if the **answer space is monotonic**: if a candidate value works, then all larger values in the same direction also work (or vice versa).
+
+- We can check if brute force would be O(n) and can be optimized using binary search.
+- Might need to use lower boundaray search if I am looking for the lower boundaray e.g. LC 2300
+- Might have to sort first
+
+| Problem type              | What you are searching for               | Lower bound (low)           | Upper bound (high)                  |
+| ------------------------- | ---------------------------------------- | --------------------------- | ----------------------------------- |
+| Capacity / Speed          | Minimum rate to finish work              | $1$ (or max single element) | Sum of all elements (worst case)    |
+| Allocation / Partitioning | Minimize the max sum of $K$ subarrays    | Max element in the array    | Sum of all elements                 |
+| Distance / Threshold      | Maximize the min distance between points | $0$ or $1$                  | Max coordinate minus min coordinate |
 
 **Quick disambiguation:**
 

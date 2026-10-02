@@ -467,3 +467,29 @@ def findUnsortedSubarray(self, nums: list[int]) -> int:
         return 0
         
     return right - left + 1
+
+# LC 402
+"""
+Time: O(N)
+Space: O(N)
+"""
+def removeKdigits(self, num: str, k: int) -> str:
+    stack = []
+
+    for digit in num:
+        # Pop from stack if the current digit is smaller than the last kept digit,
+        # and we still have removals left.
+        while stack and k > 0 and stack[-1] > digit:
+            stack.pop()
+            k -= 1
+        # need to first remove then add
+        stack.append(digit)
+        
+    # If k is still > 0, remove from the end (since remaining digits are sorted ascendingly)
+    if k > 0:
+        stack = stack[:-k]
+        
+    # Join stack and remove leading zeros
+    result = "".join(stack).lstrip("0")
+    
+    return result if result else "0"

@@ -373,6 +373,14 @@ def findMin(self, nums: list[int]) -> int:
 #--------------------------------
 """
 Steps:
+1. Define search space and make sure it is monotonic (either increasing or decreasing).
+2. Initializae left to min and right to max in search space. init result to max or min depending on problem.
+3. Start while loop with condition left <= right.
+4. Calculate mid = (left + right) // 2.
+5. Check if mid is a valid value based on problem constraints.
+6. If valid update the result with mid
+7. Adjust left (mid + 1) or right (mid - 1) based on whether you are looking for min or max valid value.
+8. Return result after loop ends.
 
 """
 # Template
@@ -424,3 +432,39 @@ def minEatingSpeed(self, piles: List[int], h: int) -> int:
     return res
 
 # LC 2300: Successful Pairs of Spells and Potions
+from typing import List
+import math
+
+class Solution:
+    """
+    Brute force O(n * m) nested for loop    
+    Time: Sorting O(n log n) + BS O(log n) + for loop O(m) -> O(n log n + m log n)
+    Space: O(1)
+    """
+    def successfulPairs(self, spells: List[int], potions: List[int], success: int) -> List[int]:
+        # 1. Sort potions so we can perform binary search
+        potions.sort()
+        potions_count = len(potions)
+        result = []
+        
+        for spell in spells:
+            # Calculate minimum potion strength needed: ceil(success / spell)
+            min_potion = math.ceil(success / spell)
+
+            # Need to init within loop to make sure these reset before processing next spell
+            left = 0
+            right = potions_count
+            
+            # Lower_bound binary search. Need to use < as <= would cause infinite loop
+            while left < right:
+                mid = (right + left) // 2
+                if potions[mid] < min_potion:
+                    left = mid + 1
+                else:
+                    right = mid  # Keep searching to the left for the first valid element
+            
+            # 'left' is now the index of the first potion >= min_potion
+            # All elements from 'left' to the end of the array are successful pairs
+            result.append(potions_count - left)
+            
+        return result
