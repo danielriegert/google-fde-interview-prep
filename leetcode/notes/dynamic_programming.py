@@ -271,7 +271,25 @@ def wordBreak(self, s: str, wordDict: list[str]) -> bool:
 
 
 # LC 790
+def numTilings(self, n: int) -> int:
+    MOD = 10**9 + 7
+    
+    if n == 1:
+        return 1
+    if n == 2:
+        return 2
+    if n == 3:
+        return 5
+    
+    dp = [0] * n
+    dp[0] = 1
+    dp[1] = 2
+    dp[2] = 5
 
+    for i in range(3, n):
+        dp[i] = (2 * dp[i-1] + dp[i-3]) % MOD
+    
+    return dp[-1]
 # ==========================================================
 # DP 2D
 # ==========================================================
@@ -300,6 +318,8 @@ General:
     - Use DP if asked to find path with certain properties (e.g., min cost, max sum, unique paths) and the problem can be broken down into subproblems based on grid positions.
     - There might be cases where we need to track multiple states at each cell e.g. all possible counts of 0s and 1s to reach the bottom right corner (LC 2510). 
     In such cases, we can use a set or list at each cell to store all achievable states.
+    - If we are looking for contigous substrings that require comparind from both sideswe need 2D DP (interval style). 
+    If we are looking for subsequences we can use 1D DP.
     """
 # Templates
 def gridDPProblem(m: int, n: int) -> int:
@@ -571,10 +591,6 @@ Transition: dp[i][j] = all counts from dp[i - 1][j] + all counts from dp[i][j - 
 """
 def isThereAPath(self, grid: list[list[int]]) -> bool:
     rows, cols = len(grid), len(grid[0])
-    
-    # Quick pruning: total path length must be even
-    if (rows + cols - 1) % 2 != 0:
-        return False
         
     # dp[i][j] will be a set of all possible counts at cell (i, j)
     dp = [[set() for _ in range(cols)] for _ in range(rows)]
@@ -719,7 +735,35 @@ def spaceOptimizedSubsequence(self, text1: str, text2: str) -> int:
         
     # 6. The final answer resides at the end of the last processed row
     return prev[n]
-    
+
+# LC 1143: Longest Common Subsequence
+# Base case is empty string, so we initialize the first row and first column of the dp table to 0.
+# The longest common subsequence between an empty string and any other string is always 0
+# dp[i][j] stores the length of the longest common subsequence between the 
+# first i characters of text1 and the first j characters of text2
+def longestCommonSubsequence(self, text1: str, text2: str) -> int:
+        m, n = len(text1), len(text2)
+        
+        # Create a (m + 1) x (n + 1) matrix initialized to 0
+        dp = [[0] * (n + 1) for _ in range(m + 1)]
+        
+        # Build the dp array from bottom up
+        for i in range(1, m + 1):
+            for j in range(1, n + 1):
+                # Note: text1[i-1] and text2[j-1] because of the offset 1
+                if text1[i - 1] == text2[j - 1]:
+                    # if the characters match take the value from the diagonal cell (dp[i - 1][j - 1]) which represents the length of the 
+                    # longest common subsequence without the current characters and
+                    # add 1 to extend the previous common subsequence.
+                    dp[i][j] = dp[i - 1][j - 1] + 1
+                else:
+                    # if the characters don't match, take the maximum value from either the cell above (dp[i - 1][j])
+                    # or the cell to the left (dp[i][j - 1]). 
+                    # This represents the best common subsequence found so far without including the current character from either string.
+                    dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])
+                    
+        return dp[m][n]
+
 # Variations
 """
 Counting Subsequences (e.g., "Distinct Subsequences")
@@ -756,7 +800,7 @@ else:
     )
 
 """
-3. Single Sequence Problems (e.g., "Longest Increasing Subsequence")
+3. Single Sequence Problems (e.g., "Longest Increasing Subsequence") e.g. LC 300
     Goal: Find patterns within a single array (no second string to compare against).
     Modification: Drop the 2D grid entirely. Use a 1D array where dp[i] represents the answer ending at index i, and loop backward through previous elements.
 """
@@ -777,20 +821,57 @@ return max(dp)
     Modification: Instead of prefixes, your loops manage interval lengths from start (i) to end (j).
 """
 
-# dp[i][j] = longest palindromic subsequence between index i and j
-dp = [[0] * n for _ in range(n)]
-for i in range(n): dp[i][i] = 1  # Base case: single letters are palindromes of length 1
+"""
+State: dp[i][j] be a boolean value representing whether the substring from index i to j (s[i...j]) is a palindrome.
+Base case: Every single character is a palindrome of length 1: dp[i][i] = True.
+Transition: For any substring of length greater than 2 (j - i > 1), s[i...j] is a palindrome if:
+    The outer characters match: s[i] == s[j]
+    The inner substring is also a palindrome: dp[i+1][j-1] == True
 
-# Iterate by length of the interval
-for length in range(2, n + 1):
-    for i in range(n - length + 1):
-        j = i + length - 1
-        if text[i] == text[j]:
-            dp[i][j] = dp[i + 1][j - 1] + 2
-        else:
-            dp[i][j] = max(dp[i + 1][j], dp[i][j - 1])
+Time ans space: O(n^2)
+Note:
+We keep increasing window so that we can safely overwrite the previous longest palindrome bounds because we are only interested
+ in the longest one found so far.
+"""
+def longestPalindrome(self, s: str) -> str:
+    n = len(s)
+    # dp[i][j] stores whether the substring from index i to j (s[i...j]) is a palindrome
+    dp = [[False] * n for _ in range(n)]
 
-return dp[0][n - 1]
+    # Tracks the [start, end] indices of the longest palindromic substring found so far
+    ans = [0, 0]
+
+    # --- BASE CASE 1: Substrings of length 1 ---
+    # Every single character is a palindrome by itself (e.g., "a", "b")
+    for i in range(n):
+        dp[i][i] = True
+
+    # --- BASE CASE 2: Substrings of length 2 ---
+    # Check adjacent characters; if they match, they form a valid palindrome of length 2 (e.g., "bb")
+    for i in range(n - 1):
+        if s[i] == s[i + 1]:
+            dp[i][i + 1] = True
+            ans = [i, i + 1]  # Update our longest palindrome bounds
+
+    # --- GENERAL CASE: Substrings of length 3 or more ---
+    # 'diff' represents the gap between the start (i) and end (j) indices, i.e., diff = j - i
+    # We iterate by increasing lengths (diff ranges from 2 up to n - 1)
+    for diff in range(2, n):
+        for i in range(n - diff):
+            j = i + diff  # Calculate the end index for this window
+
+            # Transition Rule:
+            # s[i...j] is a palindrome if:
+            # 1. The outer characters match (s[i] == s[j])
+            # 2. The inner substring (s[i+1...j-1]) is also a palindrome (dp[i + 1][j - 1])
+            if s[i] == s[j] and dp[i + 1][j - 1]:
+                dp[i][j] = True
+                ans = [i, j]  # Safe to overwrite because 'diff' strictly increases (longer or equal length)
+
+    # Extract the final start and end indices and slice the string
+    i, j = ans
+    return s[i : j + 1]
+
 
 # LC 72: Edit Distance
 """

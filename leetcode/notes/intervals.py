@@ -16,6 +16,7 @@ def merge_intervals(intervals):
     prev = merged[-1]  # Get the last interval added to our merged list
 
     # Step 3: Check for overlap (current interval starts at or before previous ends)
+    # <= as we want to merge touching intervals as well (e.g., [1,2] and [2,3] should become [1,3])
     if current[0] <= prev[1]:
       # Merge by extending the previous interval's end to the max of both ends
       prev[1] = max(prev[1], current[1])
@@ -34,6 +35,7 @@ intervals_input = [[1, 3], [2, 6], [8, 10], [15, 18]]
 print(merge_intervals(intervals_input))
 
 # 2. Checking for Overlaps
+# !!!Use this when not sorted!!! If sorted then just check if current start is less than previous end.
 # Concept: Two intervals overlap if and only if the later i.e. max of their start times is strictly less than the earlier i.e. min of their end times.
 def is_overlapping(interval_a, interval_b):
   start1, end1 = interval_a

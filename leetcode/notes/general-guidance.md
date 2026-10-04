@@ -128,7 +128,7 @@ Step Candidate Behavior
 
 1. Problem
 
-- Inputs: sorted, positive, negative, empty values, Can $N$ exceed $10^9$?" or "Will memory limits be a constraint?", arrive at stream or not
+- Inputs: sorted, positive, negative, monotonic, empty values, Can $N$ exceed $10^9$?" or "Will memory limits be a constraint?", arrive at stream or not
 - Ouputs
 - Contsraints / Rules: e.g do not modify in place
 
@@ -177,9 +177,26 @@ Step Candidate Behavior
 
 # Topic comparison — complexity & when to use
 
+**Hashmap**
+Use when
+
+- "Find if X and Y exist such that..." (The Complement Pattern)
+  Example: Two Sum. Instead of checking every pair with nested loops ($O(N^2)$), use a HashMap to store numbers you've already seen and check in $O(1)$ time if target - current_number exists.
+- Counting Frequencies or Duplicate Detection
+  Example: Valid Anagram, Top K Frequent Elements, or First Unique Character in a String. Use a map to track how many times each character or number appears.
+- Tracking Previous Positions or Indices
+  Example: Longest Substring Without Repeating Characters or Subarray Sum Equals K. A map can store the last seen index of a character or a running prefix sum to quickly look up past states.
+- Grouping by a Common Key
+  Example: Group Anagrams. Strings that are anagrams share the same sorted character signature, which can act as a HashMap key to group them together.
+- State / Prefix Sum e.g. LC 560. we combine a prefix sum with hashmap to find subarrays that sum up to k. can NOT use sliding window as negative numbers
+  Use Prefix Sum + HashMap when you need $O(N)$ time to find contiguous sub-segments matching a numerical condition, and negative values make sliding windows unusable.
+- Caching / Memoization (Dynamic Programming)
+
 **Two Pointers** is the classic O(n) pattern when you have two indices moving toward each other or in lockstep across a sorted or array-like structure. It is most useful for sorted-array checks, pair/triplet sums, in-place partitioning, and palindrome-style problems. The main tradeoff is that it usually uses O(1) extra space and depends on a strong invariant about ordering or index movement.
 
-**Sliding Window** keeps a contiguous range `[left, right]` and expands or shrinks it instead of recomputing from scratch. Its total time is O(n) because each pointer advances forward at most n times, and the extra space is O(1) or O(k) depending on the state being tracked. It is the right pattern for any problem with a contiguous subarray or substring, especially when you want the minimum or maximum length under a constraint such as sum ≤ k or at most k distinct characters.
+**Sliding Window** keeps a contiguous range `[left, right]` and expands or shrinks it instead of recomputing from scratch. Its total time is O(n) because each pointer advances forward at most n times, and the extra space is O(1) or O(k) depending on the state being tracked.
+It is the right pattern for any problem with a **contiguous subarray or substring**, especially when you want the minimum or maximum length **under a constraint** such as sum ≤ k or at most k distinct characters.
+Only works with monotonic condition i.e. NOT if positive and negative numbers are mixed
 
 **Hash Map / Set** are the default O(n) pattern for one-pass lookup and frequency tracking. They are excellent for deduplication, counting, anagrams, and pair-sum problems when order does not matter. A hash table gives average O(1) lookup, insert, and delete, but it uses O(n) extra space because the keys or counts are stored explicitly.
 
@@ -259,6 +276,7 @@ Step Candidate Behavior
 - Use hashmap ONLY if order doesn't matter
 - Need to think about ALL edge cases e.g. duplicates, empty strings, end or beginning of string, conditions that might cause out of index
 - Think about conditions for early stop
+- when asked for indexes cannot sort array
 
 ## Sliding Windows
 
@@ -288,6 +306,7 @@ Then slide the window from index k to the end e.g. for i in range(k, len(s)): . 
 - Cannot use list with Counter, must use string or tuple or dict as not hashable. Use tuple([]) to convert list to tuple.
 - Can use list(zip(`*`[[]])) to transpose a matrix. Placing an asterisk in front of grid unpacks the list, passing its individual rows as separate arguments. Writing `*`grid is equivalent to writing: [1, 2, 3], [4, 5, 6], [7, 8, 9]. zip() takes multiple iterables (like lists or tuples) and aggregates them by their index position. It pairs up the 1st element*s*, then the 2nd element*s*, then the 3rd element*s*, and so on.
 Before: grid is organized by rows: [[1, 2, 3], [4, 5, 6], [7, 8, 9]]. After: columns is organized by columns: [(1, 4, 7), (2, 5, 8), (3, 6, 9)]
+- Sometimes we can solve by looking for complement
 
 # Stack
 

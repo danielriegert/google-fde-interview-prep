@@ -18,6 +18,8 @@ Here is the comprehensive guide combining the core approaches, operational seque
 | Contiguous subarray/substring, constraint monotonic as window grows/shrinks? | Sliding window                                      |
 | None of the above but "two things converge/compare"?                         | Probably not two pointers -- check hashmap/DP first |
 
+Usually time complexity is O(n) and space complexity O(1) for these.
+
 ## **1. Opposite Direction (Converging Pointers)**
 
 ### **Core Approach**
@@ -145,6 +147,10 @@ for right in range(len(nums)):
   update_answer(r - l + 1)
 ```
 
+Sometimes the answer might require us to count elements / combinations in the window e.g. count += right - left + 1 in LC 713 to get
+all possible subarrays in the window that are smaller than a target.
+If we look for exact match then not needed
+
 ### **Code Snippet & Example** (_Longest Substring Without Repeating Characters - LeetCode 3_)
 
 ```python
@@ -248,11 +254,13 @@ def longestPalindrome(s: str) -> str:
   start, end = 0, 0
 
   def expandAroundCenter(left: int, right: int) -> int:
+    # string is valid palindrome if start and end match and start-i and end-i match
     while left >= 0 and right < len(s) and s[left] == s[right]:
       left -= 1
       right += 1
     return right - left - 1  # Returns the length of the palindrome
 
+  # Two different cases: 1. odd length 2. even length
   for i in range(len(s)):
     len1 = expandAroundCenter(i, i)  # Odd length (e.g., "aba")
     len2 = expandAroundCenter(i, i + 1)  # Even length (e.g., "abba")
@@ -353,4 +361,54 @@ def findUnsortedSubarray(self, nums: list[int]) -> int:
 
     # If end - start >= 0, return the length of the window; otherwise, return 0
     return end - start + 1 if end - start >= 0 else 0
+```
+
+LC 15
+
+```python
+"""
+sort list
+fix one number
+two pointer to find two numbers that sum up 0 - fixed
+have left and right pointer
+add up left and right
+if > sum move right pointer
+if < sum move left pointer
+
+Time O(n^2)
+Space O(n)
+"""
+def threeSum(self, nums: list[int]) -> list[list[int]]:
+    triplets = []
+    nums.sort()
+    for i in range(len(nums)):
+      # need to skip duplicates
+        if i > 0 and nums[i] == nums[i - 1]:
+            continue
+        # init left at i+1 as target is i
+        left = i + 1
+        right = len(nums) - 1
+        target = -nums[i]
+
+        while left < right:
+            current_sum = nums[left] + nums[right]  # Avoids shadowing built-in 'sum'
+            if current_sum == target:
+                triplets.append([nums[i], nums[left], nums[right]])
+
+                # skip duplicates
+                while left < right and nums[left] == nums[left + 1]:
+                    left += 1
+                while left < right and nums[right] == nums[right - 1]:
+                    right -= 1
+
+                # Must advance pointers past the matched pair
+                left += 1
+                right -= 1
+
+            elif current_sum > target:
+                right -= 1
+            else:
+                left += 1
+
+    return triplets
 ```
