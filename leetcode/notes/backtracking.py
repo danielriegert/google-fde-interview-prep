@@ -77,6 +77,18 @@ combination as arguments.
 
 Time: O(N x 2^n) to generate all subsets and then copy them into the output list.
 Space: We are using O(N) space to maintain curr, and are modifying curr in-place with backtracking. 
+
+Tree of choices for nums = [1, 2] (the numbers in the input array) is shown below. The root of the tree is an empty set, and each
+node's children are the numbers that can be added to the current combination.
+                [] 
+            /      \
+      (Add 1)      (Add 2)
+          /          \
+       [1]           [2] 2 is last item in the list, you can't pick anything after it, branch terminates immediately after creating [2]
+       /
+  (Add 2)
+    /
+ [1, 2]
 """
 def subsets(nums):
     result = []
@@ -84,7 +96,8 @@ def subsets(nums):
     def backtrack(start, path):
         # Every path is a valid subset, so we add it immediately
         result.append(path[:])
-        
+
+        # recursion will terminate and unwind back up when start reaches the length of nums, so we don't need an explicit base case here
         for i in range(start, len(nums)):
             path.append(nums[i])       # Choose
             backtrack(i + 1, path)     # Explore
@@ -120,7 +133,6 @@ def permute(nums):
     backtrack([])
     return result
 # LC 46: Permutations
-
 
 # Template for Combination backtracking problems
 """
