@@ -25,6 +25,7 @@ Backtracking Step: When a vertex has no remaining unvisited neighbors, the algor
 
 General:
 - In some cases we might want to first launch DFS from the edges of the grid (e.g. LC 1254, LC 1020)
+- Can be used to find connected components in a graph (e.g. LC 128 Longest Consecutive Sequence can be modelled as finding connected components in a graph)
 """
 # Recursive DFS Implementation
 def dfs_recursive_adjacency_list(graph, vertex, visited=None):

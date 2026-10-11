@@ -25,6 +25,8 @@ If such a previous cummulative sum exists, it means there is a subarray that sum
 We increase the overall count by the frequency of that previous cummulative sum in the HashMap.
 Time Complexity: O(n) - We traverse the list once.
 Space Complexity: O(n) - In the worst case, we may store all prefix sums in the HashMap.
+3
+1,2,3,4
 """
 class Solution:
     def subarraySum(self, nums: List[int], k: int) -> int:

@@ -119,3 +119,35 @@ s.update([5, 6]) # s = {1, 2, 3, 4, 5, 6}
 # Delete from set
 my_set = {1, 2, 3, 4, 5}
 my_set.discard(3)  # Removes 3 if it exists; does nothing if it doesn't
+
+
+# LC 128:
+class Solution:
+    """
+    Iterate through array
+    Pruning step to check if element is start of new sequence
+    Then check if next element in sequence exists using while loop.
+
+    Time: O(n)
+    Space: O(n)
+    Can also be viewed as finding connected components in graph using dfs or BFS
+    """
+    def longestConsecutive(self, nums: list[int]) -> int:
+        longest_streak = 0
+        num_set = set(nums)
+
+        for num in num_set:
+            # pruning step. we check if the current num is sthe start of a new sequence
+            # if num-1 exists then num is somewhere in the middle of a longer sequence and not the start
+            # we don't need to re-process this
+            if num - 1 not in num_set:
+                current_num = num
+                current_streak = 1
+
+                while current_num + 1 in num_set:
+                    current_num += 1
+                    current_streak += 1
+
+                longest_streak = max(longest_streak, current_streak)
+
+        return longest_streak

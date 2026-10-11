@@ -60,6 +60,8 @@ General:
 - can space optimize if we only rely on i previous results
 String problems:
 - For string problems base case is usually empty string for array check samallest possible value e.g. 0
+- Making choices based on previous states. There usually needs to be some kind of order to the choices 
+e.g. LC 128 does not satify this condition as we can jump around in the array and not have a clear order to the choices.
 
 Array problems:
 - Index of dp might be the target value (like the amount in Coin Change) 
@@ -82,7 +84,7 @@ Transition examples:
 3. Subsequeune
 
 
-4. Longest Increasing Subsequeunce
+4. Longest Increasing Subsequeunce (LC 300)
 Check all previous elements to see if the current one can extend an increasing sequence.
 Might need nested for loop
 
@@ -161,6 +163,13 @@ Time complexity: O(a∗c)
     a is number of amount and c is number of coins
 Space complexity: O(a)
 
+Approach:
+Init list of len amount + 1 and init wiht value amount + 1
+Set base case wich is o amount, requires 0 coins
+Iterate from amoutn 1 to final amount
+For each amount we check all coins and see if we can mek up current amount
+If yes we take min of current value and 1 + value of amount - coin i.e. number of coins needed to make up the remaining 
+amount after using this coin.
 """
 def coinChange(self, coins: list[int], amount: int) -> int:
     # Inint array with current amount + 1 representing not reachable to ensure
@@ -195,11 +204,14 @@ Time: O(n^2)
 Space: O(n)
 
 Can also be solve using binray search.
-Can NOT be solved with slidign window
+Can NOT be solved with slidign window as jumping around in array and negative numbers.
+
 """
 def lengthOfLIS(self, nums: list[int]) -> int:
     longest_sub_so_far = [1] * len(nums)
 
+    # i is the end of a potentially increasing subsequennce. 
+    # need inner loop to check all previous elements to see if we can extend the subsequence
     for i in range(len(nums)):
         for j in range(i):
             if nums[i] > nums[j]:

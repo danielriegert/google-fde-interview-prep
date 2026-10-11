@@ -32,3 +32,7 @@ math.ceil(p / k)
 
 # Performs floor division (integer division, rounding down). For the same pile, $7 // 3$ evaluates to $2$.
 p // k
+
+# REverse a string in Python
+reversed_string = my_string[::-1]  # Using slicing with a step of -1
+

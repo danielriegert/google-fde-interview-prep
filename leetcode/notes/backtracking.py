@@ -25,9 +25,17 @@ Clues from Constraints and Complexity
 * **The "Choose, Explore, Un-choose" Pattern:** If your algorithmic logic requires you to modify a state (e.g., add to a path), recurse deeper, and then undo that modification upon return, you are writing backtracking.
 
 Solution space:
-- Permutations: N!.
-- Combinations: N! / (N - k)!k!.
-- Subsets: 2^N, since each element could be absent or present.
+- Permutations (all possible ways): N!. 
+-> order matters. ordered arrangemenet of k items from a set of N items.
+Example: A, B, C -> ABC, ACB, BAC, BCA, CAB, CBA
+
+- Combinations: N! / (N - k)!k!. 
+-> order does not matter. unordered selection of k items from a set of N items.
+Example: A, B, C -> ABC
+
+- Subsets: 2^N, since each element could be absent or present. 
+-> order does not matter. unordered selection of any number of items from a set of N items.
+Example: A, B, C -> {}, {A}, {B}, {C}, {A, B}, {A, C}, {B, C}, {A, B, C}
 
 Common backtracking problems:
 Subsets
@@ -38,6 +46,11 @@ Combinations
 Combination Sum II
 Combination Sum III
 Palindrome Partition
+
+General:
+- Try to solve for trivial cases first, then build up to more complex cases.
+- Usually want to fix first element and then recurse on the rest of the elements.
+- base case usually if len(path) == len(input_data) 
 """
 # Template for Subset backtracking problems
 def solve(self, input_data):
@@ -50,6 +63,8 @@ def solve(self, input_data):
             return
         
         # 2. Iterate through available choices
+        # !!!order doesn#t matter, so we cannot loop from 0 to n at every step, 
+        # we need to loop from the current index to n to avoid duplicates
         for i in range(start_index, len(input_data)):
             choice = input_data[i]
             
@@ -386,6 +401,65 @@ class Solution:
 
         # Start backtracking from number 1, with an empty path and 0 sum
         backtrack(1, [], 0)
+        return result
+
+# LC 17: Letter Combinations of a Phone Number
+"""
+Input digits are "23".
+Digit 2 maps to ['a', 'b', 'c']   Digit 3 maps to ['d', 'e', 'f']
+
+BACKTRACK(index=0, path=[])
+│
+├── CHOOSE 'a'
+│   └── BACKTRACK(index=1, path=['a'])
+│       ├── CHOOSE 'd' ──> RESULT: "ad"[cite: 1]
+│       ├── CHOOSE 'e' ──> RESULT: "ae"[cite: 1]
+│       └── CHOOSE 'f' ──> RESULT: "af"[cite: 1]
+│
+├── CHOOSE 'b'[cite: 1]
+│   └── BACKTRACK(index=1, path=['b'])[cite: 1]
+│       ├── CHOOSE 'd' ──> RESULT: "bd"[cite: 1]
+│       ├── CHOOSE 'e' ──> RESULT: "be"[cite: 1]
+│       └── CHOOSE 'f' ──> RESULT: "bf"[cite: 1]
+│
+└── CHOOSE 'c'[cite: 1]
+    └── BACKTRACK(index=1, path=['c'])[cite: 1]
+        ├── CHOOSE 'd' ──> RESULT: "cd"[cite: 1]
+        ├── CHOOSE 'e' ──> RESULT: "ce"[cite: 1]
+        └── CHOOSE 'f' ──> RESULT: "cf"[cite: 1]
+"""
+class Solution:
+    def letterCombinations(self, digits: str) -> list[str]:
+        if len(digits) == 0:
+            return []
+        
+        result = []
+        # Map all the digits to their corresponding letters
+        letters = {
+            "2": "abc",
+            "3": "def",
+            "4": "ghi",
+            "5": "jkl",
+            "6": "mno",
+            "7": "pqrs",
+            "8": "tuv",
+            "9": "wxyz",
+        }
+
+        def backtrack(index, path):
+            if len(path) == len(digits):
+                result.append("".join(path))
+                return
+            
+            possible_letters = letters[digits[index]]
+
+            # we lock in the nth letter and then generate all possible combinations with it
+            for letter in possible_letters:
+                path.append(letter)
+                backtrack(index + 1, path)
+                path.pop()
+        
+        backtrack(0, [])
         return result
 
 # Grid and Matrix Backtracking Template

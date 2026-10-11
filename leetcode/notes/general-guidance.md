@@ -224,7 +224,7 @@ Only works with monotonic condition i.e. NOT if positive and negative numbers ar
 
 **Trie** is a tree of characters where each root-to-node path represents a prefix. Insertion and lookup are O(L), where L is the length of the key or word, independent of the total number of words stored; the space is proportional to the total number of characters across all stored strings. It is used for prefix matching, autocomplete, dictionary lookups, and word-search problems.
 
-**Graph DFS** uses recursion or an explicit stack to walk unvisited neighbors and backtrack on dead ends. It runs in O(V + E) and uses O(V) memory for the visited set and worst-case recursion/stack. This pattern is used for connected components, cycle detection, topological ordering, all-path exploration, and flood-fill/island problems.
+**Graph DFS** uses recursion or an explicit stack to walk unvisited neighbors and backtrack on dead ends. It runs in O(V + E) and uses O(V) memory for the visited set and worst-case recursion/stack. This pattern is used for connected components (can also use this to find consecutive sequences e.g. LC 128), cycle detection, topological ordering, all-path exploration, and flood-fill/island problems.
 
 **Graph BFS** explores the graph layer by layer via a queue and is also O(V + E) with O(V) memory for the visited set and queue. It is the correct tool for shortest paths in unweighted graphs, fewest-step tasks, and multi-source spread problems such as rotting oranges or nearest water cells.
 
@@ -506,3 +506,5 @@ min_potion = math.ceil(success / spell)
 - .sort( ) -> sorts in place
 - sorted([]) -> creates new object. also works on strings and tuples
 - can use reversed index e.g. instead of mapping doc id to word I can map word to doc ids. Use what we will search on as key
+- when columns width is unkown or dynamic in a grid we can only use rows and append to them i.e. row bucket method e.g. LC 6
+- should try to think of inverse e.g. find complement, or find longest array in the middle i.e. what to keep instead of what to remove from left and right to reach x e.g. LC 1658, count constraints, etc
