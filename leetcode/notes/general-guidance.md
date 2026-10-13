@@ -408,6 +408,11 @@ class Solution:
   Tracking incoming direction: By passing both left-incoming (l) and right-incoming (r) path lengths, each node instantly knows how it was reached and whether a continuation is valid.
 - Look closely at the problem statement's guarantees. LeetCode 236 guarantees that both p and q exist in the tree.
   This guarantee allows the algorithm to short-circuit safely. The moment you hit one of the target nodes, you don't need to look any further down that branch because the existence of the other node dictates the final outcome at the parent level.
+- if asks if current node greated than all others in path then track current max so far and compare to value
+- if looking for path that sums up to target then we can us prefix sum and backtracking i.e. remove sum once we switch path
+- if I need path nuitl leaf nodes then need to check like
+  if not node.left and not node.right:
+  return value
 
 # Tree BFS
 
@@ -508,3 +513,7 @@ min_potion = math.ceil(success / spell)
 - can use reversed index e.g. instead of mapping doc id to word I can map word to doc ids. Use what we will search on as key
 - when columns width is unkown or dynamic in a grid we can only use rows and append to them i.e. row bucket method e.g. LC 6
 - should try to think of inverse e.g. find complement, or find longest array in the middle i.e. what to keep instead of what to remove from left and right to reach x e.g. LC 1658, count constraints, etc
+- sorted() on string will return list
+- list is not hashable i.e. cannot be key in dictionary
+- anagram -> words have same character frequencies. Alternatively if I sort them they will be the same
+- need to use defaultdict(list) if I need to init a dict with empty lists

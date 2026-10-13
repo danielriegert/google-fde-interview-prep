@@ -46,4 +46,8 @@ for x, y in zip(a, b):                # iterate two lists in parallel
 squares = [x * x for x in nums]              # list comprehension
 evens = [x for x in nums if x % 2 == 0]      # list comprehension with filter
 
+# Reverse a list in place
+nums.reverse()  # [40, 30, 20, 10]
 
+nums = [10, 20, 30, 40]
+nums[::-1]  # [40, 30, 20, 10] creates a reversed copy of the list

@@ -125,6 +125,29 @@ def lowestCommonAncestor(self, root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -
         # that the other one is in the same subtree, so we return the non-null child.
         return left if left else right
 
+# built balances tree from sorted array. Can obtain by traversing  the tree in-order and storing values in an array.
+def sorted_array_to_bst(nums: list[int]) -> TreeNode | None:
+    """Converts a sorted array into a height-balanced binary search tree."""
+    if not nums:
+        return None
+
+    def helper(left: int, right: int) -> TreeNode | None:
+        if left > right:
+            return None
+
+        # Find the middle element to ensure height balance
+        mid = (left + right) // 2
+        
+        # Create root with the middle element
+        root = TreeNode(nums[mid])
+        
+        # Recursively build left and right subtrees
+        root.left = helper(left, mid - 1)
+        root.right = helper(mid + 1, right)
+        
+        return root
+
+    return helper(0, len(nums) - 1)
 # ==========================================================
 # Trees - DFS (Depth-First Search)
 # ==========================================================
@@ -387,7 +410,7 @@ and deletion (when the tree is balanced).
 Worst Case: O(n) (when the tree becomes skewed, resembling a linked list).
 Space Complexity: O(h) where h is the height of the tree, due to the recursion stack during operations.
 
-In-Order Traversal: Visiting nodes in the order: Left $\rightarrow$ Root $\rightarrow$ Right. For a BST, 
+In-Order Traversal: Visiting nodes in the order: Left -> Root -> Right i.e. in-order traversal. For a BST, 
 this always yields elements in sorted ascending order!!!.
 """
 
@@ -396,6 +419,10 @@ def isValidBST(self, root: Optional[TreeNode]) -> bool:
     """
     Time complexity: O(n) - We visit each node exactly once.
     Space complexity: O(h) - The space used by the stack is proportional to the height
+
+    Each node is checked against a range defined by its ancestors. The left child must be less than its parent, 
+    and the right child must be greater than its parent.
+    This ensures that the BST property holds throughout the tree.
     """
     def validate(node, low=float('-inf'), high=float('inf')):
         if not node:
@@ -409,6 +436,10 @@ def isValidBST(self, root: Optional[TreeNode]) -> bool:
     return validate(root)
 
 def searchBST(self, root: Optional[TreeNode], val: int) -> Optional[TreeNode]:
+        """
+        Check base case: if curernt node is none or we have found the target
+        if target is less then current nodes value it must be in the left subtree, else it must be in the right subtree.
+        """
         
         def dfs(current):
             # Base case: if node is None or we found the value, return the node
@@ -438,6 +469,9 @@ class Solution:
             Copy its value to root.val.
             Recursively delete that minimum node from the right subtree: root.right = deleteNode(root.right, root.val).
     Return: Return the updated root node.
+        2
+    1       3
+         4       5
     """
     def deleteNode(self, root: TreeNode | None, key: int) -> TreeNode | None:
         if not root:

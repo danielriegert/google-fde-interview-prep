@@ -33,6 +33,14 @@ math.ceil(p / k)
 # Performs floor division (integer division, rounding down). For the same pile, $7 // 3$ evaluates to $2$.
 p // k
 
-# REverse a string in Python
+# Reverse a string in Python
 reversed_string = my_string[::-1]  # Using slicing with a step of -1
 
+
+# Build the number by shifting left (multiplying by 10) and adding each digit
+digits = [1, 2, 3]
+number = 0
+for d in digits:
+    number = number * 10 + d
+
+print(number)  # Output: 123
