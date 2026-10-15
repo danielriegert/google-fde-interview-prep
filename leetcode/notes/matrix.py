@@ -21,6 +21,17 @@ for c in range(n):
     col = [grid[r][c] for r in range(n)]
     columns.append(col)
 
+
+result = []
+columns = len(grid[0])
+rows = len(grid)
+
+for col in range(columns):
+    column_elements = []
+    for row in range(rows):
+        column_elements.append(grid[row][col])
+    result.append(column_elements)
+
 # Getting columns from grid using zip
 columns = list(zip(*grid))  # Transpose the grid
 

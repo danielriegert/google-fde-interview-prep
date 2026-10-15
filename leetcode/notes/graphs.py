@@ -24,8 +24,10 @@ Recursive Exploration: Look at an unvisited adjacent neighbor of the current nod
 Backtracking Step: When a vertex has no remaining unvisited neighbors, the algorithm pops it or returns from the recursive function to resume exploration from the parent node.
 
 General:
-- In some cases we might want to first launch DFS from the edges of the grid (e.g. LC 1254, LC 1020)
+- In some cases we might want to first launch DFS from the edges of the grid (e.g. LC 1254, LC 1020). Launch from cellls that are on the edge of the grid
 - Can be used to find connected components in a graph (e.g. LC 128 Longest Consecutive Sequence can be modelled as finding connected components in a graph)
+- If there is only one starting point e.g. check if path then I don#t need outer for loop. If grpah is fragemented e.g islands or grids then I need it
+- Check if could be graph problem if asked for minimum number of steps to reach a target and a clear transition rule exists or if asked to find all connected components in a graph
 """
 # Recursive DFS Implementation
 def dfs_recursive_adjacency_list(graph, vertex, visited=None):
@@ -262,6 +264,10 @@ from collections import defaultdict
 from typing import List
 
 class Solution:
+    """
+    Think of it as finding path between two nodes in a directed weighted graph.
+    
+    """
     def calcEquation(self, equations: List[List[str]], values: List[float], queries: List[List[str]]) -> List[float]:
         
         # ==========================================

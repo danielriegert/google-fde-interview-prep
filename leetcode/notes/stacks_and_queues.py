@@ -438,6 +438,8 @@ def subArrayRanges(self, nums: List[int]) -> int:
 """
 Core idea:
 We need to find the left and right boundary of the subarray.
+The left boundary is the left most element that disrupts the increasing order from the left to right.
+The right boundary is the right most element that disrupts the decreasing order from the right to left.
 We can do this by using monotonic stacks to find the max and min
 """
 def findUnsortedSubarray(self, nums: list[int]) -> int:

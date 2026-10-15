@@ -34,6 +34,9 @@ Useful tips:
 - pay attention when using for loop what to set for range. often need to subtract 1.
  Also remember for loop is 0 indexed and upper range not inclusive whereas linked list is 1 indexed
 - In some scenarios we might want to link the tail wiht the head of the list and then break it again at the new tail e.g. LC 61
+- Whenever head could be deleted, use a dummy node to simplify the logic and avoid special cases for head deletion.
+- If we looking for nth node from end, we can use two pointers. Move fast pointer n steps ahead first, then move both pointers until fast reaches the end.
+ Slow will be at the node before the one to delete.
 """
 # Delete from a Linked List
 def delete_by_value(head, key):

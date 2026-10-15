@@ -332,6 +332,8 @@ General:
     In such cases, we can use a set or list at each cell to store all achievable states.
     - If we are looking for contigous substrings that require comparind from both sideswe need 2D DP (interval style). 
     If we are looking for subsequences we can use 1D DP.
+    - Dynamic programming relies on problems can be broken down into smaller subproblems and a directed acyclic graph (DAG) or a strict topological ordering where subproblems flow in one direction
+      (like moving only down and right in a grid). This breaks if I can move in all four directions on a grid
     """
 # Templates
 def gridDPProblem(m: int, n: int) -> int:
